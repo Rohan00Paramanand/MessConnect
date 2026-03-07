@@ -35,12 +35,21 @@ const complaintSchema = new Schema(
 
     status: {
       type: String,
-      enum: ["pending", "resolved", "rejected"],
+      enum: ["pending", "assigned", "resolved", "rejected"],
       default: "pending"
+    },
+
+    assignedTo: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     }
 
   },
   { timestamps: true }
 );
+
+// Indexes for faster filtering
+complaintSchema.index({ status: 1 });
+complaintSchema.index({ assignedTo: 1 });
 
 export default mongoose.model('Complaint', complaintSchema);
