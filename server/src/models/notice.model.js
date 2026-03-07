@@ -22,7 +22,7 @@ const noticeSchema = new Schema({
 
     targetRole: {
         type: String,
-        enum: ['student', 'vendor', 'faculty', 'all'],
+        enum: ['student', 'vendor', 'mess_committee', 'all'],
         default: 'all'
     },
 
@@ -36,7 +36,7 @@ const noticeSchema = new Schema({
         type: Date,
     }
 },
-{timestamps: true});
+    { timestamps: true });
 
 
 export default mongoose.model('Notice', noticeSchema);
