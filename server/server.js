@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import connectDB from './src/config/db.js';
 import authRoutes from './src/routes/auth.routes.js';
 import complaintRoutes from './src/routes/complaint.routes.js';
@@ -32,6 +33,7 @@ app.use(cors(corsOptions));
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(cookieParser())
 
 // Serve static files from the uploads directory
 const __dirname = path.resolve();
