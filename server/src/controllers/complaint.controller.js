@@ -39,6 +39,13 @@ export const createComplaint = async (req, res) => {
 // @access  Private
 export const getComplaints = async (req, res) => {
     try {
+        // Auto-resolve complaints that have been vendor_completed for more than 3 days
+        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        await Complaint.updateMany(
+            { status: 'vendor_completed', vendorCompletedAt: { $lt: threeDaysAgo } },
+            { $set: { status: 'resolved' } }
+        );
+
         let complaints;
 
         if (req.user.role === 'student') {
@@ -47,8 +54,8 @@ export const getComplaints = async (req, res) => {
             // Committee sees all complaints
             complaints = await Complaint.find().populate('user_id', 'name email').populate('assignedTo', 'name email');
         } else if (req.user.role === 'vendor') {
-            // Vendors only see assigned complaints
-            complaints = await Complaint.find({ status: 'assigned' }).populate('user_id', 'name email').populate('assignedTo', 'name email');
+            // Vendors see assigned, vendor_completed, and resolved complaints
+            complaints = await Complaint.find({ status: { $in: ['assigned', 'vendor_completed', 'resolved'] } }).populate('user_id', 'name email').populate('assignedTo', 'name email');
         }
 
         res.json({
@@ -97,21 +104,87 @@ export const assignComplaint = async (req, res) => {
     }
 };
 
-// @desc    Update complaint status (resolve/reject)
+// @desc    Update complaint status (reject only for committee)
 // @route   PATCH /api/complaints/:id/status
 // @access  Private (Mess Committee)
 export const updateComplaintStatus = async (req, res) => {
     try {
-        const { status } = req.body; // should be 'resolved' or 'rejected'
+        const { status } = req.body;
 
-        if (!['resolved', 'rejected'].includes(status)) {
-            return res.status(400).json({ status: 'error', message: 'Invalid status update. Only resolved or rejected allowed.' });
+        if (status !== 'rejected') {
+            return res.status(400).json({ status: 'error', message: 'Mess committee can only reject complaints from this endpoint.' });
         }
 
         const complaint = await Complaint.findById(req.params.id);
 
         if (!complaint) {
             return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+        }
+
+        complaint.status = status;
+        const updatedComplaint = await complaint.save();
+
+        res.json({
+            status: 'success',
+            data: updatedComplaint
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+// @desc    Mark complaint as completed by vendor
+// @route   PATCH /api/complaints/:id/vendor-complete
+// @access  Private (Vendor)
+export const markVendorCompleted = async (req, res) => {
+    try {
+        const complaint = await Complaint.findById(req.params.id);
+
+        if (!complaint) {
+            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+        }
+
+        if (complaint.status !== 'assigned') {
+            return res.status(400).json({ status: 'error', message: 'Only assigned complaints can be marked as completed' });
+        }
+
+        complaint.status = 'vendor_completed';
+        complaint.vendorCompletedAt = Date.now();
+        const updatedComplaint = await complaint.save();
+
+        res.json({
+            status: 'success',
+            data: updatedComplaint
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+// @desc    Student reviews a vendor-completed complaint
+// @route   PATCH /api/complaints/:id/review
+// @access  Private (Student)
+export const reviewComplaint = async (req, res) => {
+    try {
+        const { status } = req.body; // 'resolved' or 'rejected'
+
+        if (!['resolved', 'rejected'].includes(status)) {
+            return res.status(400).json({ status: 'error', message: 'Invalid status. Must be resolved or rejected' });
+        }
+
+        const complaint = await Complaint.findById(req.params.id);
+
+        if (!complaint) {
+            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+        }
+
+        // Ensure it belongs to the student
+        if (complaint.user_id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ status: 'error', message: 'Not authorized to review this complaint' });
+        }
+
+        if (complaint.status !== 'vendor_completed') {
+            return res.status(400).json({ status: 'error', message: 'Complaint is not ready for review' });
         }
 
         complaint.status = status;
