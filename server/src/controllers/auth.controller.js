@@ -11,7 +11,7 @@ const lowerCaseRegex = /[a-z]/;
 
 const baseSchema = z.object({
     name: z.string().min(3).max(50),
-    email: z.string().email().transform(v => v.toLowerCase()),
+    email: z.email().transform(v => v.toLowerCase()),
     password: z.string()
         .min(8, { message: "Must be 8 char long." })
         .max(50)
@@ -62,7 +62,7 @@ const signup = async (req, res) => {
 
     }
 
-    if (data.role === "faculty") {
+    if (data.role === "mess_committee") {
 
         if (!data.department || !data.branch) {
             return res.status(400).json({
@@ -92,12 +92,14 @@ const signup = async (req, res) => {
 
         const newUser = await User.create(data); // password hashed automatically
 
+        console.log("Before token creation.")
         const token = jwt.sign(
             { _id: newUser._id },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
 
+        console.log("After token creation.")
         res.cookie("token", token, {
             httpOnly: true,
             sameSite: true
