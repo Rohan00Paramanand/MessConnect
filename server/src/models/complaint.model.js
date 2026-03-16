@@ -35,13 +35,17 @@ const complaintSchema = new Schema(
 
     status: {
       type: String,
-      enum: ["pending", "assigned", "resolved", "rejected"],
+      enum: ["pending", "assigned", "resolved", "rejected", "vendor_completed"],
       default: "pending"
     },
 
     assignedTo: {
       type: Schema.Types.ObjectId,
       ref: 'User'
+    },
+
+    vendorCompletedAt: {
+      type: Date
     }
 
   },
