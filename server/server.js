@@ -10,6 +10,7 @@ import staffRoutes from './src/routes/staff.routes.js';
 import feedbackRoutes from './src/routes/feedback.routes.js';
 import noticeRoutes from './src/routes/notice.routes.js';
 import timeTableRoutes from './src/routes/timeTable.routes.js';
+import adminRoutes from './src/routes/admin.routes.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -49,6 +50,7 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/timetable', timeTableRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ERROR HANDLING
 

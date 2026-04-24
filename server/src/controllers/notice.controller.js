@@ -52,13 +52,16 @@ export const getNotices = async (req, res) => {
         // 3. Expiration date must either be null OR in the future
         const query = {
             isActive: true,
-            targetRole: { $in: ['all', userRole] },
             $or: [
                 { expiresAt: { $exists: false } },
                 { expiresAt: null },
                 { expiresAt: { $gt: currentDate } }
             ]
         };
+
+        if (!['admin', 'super_admin'].includes(userRole)) {
+            query.targetRole = { $in: ['all', userRole] };
+        }
 
         const notices = await Notice.find(query)
             .populate('createdBy', 'name email')

@@ -66,9 +66,19 @@ export const getTimeTable = async (req, res) => {
                 };
             }
         } else {
-            // Default: Fetch upcoming meals from today onwards
+            // Default: Fetch meals for the CURRENT WEEK (Monday to Sunday)
             const today = new Date();
-            query.date = { $gte: new Date(today.setHours(0, 0, 0, 0)) };
+            const day = today.getDay();
+            const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
+            
+            const startOfWeek = new Date(today.setDate(diffToMonday));
+            startOfWeek.setHours(0, 0, 0, 0);
+            
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            query.date = { $gte: startOfWeek, $lte: endOfWeek };
         }
 
         const timeTable = await TimeTable.find(query)

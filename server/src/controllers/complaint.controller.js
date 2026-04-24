@@ -5,7 +5,11 @@ import Complaint from '../models/complaint.model.js';
 // @access  Private (Student/Mess Committee)
 export const createComplaint = async (req, res) => {
     try {
-        const { title, description, category } = req.body;
+        const { title, description, category, latitude, longitude, address, mess } = req.body;
+
+        if (!mess) {
+            return res.status(400).json({ status: 'error', message: 'Mess is required' });
+        }
 
         // Parse coverImage similar to course implementation 
         let image = "";
@@ -21,7 +25,9 @@ export const createComplaint = async (req, res) => {
             title,
             description,
             category,
+            mess,
             image,
+            location: (latitude && longitude) ? { latitude, longitude, address } : undefined,
             status: 'pending'
         });
 
@@ -46,16 +52,44 @@ export const getComplaints = async (req, res) => {
             { $set: { status: 'resolved' } }
         );
 
+        let queryFilter = {};
+
+        // Mess Committee / Admins can filter via parameter
+        if (req.query.mess && ['mess_committee', 'admin', 'super_admin'].includes(req.user.role)) {
+            queryFilter.mess = req.query.mess;
+        }
+
+        // Vendors are locked to their assigned mess
+        if (req.user.role === 'vendor') {
+            if (req.user.messAssigned && req.user.messAssigned !== 'None') {
+                queryFilter.mess = req.user.messAssigned;
+            }
+        }
+
         let complaints;
 
         if (req.user.role === 'student') {
-            complaints = await Complaint.find({ user_id: req.user._id }).populate('assignedTo', 'name email');
-        } else if (req.user.role === 'mess_committee') {
-            // Committee sees all complaints
-            complaints = await Complaint.find().populate('user_id', 'name email').populate('assignedTo', 'name email');
+            queryFilter.$or = [
+                { status: { $in: ['pending', 'assigned', 'vendor_completed'] } },
+                { user_id: req.user._id }
+            ];
+            complaints = await Complaint.find(queryFilter)
+            .populate('assignedTo', 'name email')
+            .populate('user_id', 'name avatar')
+            .sort({ createdAt: -1 });
+        } else if (['mess_committee', 'admin', 'super_admin'].includes(req.user.role)) {
+            // Committee and Admins see all complaints (matching queryFilter)
+            complaints = await Complaint.find(queryFilter)
+            .populate('user_id', 'name email')
+            .populate('assignedTo', 'name email')
+            .sort({ createdAt: -1 });
         } else if (req.user.role === 'vendor') {
             // Vendors see assigned, vendor_completed, and resolved complaints
-            complaints = await Complaint.find({ status: { $in: ['assigned', 'vendor_completed', 'resolved'] } }).populate('user_id', 'name email').populate('assignedTo', 'name email');
+            queryFilter.status = { $in: ['assigned', 'vendor_completed', 'resolved'] };
+            complaints = await Complaint.find(queryFilter)
+            .populate('user_id', 'name email')
+            .populate('assignedTo', 'name email')
+            .sort({ createdAt: -1 });
         }
 
         res.json({
@@ -68,55 +102,50 @@ export const getComplaints = async (req, res) => {
     }
 };
 
-// @desc    Assign a complaint
+// @desc    Assign a complaint to a vendor
 // @route   PATCH /api/complaints/:id/assign
 // @access  Private (Mess Committee)
 export const assignComplaint = async (req, res) => {
     try {
-        const { assignedTo } = req.body;
-
-        // Validate that the assigned user is also a mess committee member
-        // Dynamically importing to avoid circular dependencies if any, though regular import is fine too.
-        const User = (await import('../models/user.model.js')).default;
-        const assignee = await User.findById(assignedTo);
-
-        if (!assignee || assignee.role !== 'mess_committee') {
-            return res.status(400).json({ status: 'error', message: 'Can only assign to a mess committee member' });
-        }
+        const { assignedTo } = req.body; // Vendor user ID
 
         const complaint = await Complaint.findById(req.params.id);
-
         if (!complaint) {
             return res.status(404).json({ status: 'error', message: 'Complaint not found' });
         }
 
-        complaint.assignedTo = assignedTo;
-        complaint.status = 'assigned';
+        // If assignedTo is provided, validate it's a vendor
+        if (assignedTo) {
+            const User = (await import('../models/user.model.js')).default;
+            const assignee = await User.findById(assignedTo);
+            if (!assignee || assignee.role !== 'vendor') {
+                return res.status(400).json({ status: 'error', message: 'Can only assign to a vendor' });
+            }
+            complaint.assignedTo = assignedTo;
+        }
 
+        complaint.status = 'assigned';
         const updatedComplaint = await complaint.save();
 
-        res.json({
-            status: 'success',
-            data: updatedComplaint
-        });
+        res.json({ status: 'success', data: updatedComplaint });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
     }
 };
 
-// @desc    Update complaint status (reject only for committee)
+// @desc    Update complaint status (committee can assign, reject, resolve)
 // @route   PATCH /api/complaints/:id/status
 // @access  Private (Mess Committee)
 export const updateComplaintStatus = async (req, res) => {
     try {
         const { status } = req.body;
 
-        if (status !== 'rejected') {
-            return res.status(400).json({ status: 'error', message: 'Mess committee can only reject complaints from this endpoint.' });
+        const allowed = ['assigned', 'rejected', 'resolved'];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({ status: 'error', message: `Invalid status. Allowed: ${allowed.join(', ')}` });
         }
 
         const complaint = await Complaint.findById(req.params.id);
-
         if (!complaint) {
             return res.status(404).json({ status: 'error', message: 'Complaint not found' });
         }
@@ -124,10 +153,7 @@ export const updateComplaintStatus = async (req, res) => {
         complaint.status = status;
         const updatedComplaint = await complaint.save();
 
-        res.json({
-            status: 'success',
-            data: updatedComplaint
-        });
+        res.json({ status: 'success', data: updatedComplaint });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
     }
@@ -193,6 +219,48 @@ export const reviewComplaint = async (req, res) => {
         res.json({
             status: 'success',
             data: updatedComplaint
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+// @desc    Upvote a complaint
+// @route   POST /api/complaints/:id/upvote
+// @access  Private (Student)
+export const upvoteComplaint = async (req, res) => {
+    try {
+        if (req.user.role !== 'student') {
+            return res.status(403).json({ status: 'error', message: 'Only students can upvote complaints' });
+        }
+
+        const complaint = await Complaint.findById(req.params.id);
+        if (!complaint) {
+            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+        }
+
+        // Initialize upvotes array if it doesn't exist (for older records)
+        if (!complaint.upvotes) {
+            complaint.upvotes = [];
+        }
+
+        // Check if user already upvoted (convert ObjectIds to strings for safe comparison)
+        const userIdStr = req.user._id.toString();
+        const index = complaint.upvotes.findIndex(id => id.toString() === userIdStr);
+        
+        if (index > -1) {
+            // Remove upvote
+            complaint.upvotes.splice(index, 1);
+        } else {
+            // Add upvote
+            complaint.upvotes.push(req.user._id);
+        }
+
+        await complaint.save();
+
+        res.json({
+            status: 'success',
+            data: complaint
         });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });

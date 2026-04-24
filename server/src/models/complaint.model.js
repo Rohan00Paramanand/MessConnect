@@ -46,7 +46,24 @@ const complaintSchema = new Schema(
 
     vendorCompletedAt: {
       type: Date
-    }
+    },
+    
+    location: {
+      latitude: Number,
+      longitude: Number,
+      address: String
+    },
+
+    mess: {
+      type: String,
+      enum: ['Adhik boys mess', 'Samruddhi Girls mess', 'New girls mess'],
+      required: true
+    },
+
+    upvotes: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }]
 
   },
   { timestamps: true }

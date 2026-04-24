@@ -1,0 +1,30 @@
+[0m[0m
+[0m[4mC:\Users\shrey\OneDrive\Desktop\project\MessConnectFinal\MessConnect\client\src\App.jsx[24m[0m
+[0m  [2m24:11[22m  [31merror[39m  'isAuthenticated' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\shrey\OneDrive\Desktop\project\MessConnectFinal\MessConnect\client\src\pages\Complaints\ComplaintForm.jsx[24m[0m
+[0m  [2m2:8[22m  [31merror[39m  'useAuthStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\shrey\OneDrive\Desktop\project\MessConnectFinal\MessConnect\client\src\pages\Complaints\ComplaintsList.jsx[24m[0m
+[0m  [2m35:14[22m  [31merror[39m  'error' is defined but never used  [2mno-unused-vars[22m[0m
+[0m  [2m61:14[22m  [31merror[39m  'e' is defined but never used      [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\shrey\OneDrive\Desktop\project\MessConnectFinal\MessConnect\client\src\pages\Feedback\FeedbackView.jsx[24m[0m
+[0m  [2m39:14[22m  [31merror[39m  'e' is defined but never used  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\shrey\OneDrive\Desktop\project\MessConnectFinal\MessConnect\client\src\pages\Notices\NoticeBoard.jsx[24m[0m
+[0m  [2m30:14[22m  [31merror[39m  'e' is defined but never used      [2mno-unused-vars[22m[0m
+[0m  [2m65:14[22m  [31merror[39m  'error' is defined but never used  [2mno-unused-vars[22m[0m
+[0m  [2m78:14[22m  [31merror[39m  'e' is defined but never used      [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\shrey\OneDrive\Desktop\project\MessConnectFinal\MessConnect\client\src\pages\Staff\StaffDirectory.jsx[24m[0m
+[0m  [2m30:14[22m  [31merror[39m  'e' is defined but never used      [2mno-unused-vars[22m[0m
+[0m  [2m54:14[22m  [31merror[39m  'error' is defined but never used  [2mno-unused-vars[22m[0m
+[0m  [2m67:14[22m  [31merror[39m  'e' is defined but never used      [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\shrey\OneDrive\Desktop\project\MessConnectFinal\MessConnect\client\src\pages\Timetable\WeeklyTimetable.jsx[24m[0m
+[0m  [2m27:14[22m  [31merror[39m  'e' is defined but never used  [2mno-unused-vars[22m[0m
+[0m  [2m67:14[22m  [31merror[39m  'e' is defined but never used  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[31m[1m✖ 13 problems (13 errors, 0 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createComplaint, getComplaints, assignComplaint, updateComplaintStatus, markVendorCompleted, reviewComplaint } from '../controllers/complaint.controller.js';
+import { createComplaint, getComplaints, assignComplaint, updateComplaintStatus, markVendorCompleted, reviewComplaint, upvoteComplaint } from '../controllers/complaint.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 import upload from '../middleware/upload.middleware.js';
 
@@ -23,5 +23,8 @@ router.route('/:id/vendor-complete')
 
 router.route('/:id/review')
     .patch(authorizeRoles('student'), reviewComplaint);
+
+router.route('/:id/upvote')
+    .post(authorizeRoles('student'), upvoteComplaint);
 
 export default router;
