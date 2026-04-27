@@ -220,16 +220,18 @@ const Signup = () => {
                 </p>
               </div>
 
-              <Input 
-                label="Enter 6-digit OTP" 
-                name="otp" 
-                type="text" 
-                maxLength="6"
-                required 
-                className="text-center tracking-widest text-xl h-12"
-                value={formData.otp} 
-                onChange={handleChange} 
-              />
+              <div className="flex flex-col items-center justify-center">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Enter 6-digit OTP</label>
+                <input 
+                  name="otp" 
+                  type="text" 
+                  maxLength="6"
+                  required 
+                  className="w-48 px-4 py-3 text-center tracking-[0.5em] text-2xl h-14 bg-white/80 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500 font-black shadow-inner transition-all"
+                  value={formData.otp} 
+                  onChange={handleChange} 
+                />
+              </div>
               
               <div className="flex flex-col gap-3 mt-6">
                 <Button type="submit" disabled={loading} variant="primary" className="w-full">
