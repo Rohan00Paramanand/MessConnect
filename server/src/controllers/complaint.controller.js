@@ -45,13 +45,7 @@ export const createComplaint = async (req, res) => {
 // @access  Private
 export const getComplaints = async (req, res) => {
     try {
-        // Auto-resolve complaints that have been vendor_completed for more than 3 days
         const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-        await Complaint.updateMany(
-            { status: 'vendor_completed', vendorCompletedAt: { $lt: threeDaysAgo } },
-            { $set: { status: 'resolved', resolvedAt: Date.now() } }
-        );
-
         let queryFilter = {
             $and: [
                 {
@@ -112,36 +106,7 @@ export const getComplaints = async (req, res) => {
     }
 };
 
-// @desc    Assign a complaint to a vendor
-// @route   PATCH /api/complaints/:id/assign
-// @access  Private (Mess Committee)
-export const assignComplaint = async (req, res) => {
-    try {
-        const { assignedTo } = req.body; // Vendor user ID
 
-        const complaint = await Complaint.findById(req.params.id);
-        if (!complaint) {
-            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
-        }
-
-        // If assignedTo is provided, validate it's a vendor
-        if (assignedTo) {
-            const User = (await import('../models/user.model.js')).default;
-            const assignee = await User.findById(assignedTo);
-            if (!assignee || assignee.role !== 'vendor') {
-                return res.status(400).json({ status: 'error', message: 'Can only assign to a vendor' });
-            }
-            complaint.assignedTo = assignedTo;
-        }
-
-        complaint.status = 'assigned';
-        const updatedComplaint = await complaint.save();
-
-        res.json({ status: 'success', data: updatedComplaint });
-    } catch (error) {
-        res.status(500).json({ status: 'error', message: error.message });
-    }
-};
 
 // @desc    Update complaint status (committee can assign, reject, resolve)
 // @route   PATCH /api/complaints/:id/status
@@ -200,46 +165,7 @@ export const markVendorCompleted = async (req, res) => {
     }
 };
 
-// @desc    Student reviews a vendor-completed complaint
-// @route   PATCH /api/complaints/:id/review
-// @access  Private (Student)
-export const reviewComplaint = async (req, res) => {
-    try {
-        const { status } = req.body; // 'resolved' or 'rejected'
 
-        if (!['resolved', 'rejected'].includes(status)) {
-            return res.status(400).json({ status: 'error', message: 'Invalid status. Must be resolved or rejected' });
-        }
-
-        const complaint = await Complaint.findById(req.params.id);
-
-        if (!complaint) {
-            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
-        }
-
-        // Ensure it belongs to the student
-        if (complaint.user_id.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ status: 'error', message: 'Not authorized to review this complaint' });
-        }
-
-        if (complaint.status !== 'vendor_completed') {
-            return res.status(400).json({ status: 'error', message: 'Complaint is not ready for review' });
-        }
-
-        complaint.status = status;
-        if (status === 'resolved' || status === 'rejected') {
-            complaint.resolvedAt = Date.now();
-        }
-        const updatedComplaint = await complaint.save();
-
-        res.json({
-            status: 'success',
-            data: updatedComplaint
-        });
-    } catch (error) {
-        res.status(500).json({ status: 'error', message: error.message });
-    }
-};
 
 // @desc    Upvote a complaint
 // @route   POST /api/complaints/:id/upvote
