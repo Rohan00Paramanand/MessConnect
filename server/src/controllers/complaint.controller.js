@@ -49,13 +49,23 @@ export const getComplaints = async (req, res) => {
         const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
         await Complaint.updateMany(
             { status: 'vendor_completed', vendorCompletedAt: { $lt: threeDaysAgo } },
-            { $set: { status: 'resolved' } }
+            { $set: { status: 'resolved', resolvedAt: Date.now() } }
         );
 
-        let queryFilter = {};
+        let queryFilter = {
+            $and: [
+                {
+                    $or: [
+                        { status: { $nin: ['resolved', 'rejected'] } },
+                        { resolvedAt: { $gte: threeDaysAgo } },
+                        { resolvedAt: { $exists: false }, updatedAt: { $gte: threeDaysAgo } }
+                    ]
+                }
+            ]
+        };
 
         // Mess Committee / Admins can filter via parameter
-        if (req.query.mess && ['mess_committee', 'admin', 'super_admin'].includes(req.user.role)) {
+        if (req.query.mess && ['mess_committee', 'super_admin'].includes(req.user.role)) {
             queryFilter.mess = req.query.mess;
         }
 
@@ -77,7 +87,7 @@ export const getComplaints = async (req, res) => {
             .populate('assignedTo', 'name email')
             .populate('user_id', 'name avatar')
             .sort({ createdAt: -1 });
-        } else if (['mess_committee', 'admin', 'super_admin'].includes(req.user.role)) {
+        } else if (['mess_committee', 'super_admin'].includes(req.user.role)) {
             // Committee and Admins see all complaints (matching queryFilter)
             complaints = await Complaint.find(queryFilter)
             .populate('user_id', 'name email')
@@ -151,6 +161,9 @@ export const updateComplaintStatus = async (req, res) => {
         }
 
         complaint.status = status;
+        if (status === 'resolved' || status === 'rejected') {
+            complaint.resolvedAt = Date.now();
+        }
         const updatedComplaint = await complaint.save();
 
         res.json({ status: 'success', data: updatedComplaint });
@@ -214,6 +227,9 @@ export const reviewComplaint = async (req, res) => {
         }
 
         complaint.status = status;
+        if (status === 'resolved' || status === 'rejected') {
+            complaint.resolvedAt = Date.now();
+        }
         const updatedComplaint = await complaint.save();
 
         res.json({
