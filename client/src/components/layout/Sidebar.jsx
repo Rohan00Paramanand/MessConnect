@@ -7,7 +7,6 @@ const roleColors = {
   student:        { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
   mess_committee: { pill: 'bg-amber-500/10 text-amber-700 border-amber-200', dot: 'bg-amber-500',   active: 'from-amber-500 to-orange-500' },
   vendor:         { pill: 'bg-rose-500/10 text-rose-700 border-rose-200',    dot: 'bg-rose-500',    active: 'from-rose-600 to-pink-600' },
-  admin:          { pill: 'bg-indigo-500/10 text-indigo-700 border-indigo-200', dot: 'bg-indigo-500', active: 'from-indigo-600 to-violet-600' },
   super_admin:    { pill: 'bg-violet-500/10 text-violet-700 border-violet-200', dot: 'bg-violet-500', active: 'from-violet-700 to-purple-600' },
 };
 
@@ -37,7 +36,7 @@ const getLinks = (role) => {
       { name: 'Staff', path: '/staff', icon: Users },
       { name: 'Timetable', path: '/timetable', icon: Calendar }
     );
-  } else if (role === 'admin' || role === 'super_admin') {
+  } else if (role === 'super_admin') {
     base.push(
       { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
       { name: 'All Complaints', path: '/complaints', icon: MessageSquare },
@@ -48,7 +47,7 @@ const getLinks = (role) => {
 };
 
 const NavItem = ({ link, role, onClick }) => {
-  const theme = roleColors[role] || roleColors.admin;
+  const theme = roleColors[role] || roleColors.super_admin;
   return (
     <NavLink
       to={link.path}
@@ -73,7 +72,7 @@ const NavItem = ({ link, role, onClick }) => {
 
 const SidebarContent = ({ user, role, links, onLinkClick }) => {
   const { logout } = useAuthStore();
-  const theme = roleColors[role] || roleColors.admin;
+  const theme = roleColors[role] || roleColors.super_admin;
 
   return (
     <div className="flex flex-col h-full">

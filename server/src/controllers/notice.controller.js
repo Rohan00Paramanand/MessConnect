@@ -59,7 +59,7 @@ export const getNotices = async (req, res) => {
             ]
         };
 
-        if (!['admin', 'super_admin'].includes(userRole)) {
+        if (!['super_admin'].includes(userRole)) {
             query.targetRole = { $in: ['all', userRole] };
         }
 

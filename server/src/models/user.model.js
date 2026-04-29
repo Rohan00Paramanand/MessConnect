@@ -26,7 +26,7 @@ const userSchema = new Schema(
 
     role: {
       type: String,
-      enum: ["student", "faculty", "vendor", "mess_committee", "admin", "super_admin"],
+      enum: ["student", "faculty", "vendor", "mess_committee", "super_admin"],
       required: true
     },
 
@@ -34,16 +34,7 @@ const userSchema = new Schema(
       type: String,
       required: true
     },
-
-    department: String,
-    branch: String,
-    year: Number,
     companyName: String,
-
-    messType: {
-      type: String,
-      enum: ['card', 'per-meal']
-    },
 
     messAssigned: {
       type: String,
@@ -60,7 +51,7 @@ const userSchema = new Schema(
       type: Boolean,
       default: false
     },
-    
+
     isApprovedByAdmin: {
       type: Boolean,
       default: false

@@ -88,7 +88,7 @@ export const getFeedback = async (req, res) => {
 
         let aggregateFilter = req.user.role === 'student' ? { user: req.user._id } : {};
         
-        if (req.query.mess && ['mess_committee', 'admin', 'super_admin'].includes(req.user.role)) {
+        if (req.query.mess && ['mess_committee', 'super_admin'].includes(req.user.role)) {
             aggregateFilter.mess = req.query.mess;
         }
 
@@ -129,8 +129,8 @@ export const getFeedback = async (req, res) => {
 
         let query = Feedback.find(listQueryFilter);
 
-        if (req.user.role === 'mess_committee' || req.user.role === 'admin' || req.user.role === 'super_admin') {
-            query = query.populate('user', 'name email department branch year');
+        if (req.user.role === 'mess_committee' || req.user.role === 'super_admin') {
+            query = query.populate('user', 'name email');
         } else if (req.user.role === 'vendor') {
             query = query.select('-user');
         }

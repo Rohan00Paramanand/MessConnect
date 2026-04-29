@@ -68,7 +68,7 @@ const UserApprovals = () => {
                       </span>
                     </td>
                     <td className="p-4">
-                      {user.role === 'vendor' ? user.companyName : `${user.department || 'N/A'} - ${user.branch || 'N/A'}`}
+                      {user.role === 'vendor' ? user.companyName : 'N/A'}
                     </td>
                     <td className="p-4">
                       <Button onClick={() => handleApprove(user._id)} variant="primary" className="text-xs bg-indigo-600 hover:bg-indigo-700">

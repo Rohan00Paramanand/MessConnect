@@ -10,6 +10,7 @@ import Layout from './components/layout/Layout'
 // Pages
 import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
+import ForgotPassword from './pages/Auth/ForgotPassword'
 import StudentDashboard from './pages/Dashboard/StudentDashboard'
 import CommitteeDashboard from './pages/Dashboard/CommitteeDashboard'
 import VendorDashboard from './pages/Dashboard/VendorDashboard'
@@ -36,6 +37,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Dashboard Routes */}
         <Route element={<ProtectedRoute />}>
@@ -56,7 +58,7 @@ function App() {
 
             <Route path="/" element={
               <Navigate to={
-                (user?.role === 'admin' || user?.role === 'super_admin') ? '/dashboard/admin' :
+                user?.role === 'super_admin' ? '/dashboard/admin' :
                 user?.role === 'student' ? '/dashboard/student' :
                 user?.role === 'vendor' ? '/dashboard/vendor' :
                 '/dashboard/committee'

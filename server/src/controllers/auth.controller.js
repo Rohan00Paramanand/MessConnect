@@ -23,10 +23,7 @@ const baseSchema = z.object({
     role: z.enum(["student", "faculty", "vendor", "mess_committee"]),
     phoneNumber: z.string().min(10),
 
-    department: z.string().optional(),
-    branch: z.string().optional(),
-    year: z.number().optional(),
-    messType: z.enum(["card", "per-meal"]).optional(),
+
     messAssigned: z.enum(["Adhik boys mess", "Samruddhi Girls mess", "New girls mess", "None"]).optional(),
     isActive: z.boolean().optional(),
     isVerified: z.boolean().optional(),
@@ -52,29 +49,9 @@ const signup = async (req, res) => {
 
     const data = parsedData.data;
 
-    /* =============================
-       ROLE BASED VALIDATION
-    ============================= */
 
-    if (data.role === "student") {
 
-        if (!data.department || !data.branch || !data.year || !data.messType) {
-            return res.status(400).json({
-                message: "Student must provide department, branch, year and messType"
-            });
-        }
 
-    }
-
-    if (data.role === "mess_committee") {
-
-        if (!data.department || !data.branch) {
-            return res.status(400).json({
-                message: "Faculty must provide department and branch"
-            });
-        }
-
-    }
 
     if (data.role === "vendor") {
 
@@ -113,8 +90,8 @@ const signup = async (req, res) => {
         }
 
         // Create the user and set them as verified (if OTP succeeded, we can assume verified)
-        const newUser = await User.create({ ...data, isVerified: true }); 
-        
+        const newUser = await User.create({ ...data, isVerified: true });
+
         // Cleanup OTP
         await Otp.deleteOne({ _id: otpRecord._id });
 
@@ -152,7 +129,7 @@ const signup = async (req, res) => {
 ============================= */
 
 const login = async (req, res) => {
-
+    console.log("Request object: ", req.body);
     try {
 
         let { email, password } = req.body;
@@ -229,7 +206,7 @@ const logout = (req, res) => {
 const sendOtp = async (req, res) => {
     try {
         const { email, phoneNumber } = req.body;
-        
+
         if (!email && !phoneNumber) {
             return res.status(400).json({ message: "Email or Phone Number is required" });
         }
@@ -251,12 +228,65 @@ const sendOtp = async (req, res) => {
                 message: `Your verification OTP is: ${otp}. It is valid for 5 minutes.`
             });
         }
-        
+
         if (phoneNumber) {
             console.log(`\n[SMS MOCK] Sending OTP ${otp} to phone ${phoneNumber}\n`);
         }
 
         res.status(200).json({ status: "success", message: "OTP sent successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+/* =============================
+   RESET PASSWORD
+============================= */
+
+const resetPasswordSchema = z.object({
+    email: z.email().transform(v => v.toLowerCase()),
+    otp: z.string().length(6, { message: "OTP must be exactly 6 digits." }),
+    newPassword: z.string()
+        .min(8, { message: "Must be 8 char long." })
+        .max(50)
+        .regex(specialCharRegex, { message: "Must contain one special char." })
+        .regex(upperCaseRegex, { message: "Must contain one upper case char." })
+        .regex(lowerCaseRegex, { message: "Must contain one lower case char." })
+});
+
+const resetPassword = async (req, res) => {
+    try {
+        const parsedData = resetPasswordSchema.safeParse(req.body);
+        
+        if (!parsedData.success) {
+            return res.status(400).json({
+                message: "Invalid input format",
+                error: parsedData.error.issues
+            });
+        }
+
+        const { email, otp, newPassword } = parsedData.data;
+
+        // Verify OTP
+        const otpRecord = await Otp.findOne({ email, otp });
+        if (!otpRecord) {
+            return res.status(400).json({ message: "Invalid or expired OTP" });
+        }
+
+        // Verify User
+        const user = await User.findOne({ email }).select("+password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Update password and let pre('save') hook hash it
+        user.password = newPassword;
+        await user.save();
+
+        // Cleanup OTP
+        await Otp.deleteOne({ _id: otpRecord._id });
+
+        res.status(200).json({ status: "success", message: "Password reset successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -270,4 +300,4 @@ export const getMe = async (req, res) => {
     }
 };
 
-export { signup, login, logout, sendOtp };
+export { signup, login, logout, sendOtp, resetPassword };

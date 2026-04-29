@@ -111,6 +111,11 @@ const Login = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
+              <div className="flex justify-end">
+                <Link to="/forgot-password" className="text-sm font-bold text-teal-600 hover:text-teal-500 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
               <Button type="submit" className="w-full mt-2 py-3.5 text-base" disabled={loading} variant="primary">
                 {loading ? (
                   <span className="flex items-center gap-2">

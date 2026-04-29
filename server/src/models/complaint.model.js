@@ -47,6 +47,10 @@ const complaintSchema = new Schema(
     vendorCompletedAt: {
       type: Date
     },
+
+    resolvedAt: {
+      type: Date
+    },
     
     location: {
       latitude: Number,
