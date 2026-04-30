@@ -78,22 +78,22 @@ export const getComplaints = async (req, res) => {
                 { user_id: req.user._id }
             ];
             complaints = await Complaint.find(queryFilter)
-            .populate('assignedTo', 'name email')
-            .populate('user_id', 'name avatar')
-            .sort({ createdAt: -1 });
+                .populate('assignedTo', 'name email')
+                .populate('user_id', 'name avatar')
+                .sort({ createdAt: -1 });
         } else if (['mess_committee', 'super_admin'].includes(req.user.role)) {
             // Committee and Admins see all complaints (matching queryFilter)
             complaints = await Complaint.find(queryFilter)
-            .populate('user_id', 'name email')
-            .populate('assignedTo', 'name email')
-            .sort({ createdAt: -1 });
+                .populate('user_id', 'name email')
+                .populate('assignedTo', 'name email')
+                .sort({ createdAt: -1 });
         } else if (req.user.role === 'vendor') {
             // Vendors see assigned, vendor_completed, and resolved complaints
-            queryFilter.status = { $in: ['assigned', 'vendor_completed', 'resolved'] };
+            queryFilter.status = { $in: ['assigned', 'vendor_completed'] };
             complaints = await Complaint.find(queryFilter)
-            .populate('user_id', 'name email')
-            .populate('assignedTo', 'name email')
-            .sort({ createdAt: -1 });
+                .populate('user_id', 'name email')
+                .populate('assignedTo', 'name email')
+                .sort({ createdAt: -1 });
         }
 
         res.json({
@@ -105,7 +105,6 @@ export const getComplaints = async (req, res) => {
         res.status(500).json({ status: 'error', message: error.message });
     }
 };
-
 
 
 // @desc    Update complaint status (committee can assign, reject, resolve)
@@ -189,7 +188,7 @@ export const upvoteComplaint = async (req, res) => {
         // Check if user already upvoted (convert ObjectIds to strings for safe comparison)
         const userIdStr = req.user._id.toString();
         const index = complaint.upvotes.findIndex(id => id.toString() === userIdStr);
-        
+
         if (index > -1) {
             // Remove upvote
             complaint.upvotes.splice(index, 1);
