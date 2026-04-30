@@ -43,10 +43,10 @@ export const addStaff = async (req, res) => {
 
 // @desc    Get all staff members
 // @route   GET /api/staff
-// @access  Private (Vendor, Student, Mess Committee)
+// @access  Private (Vendor, Mess Committee)
 export const getStaff = async (req, res) => {
     try {
-        const allowedRoles = ['vendor', 'student', 'mess_committee'];
+        const allowedRoles = ['vendor', 'mess_committee'];
         if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to view staff' });
         }
@@ -54,9 +54,14 @@ export const getStaff = async (req, res) => {
         let query = {};
         if (req.user.role === 'vendor') {
             query = { vendor: req.user._id };
+        } else if (req.query.mess && req.user.role === 'mess_committee') {
+            const User = (await import('../models/user.model.js')).default;
+            const vendorsInMess = await User.find({ role: 'vendor', messAssigned: req.query.mess }).select('_id');
+            const vendorIds = vendorsInMess.map(v => v._id);
+            query = { vendor: { $in: vendorIds } };
         }
 
-        const staffList = await Staff.find(query).populate('vendor', 'name email');
+        const staffList = await Staff.find(query).populate('vendor', 'name email messAssigned');
 
         res.status(200).json({
             status: 'success',

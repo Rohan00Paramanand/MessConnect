@@ -20,12 +20,20 @@ const WeeklyTimetable = () => {
   const [activeCell, setActiveCell] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [itemsInput, setItemsInput] = useState('');
+  const [messFilter, setMessFilter] = useState('Adhik boys mess');
 
-  const fetchTimetable = async () => {
-    try { const { data } = await api.get('/api/timetable'); setTimetable(data.data || data); }
+  const fetchTimetable = async (filterVal = messFilter) => {
+    try { 
+      const params = {};
+      if (['student', 'mess_committee'].includes(user?.role) && filterVal) {
+        params.mess = filterVal;
+      }
+      const { data } = await api.get('/api/timetable', { params }); 
+      setTimetable(data.data || data); 
+    }
     catch { toast.error('Failed to load timetable'); } finally { setLoading(false); }
   };
-  useEffect(() => { fetchTimetable(); }, []);
+  useEffect(() => { fetchTimetable(messFilter); }, [messFilter]);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -97,6 +105,19 @@ const WeeklyTimetable = () => {
               <span className="bg-white/20 px-3 py-1.5 rounded-lg border border-white/20 font-bold backdrop-blur-sm shadow-sm inline-flex items-center gap-2">
                 <Plus size={14} className="opacity-70" /> Click any empty cell to add a meal
               </span>
+            </div>
+          )}
+          {['student', 'mess_committee'].includes(user?.role) && (
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30 truncate">
+              <select 
+                className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"
+                value={messFilter}
+                onChange={(e) => setMessFilter(e.target.value)}
+              >
+                <option value="Adhik boys mess" className="text-gray-900">Adhik boys mess</option>
+                <option value="Samruddhi Girls mess" className="text-gray-900">Samruddhi Girls mess</option>
+                <option value="New girls mess" className="text-gray-900">New girls mess</option>
+              </select>
             </div>
           )}
         </div>

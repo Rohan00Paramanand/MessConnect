@@ -35,7 +35,7 @@ const FeedbackView = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [categoryAverages, setCategoryAverages] = useState({});
   const [avgRating, setAvgRating] = useState('–');
-  const [messFilter, setMessFilter] = useState('');
+  const [messFilter, setMessFilter] = useState('Adhik boys mess');
   const [submissionMess, setSubmissionMess] = useState('Adhik boys mess');
 
   // Check if there is already a feedback submitted for the selected date and mess
@@ -151,7 +151,6 @@ const FeedbackView = () => {
                     value={messFilter}
                     onChange={(e) => setMessFilter(e.target.value)}
                   >
-                    <option value="" className="text-gray-900">All Messes</option>
                     <option value="Adhik boys mess" className="text-gray-900">Adhik boys mess</option>
                     <option value="Samruddhi Girls mess" className="text-gray-900">Samruddhi Girls mess</option>
                     <option value="New girls mess" className="text-gray-900">New girls mess</option>
@@ -188,7 +187,12 @@ const FeedbackView = () => {
           <h3 className="text-xl font-black text-gray-900 mb-6">Rate Today's Meals</h3>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <Input type="date" label="Date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input 
+                type="text" 
+                label="Date" 
+                value={new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} 
+                disabled 
+              />
               
               <div className="flex flex-col">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Select Mess</label>
