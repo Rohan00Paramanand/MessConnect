@@ -42,31 +42,24 @@ const useAuthStore = () => {
   };
 
   const checkAuth = async () => {
-    const storedToken = localStorage.getItem('token');
-    if (!storedToken) {
-      setUser(null);
-      setIsAuthenticated(false);
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
     try {
       const { data } = await api.get('/api/auth/me');
       if (data.user) {
         setUser(data.user);
         setIsAuthenticated(true);
-        setLoading(false);
       } else {
         localStorage.removeItem('token');
         setUser(null);
         setToken(null);
         setIsAuthenticated(false);
-        setLoading(false);
       }
     } catch {
       localStorage.removeItem('token');
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+    } finally {
       setLoading(false);
     }
   };

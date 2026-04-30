@@ -22,7 +22,8 @@ export const createTimeTable = async (req, res) => {
                 $gte: new Date(mealDate.setHours(0, 0, 0, 0)),
                 $lt: new Date(mealDate.setHours(23, 59, 59, 999))
             },
-            mealType
+            mealType,
+            mess: req.user.messAssigned
         });
 
         if (existingMeal) {
@@ -33,6 +34,7 @@ export const createTimeTable = async (req, res) => {
             date: new Date(date),
             mealType,
             items: Array.isArray(items) ? items : [items],
+            mess: req.user.messAssigned,
             createdBy: req.user._id
         });
 
@@ -53,8 +55,16 @@ export const createTimeTable = async (req, res) => {
 // @access  Private
 export const getTimeTable = async (req, res) => {
     try {
-        const { date } = req.query;
+        const { date, mess } = req.query;
         let query = {};
+
+        if (req.user.role === 'vendor') {
+            query.mess = req.user.messAssigned;
+        } else if (mess) {
+            query.mess = mess;
+        } else {
+            query.mess = 'Adhik boys mess';
+        }
 
         if (date) {
             // Fetch for a specific day
@@ -110,6 +120,10 @@ export const updateTimeTable = async (req, res) => {
             return res.status(404).json({ status: 'error', message: 'Timetable entry not found' });
         }
 
+        if (timeTable.createdBy.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ status: 'error', message: 'Not authorized to update this timetable' });
+        }
+
         timeTable = await TimeTable.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
@@ -137,6 +151,10 @@ export const deleteTimeTable = async (req, res) => {
 
         if (!timeTable) {
             return res.status(404).json({ status: 'error', message: 'Timetable entry not found' });
+        }
+
+        if (timeTable.createdBy.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ status: 'error', message: 'Not authorized to delete this timetable' });
         }
 
         await timeTable.deleteOne();

@@ -27,6 +27,15 @@ export const submitFeedback = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Invalid date format' });
         }
 
+        const today = new Date();
+        if (
+            feedbackDate.getFullYear() !== today.getFullYear() ||
+            feedbackDate.getMonth() !== today.getMonth() ||
+            feedbackDate.getDate() !== today.getDate()
+        ) {
+            return res.status(400).json({ status: 'error', message: 'Feedback can only be submitted for the present day' });
+        }
+
         // The schema ensures uniqueness per user per date per mess, so match exactly what we are resolving
         let existingFeedback = await Feedback.findOne({
             user: req.user._id,

@@ -21,6 +21,12 @@ const timeTableSchema = new Schema(
       }
     ],
 
+    mess: {
+      type: String,
+      enum: ['Adhik boys mess', 'Samruddhi Girls mess', 'New girls mess', 'None'],
+      required: true
+    },
+
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -30,7 +36,7 @@ const timeTableSchema = new Schema(
   { timestamps: true }
 );
 
-// Prevent duplicate meal for same date
-timeTableSchema.index({ date: 1, mealType: 1 }, { unique: true });
+// Prevent duplicate meal for same date and mess
+timeTableSchema.index({ date: 1, mealType: 1, mess: 1 }, { unique: true });
 
 export default mongoose.model('TimeTable', timeTableSchema);

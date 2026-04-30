@@ -15,13 +15,21 @@ const StaffDirectory = () => {
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', phoneNumber: '', role: 'Cook', joiningDate: '', salary: '', isActive: true });
+  const [messFilter, setMessFilter] = useState('Adhik boys mess');
 
-  const fetchStaff = async () => {
-    try { const { data } = await api.get('/api/staff'); setStaff(data.data || data); }
+  const fetchStaff = async (filterVal = messFilter) => {
+    try {
+      const params = {};
+      if (user?.role === 'mess_committee' && filterVal) {
+        params.mess = filterVal;
+      }
+      const { data } = await api.get('/api/staff', { params });
+      setStaff(data.data || data);
+    }
     catch { toast.error('Failed to load staff'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { fetchStaff(); }, []);
+  useEffect(() => { fetchStaff(messFilter); }, [messFilter]);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setFormLoading(true);
@@ -40,6 +48,17 @@ const StaffDirectory = () => {
     try { await api.delete(`/api/staff/${id}`); setStaff(staff.filter(s => s._id !== id)); toast.success('Removed!'); }
     catch { toast.error('Error removing staff'); }
   };
+
+  if (user?.role === 'student') {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center bg-white/70 backdrop-blur-xl border border-white/60 rounded-[2rem] p-12">
+          <h2 className="text-2xl font-black text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-500 font-medium">You are not authorized to view the staff directory.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -60,11 +79,26 @@ const StaffDirectory = () => {
               {user?.role === 'vendor' ? 'Manage your mess workers and their roles' : 'View the active staff directory'}
             </p>
           </div>
-          {user?.role === 'vendor' && (
-            <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-5 py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-2xl text-white font-bold text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5">
-              {showForm ? <><X size={16}/> Cancel</> : <><Plus size={16}/> Add Staff</>}
-            </button>
-          )}
+          <div className="flex items-center gap-4">
+            {user?.role === 'mess_committee' && (
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30 truncate">
+                <select 
+                  className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"
+                  value={messFilter}
+                  onChange={(e) => setMessFilter(e.target.value)}
+                >
+                  <option value="Adhik boys mess" className="text-gray-900">Adhik boys mess</option>
+                  <option value="Samruddhi Girls mess" className="text-gray-900">Samruddhi Girls mess</option>
+                  <option value="New girls mess" className="text-gray-900">New girls mess</option>
+                </select>
+              </div>
+            )}
+            {user?.role === 'vendor' && (
+              <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-5 py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-2xl text-white font-bold text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5">
+                {showForm ? <><X size={16}/> Cancel</> : <><Plus size={16}/> Add Staff</>}
+              </button>
+            )}
+          </div>
         </div>
         <div className="relative z-10 mt-6 flex gap-6">
           <div>
