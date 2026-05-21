@@ -5,7 +5,7 @@ import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 router.use(protect);
-router.use(authorizeRoles('super_admin'));
+router.use(authorizeRoles('college_admin'));
 
 router.get('/pending-users', getPendingUsers);
 router.patch('/approve-user/:id', approveUser);
