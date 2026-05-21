@@ -1,10 +1,14 @@
 import mongoose, { Schema } from 'mongoose';
-
 const timeTableSchema = new Schema(
   {
     date: {
       type: Date,
-      required: true
+      required: true,
+      set: (val) => {
+        const d = new Date(val);
+        d.setUTCHours(0, 0, 0, 0); // truncate time to ensure unique index works per day
+        return d;
+      }
     },
 
     mealType: {
@@ -22,8 +26,14 @@ const timeTableSchema = new Schema(
     ],
 
     mess: {
-      type: String,
-      enum: ['Adhik boys mess', 'Samruddhi Girls mess', 'New girls mess', 'None'],
+      type: Schema.Types.ObjectId,
+      ref: 'Mess',
+      required: true
+    },
+
+    collegeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'College',
       required: true
     },
 

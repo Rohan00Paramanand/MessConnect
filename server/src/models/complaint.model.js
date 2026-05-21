@@ -1,5 +1,4 @@
 import mongoose, { Schema } from 'mongoose';
-
 const complaintSchema = new Schema(
   {
     user_id: {
@@ -59,8 +58,14 @@ const complaintSchema = new Schema(
     },
 
     mess: {
-      type: String,
-      enum: ['Adhik boys mess', 'Samruddhi Girls mess', 'New girls mess'],
+      type: Schema.Types.ObjectId,
+      ref: 'Mess',
+      required: true
+    },
+
+    collegeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'College',
       required: true
     },
 
