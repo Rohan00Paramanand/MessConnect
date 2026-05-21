@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import Otp from "../models/otp.model.js";
+import College from "../models/college.model.js";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { sendEmail } from "../utils/sendEmail.js";
@@ -20,11 +21,11 @@ const baseSchema = z.object({
         .regex(specialCharRegex, { message: "Must contain one special char." })
         .regex(upperCaseRegex, { message: "Must contain one upper case char." })
         .regex(lowerCaseRegex, { message: "Must contain one lower case char." }),
-    role: z.enum(["student", "faculty", "vendor", "mess_committee"]),
+    role: z.enum(["student", "vendor", "mess_committee", "college_admin", "super_admin"]),
     phoneNumber: z.string().min(10),
 
-
-    messAssigned: z.enum(["Adhik boys mess", "Samruddhi Girls mess", "New girls mess", "None"]).optional(),
+    collegeSlug: z.string().optional(),
+    messAssigned: z.string().optional(), // ObjectId of the Mess
     isActive: z.boolean().optional(),
     isVerified: z.boolean().optional(),
     companyName: z.string().optional(),
@@ -54,21 +55,51 @@ const signup = async (req, res) => {
 
 
     if (data.role === "vendor") {
-
         if (!data.companyName) {
             return res.status(400).json({
                 message: "Vendor must provide companyName"
             });
         }
-        if (!data.messAssigned || data.messAssigned === "None") {
+        if (!data.messAssigned) {
             return res.status(400).json({
                 message: "Vendor must select an assigned mess"
             });
         }
-
     }
 
     try {
+        let collegeId = null;
+
+        if (data.role !== "super_admin") {
+            const emailDomain = data.email.split("@")[1];
+            
+            // For vendors and college_admins, we rely on the collegeSlug from the URL
+            if (data.role === "vendor" || data.role === "college_admin") {
+                if (!data.collegeSlug) {
+                    return res.status(400).json({ message: "collegeSlug is required for vendors and admins" });
+                }
+                const college = await College.findOne({ slug: data.collegeSlug });
+                if (!college) {
+                    return res.status(400).json({ message: "Invalid college slug provided." });
+                }
+                collegeId = college._id;
+            } 
+            // For students and mess_committee, we STRICTLY enforce the email domain check
+            else {
+                const college = await College.findOne({ allowedDomains: emailDomain });
+                
+                if (!college) {
+                    return res.status(400).json({ message: `Your email domain (${emailDomain}) is not registered with any college.` });
+                }
+                
+                // If they happen to be on a college-specific URL, optionally verify it matches their email
+                if (data.collegeSlug && college.slug !== data.collegeSlug) {
+                     return res.status(400).json({ message: "Your email domain does not belong to this specific college portal." });
+                }
+                
+                collegeId = college._id;
+            }
+        }
 
         // Validate OTP
         const otpRecord = await Otp.findOne({
@@ -90,7 +121,13 @@ const signup = async (req, res) => {
         }
 
         // Create the user and set them as verified (if OTP succeeded, we can assume verified)
-        const newUser = await User.create({ ...data, isVerified: true });
+        // Also attach the dynamically resolved collegeId
+        const userData = { ...data, isVerified: true };
+        if (collegeId) {
+            userData.collegeId = collegeId;
+        }
+
+        const newUser = await User.create(userData);
 
         // Cleanup OTP
         await Otp.deleteOne({ _id: otpRecord._id });
