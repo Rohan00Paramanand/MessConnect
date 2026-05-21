@@ -23,6 +23,11 @@ export const protect = async (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({ status: 'error', message: 'Not authorized, user not found' });
         }
+        
+        // Attach collegeId for tenant isolation (super_admin might not have one)
+        if (req.user.collegeId) {
+            req.collegeId = req.user.collegeId;
+        }
 
         next();
     } catch (error) {
