@@ -34,6 +34,12 @@ const noticeSchema = new Schema({
 
     expiresAt: {
         type: Date,
+    },
+    
+    collegeId: {
+        type: Schema.Types.ObjectId,
+        ref: 'College',
+        required: true
     }
 },
     { timestamps: true });

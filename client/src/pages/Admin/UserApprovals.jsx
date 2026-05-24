@@ -28,8 +28,8 @@ const UserApprovals = () => {
       await api.patch(`/api/admin/approve-user/${id}`);
       toast.success('User approved successfully!');
       setUsers(users.filter(u => u._id !== id));
-    } catch {
-      toast.error('Failed to approve user');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to approve user');
     }
   };
 

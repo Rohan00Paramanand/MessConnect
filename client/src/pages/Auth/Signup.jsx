@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
@@ -12,6 +12,8 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
+  const [colleges, setColleges] = useState([]);
+  const [messes, setMesses] = useState([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -20,11 +22,40 @@ const Signup = () => {
     role: 'student',
     phoneNumber: '',
     companyName: '',
-    messAssigned: 'None',
+    messAssigned: '',
+    collegeSlug: '',
     otp: ''
   });
 
+  useEffect(() => {
+    api.get('/api/auth/colleges')
+      .then(({ data }) => {
+        setColleges(data.data || []);
+      })
+      .catch(() => {
+        toast.error('Failed to load colleges');
+      });
+  }, []);
+
+  useEffect(() => {
+    if (formData.role === 'vendor' && formData.collegeSlug) {
+      const selectedCollege = colleges.find(c => c.slug === formData.collegeSlug);
+      if (selectedCollege) {
+        api.get(`/api/auth/messes?collegeId=${selectedCollege._id}`)
+          .then(({ data }) => {
+            setMesses(data.data || []);
+          })
+          .catch(() => {
+            setMesses([]);
+          });
+      }
+    } else {
+      setMesses([]);
+    }
+  }, [formData.role, formData.collegeSlug, colleges]);
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -126,7 +157,7 @@ const Signup = () => {
                       <button
                         key={role}
                         type="button"
-                        onClick={() => setFormData({ ...formData, role })}
+                        onClick={() => setFormData({ ...formData, role, collegeSlug: '', messAssigned: '' })}
                         className={`py-2 px-3 text-sm font-bold rounded-xl border transition-all ${formData.role === role ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}
                       >
                         {role === 'mess_committee' ? 'Committee' : role.charAt(0).toUpperCase() + role.slice(1)}
@@ -141,6 +172,25 @@ const Signup = () => {
 
                 {formData.role === 'vendor' && (
                   <div className="space-y-4 animate-fade-in">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select College</label>
+                      <select
+                        name="collegeSlug"
+                        required
+                        value={formData.collegeSlug}
+                        onChange={(e) => {
+                          const slug = e.target.value;
+                          setFormData({ ...formData, collegeSlug: slug, messAssigned: '' });
+                        }}
+                        className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500"
+                      >
+                        <option value="">Select College</option>
+                        {colleges.map(c => (
+                          <option key={c._id} value={c.slug}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     <Input label="Registered Company Name" name="companyName" required value={formData.companyName} onChange={handleChange} />
 
                     <div>
@@ -151,11 +201,12 @@ const Signup = () => {
                         value={formData.messAssigned}
                         onChange={handleChange}
                         className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500"
+                        disabled={!formData.collegeSlug}
                       >
-                        <option disabled value="">Select Mess</option>
-                        <option value="Adhik boys mess">Adhik boys mess</option>
-                        <option value="Samruddhi Girls mess">Samruddhi Girls mess</option>
-                        <option value="New girls mess">New girls mess</option>
+                        <option value="">{formData.collegeSlug ? 'Select Mess' : 'Select a college first'}</option>
+                        {messes.map(m => (
+                          <option key={m._id} value={m._id}>{m.name}</option>
+                        ))}
                       </select>
                     </div>
 
@@ -167,7 +218,6 @@ const Signup = () => {
 
                 {formData.role === 'mess_committee' && (
                   <div className="space-y-4 animate-fade-in">
-
                     <div className="p-3 bg-white/40 rounded-lg text-sm text-amber-800 font-bold border border-amber-200">
                       Committee accounts will require administrative review and verification before login is permitted.
                     </div>

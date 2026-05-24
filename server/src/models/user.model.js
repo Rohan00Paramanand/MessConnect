@@ -26,20 +26,29 @@ const userSchema = new Schema(
 
     role: {
       type: String,
-      enum: ["student", "faculty", "vendor", "mess_committee", "super_admin"],
+      enum: ["student", "vendor", "mess_committee", "college_admin", "super_admin"],
       required: true
     },
 
     phoneNumber: {
       type: String,
-      required: true
+      required: true,
+      unique: true
     },
+    // Company name is typically only applicable when role is 'vendor'
     companyName: String,
 
     messAssigned: {
-      type: String,
-      enum: ['Adhik boys mess', 'Samruddhi Girls mess', 'New girls mess', 'None'],
-      default: 'None'
+      type: Schema.Types.ObjectId,
+      ref: 'Mess'
+    },
+
+    collegeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'College',
+      required: function() {
+        return this.role !== 'super_admin';
+      }
     },
 
     isActive: {

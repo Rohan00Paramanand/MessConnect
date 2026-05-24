@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
-import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, X, Menu } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, X, Menu, School } from 'lucide-react';
 
 const roleColors = {
   student:        { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
   mess_committee: { pill: 'bg-amber-500/10 text-amber-700 border-amber-200', dot: 'bg-amber-500',   active: 'from-amber-500 to-orange-500' },
   vendor:         { pill: 'bg-rose-500/10 text-rose-700 border-rose-200',    dot: 'bg-rose-500',    active: 'from-rose-600 to-pink-600' },
+  college_admin:  { pill: 'bg-indigo-500/10 text-indigo-700 border-indigo-200', dot: 'bg-indigo-500', active: 'from-indigo-600 to-violet-600' },
   super_admin:    { pill: 'bg-violet-500/10 text-violet-700 border-violet-200', dot: 'bg-violet-500', active: 'from-violet-700 to-purple-600' },
 };
 
@@ -35,12 +36,16 @@ const getLinks = (role) => {
       { name: 'Staff', path: '/staff', icon: Users },
       { name: 'Timetable', path: '/timetable', icon: Calendar }
     );
-  } else if (role === 'super_admin') {
+  } else if (role === 'college_admin') {
     base.push(
       { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
-      { name: 'All Complaints', path: '/complaints', icon: MessageSquare },
-      { name: 'All Notices', path: '/notices', icon: Bell },
+      { name: 'Complaints', path: '/complaints', icon: MessageSquare },
+      { name: 'Notices', path: '/notices', icon: Bell },
       { name: 'Feedback', path: '/feedback', icon: Star }
+    );
+  } else if (role === 'super_admin') {
+    base.push(
+      { name: 'Manage Colleges', path: '/colleges', icon: School }
     );
   }
   return base;
@@ -121,7 +126,7 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
 };
 
 const Sidebar = () => {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const role = user?.role;
   const links = getLinks(role);
   const [mobileOpen, setMobileOpen] = useState(false);

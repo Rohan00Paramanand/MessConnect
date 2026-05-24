@@ -1,5 +1,4 @@
 import mongoose, { Schema } from 'mongoose';
-
 const feedbackSchema = new Schema(
   {
     user: {
@@ -10,7 +9,12 @@ const feedbackSchema = new Schema(
 
     date: {
       type: Date,
-      required: true
+      required: true,
+      set: (val) => {
+        const d = new Date(val);
+        d.setUTCHours(0, 0, 0, 0); // truncate time to ensure unique index works per day
+        return d;
+      }
     },
 
     ratings: [
@@ -41,8 +45,14 @@ const feedbackSchema = new Schema(
     },
     
     mess: {
-      type: String,
-      enum: ['Adhik boys mess', 'Samruddhi Girls mess', 'New girls mess'],
+      type: Schema.Types.ObjectId,
+      ref: 'Mess',
+      required: true
+    },
+    
+    collegeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'College',
       required: true
     }
   },

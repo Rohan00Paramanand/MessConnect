@@ -37,12 +37,24 @@ const staffSchema = new Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+
+    mess: {
+      type: Schema.Types.ObjectId,
+      ref: 'Mess',
+      required: true
+    },
+
+    collegeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'College',
+      required: true
     }
   },
   { timestamps: true }
 );
 
 // Optional: prevent duplicate phone per vendor
-staffSchema.index({ phoneNumber: 1 }, { unique: true });
+staffSchema.index({ vendor: 1, phoneNumber: 1 }, { unique: true });
 
 export default mongoose.model('Staff', staffSchema);
