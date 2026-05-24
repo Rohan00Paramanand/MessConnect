@@ -19,7 +19,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      // window.location.href = '/login'; // Let Zustand handle this possibly
+      // Recoil auth state will detect the missing cookie on next /api/auth/me call and redirect
     }
     return Promise.reject(error);
   }

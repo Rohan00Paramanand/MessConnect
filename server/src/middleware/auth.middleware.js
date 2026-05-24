@@ -24,7 +24,8 @@ export const protect = async (req, res, next) => {
             return res.status(401).json({ status: 'error', message: 'Not authorized, user not found' });
         }
         
-        // Attach collegeId for tenant isolation (super_admin might not have one)
+        // Attach collegeId for tenant isolation (super_admin might not have one).
+        // Note: req.collegeId is a raw Mongoose ObjectId — not a plain string.
         if (req.user.collegeId) {
             req.collegeId = req.user.collegeId;
         }
@@ -38,6 +39,9 @@ export const protect = async (req, res, next) => {
 
 export const authorizeRoles = (...roles) => {
     return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ status: 'error', message: 'Not authorized' });
+        }
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 status: 'error',

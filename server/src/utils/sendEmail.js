@@ -30,5 +30,6 @@ export const sendEmail = async (options) => {
     }
   } catch (error) {
     console.error('Error sending email:', error.message);
+    throw error; // Re-throw so callers can handle send failures
   }
 };
