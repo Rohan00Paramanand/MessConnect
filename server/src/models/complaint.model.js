@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+
 const complaintSchema = new Schema(
   {
     user_id: {
@@ -72,7 +73,12 @@ const complaintSchema = new Schema(
     upvotes: [{
       type: Schema.Types.ObjectId,
       ref: 'User'
-    }]
+    }],
+
+    rejectionReason: {
+      type: String,
+      enum: ["duplicate", "wrong_category", "spam", "false_information", "inappropriate", null]
+    }
 
   },
   { timestamps: true }

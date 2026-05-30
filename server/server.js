@@ -12,6 +12,7 @@ import noticeRoutes from './src/routes/notice.routes.js';
 import timeTableRoutes from './src/routes/timeTable.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
 import superadminRoutes from './src/routes/superadmin.routes.js';
+import messRoutes from './src/routes/mess.routes.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/timetable', timeTableRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/superadmin', superadminRoutes);
+app.use('/api/messes', messRoutes);
 
 
 // ERROR HANDLING

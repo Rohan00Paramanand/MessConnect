@@ -64,6 +64,17 @@ const userSchema = new Schema(
     isApprovedByAdmin: {
       type: Boolean,
       default: false
+    },
+
+    trustMeter: {
+      type: Number,
+      default: 100,
+      min: 0,
+      max: 100
+    },
+
+    bannedUntil: {
+      type: Date
     }
 
   },

@@ -23,6 +23,13 @@ export const protect = async (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({ status: 'error', message: 'Not authorized, user not found' });
         }
+
+        // Lazy recovery: If student was banned and the ban duration has expired, restore trust to 20 baseline
+        if (req.user.role === 'student' && req.user.trustMeter === 0 && req.user.bannedUntil && new Date() >= new Date(req.user.bannedUntil)) {
+            req.user.trustMeter = 20;
+            req.user.bannedUntil = null;
+            await req.user.save();
+        }
         
         // Attach collegeId for tenant isolation (super_admin might not have one).
         // Note: req.collegeId is a raw Mongoose ObjectId — not a plain string.

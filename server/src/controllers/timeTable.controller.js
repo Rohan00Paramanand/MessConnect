@@ -1,4 +1,5 @@
 import TimeTable from '../models/timeTable.model.js';
+import Mess from '../models/mess.model.js';
 
 // @desc    Create a new timetable entry
 // @route   POST /api/timetable
@@ -35,6 +36,7 @@ export const createTimeTable = async (req, res) => {
             mealType,
             items: Array.isArray(items) ? items : [items],
             mess: req.user.messAssigned,
+            collegeId: req.collegeId,
             createdBy: req.user._id
         });
 
@@ -56,14 +58,18 @@ export const createTimeTable = async (req, res) => {
 export const getTimeTable = async (req, res) => {
     try {
         const { date, mess } = req.query;
-        let query = {};
+        // Always scope to the user's own college
+        let query = { collegeId: req.collegeId };
 
         if (req.user.role === 'vendor') {
             query.mess = req.user.messAssigned;
         } else if (mess) {
+            // Validate the requested mess belongs to this college
+            const messDoc = await Mess.findOne({ _id: mess, collegeId: req.collegeId });
+            if (!messDoc) {
+                return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
+            }
             query.mess = mess;
-        } else {
-            query.mess = 'Adhik boys mess';
         }
 
         if (date) {

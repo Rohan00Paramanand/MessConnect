@@ -115,6 +115,9 @@ const signup = async (req, res) => {
             return res.status(400).json({ message: "User already exists" });
         }
 
+        if (data.messAssigned === "") {
+            data.messAssigned = undefined;
+        }
         // Create the user — only pick the fields we explicitly allow (never spread raw request body)
         const newUser = await User.create({
             name: data.name,
@@ -145,10 +148,12 @@ const signup = async (req, res) => {
 
         res.status(201).json({
             message: "User registered successfully",
+            token,
             user: {
                 name: newUser.name,
                 email: newUser.email,
-                role: newUser.role
+                role: newUser.role,
+                collegeId: newUser.collegeId
             }
         });
 
@@ -202,13 +207,18 @@ const login = async (req, res) => {
             httpOnly: true,
             sameSite: true
         });
+        console.log(token);
 
         res.status(200).json({
             message: "Logged in successfully",
+            token,
             user: {
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                isActive: user.isActive,
+                isApprovedByAdmin: user.isApprovedByAdmin,
+                collegeId: user.collegeId
             }
         });
 
@@ -477,12 +487,13 @@ const acceptInvitation = async (req, res) => {
         res.status(201).json({
             status: 'success',
             message: 'Invitation accepted and account registered successfully',
+            token: jwtToken,
             user: {
                 name: newUser.name,
                 email: newUser.email,
-                role: newUser.role
+                role: newUser.role,
+                collegeId: newUser.collegeId
             }
-            // token intentionally NOT returned in body — use httpOnly cookie only
         });
 
     } catch (error) {
