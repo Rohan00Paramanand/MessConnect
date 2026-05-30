@@ -31,8 +31,10 @@ const AcceptInvitation = () => {
 
   useEffect(() => {
     if (!token) {
-      setInvitationError('No invitation token provided. Please check your link.');
-      setInvitationLoading(false);
+      setTimeout(() => {
+        setInvitationError('No invitation token provided. Please check your link.');
+        setInvitationLoading(false);
+      }, 0);
       return;
     }
 

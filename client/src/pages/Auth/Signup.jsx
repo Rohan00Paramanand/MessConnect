@@ -43,14 +43,14 @@ const Signup = () => {
       if (selectedCollege) {
         api.get(`/api/auth/messes?collegeId=${selectedCollege._id}`)
           .then(({ data }) => {
-            setMesses(data.data || []);
+            setTimeout(() => setMesses(data.data || []), 0);
           })
           .catch(() => {
-            setMesses([]);
+            setTimeout(() => setMesses([]), 0);
           });
       }
     } else {
-      setMesses([]);
+      setTimeout(() => setMesses([]), 0);
     }
   }, [formData.role, formData.collegeSlug, colleges]);
 

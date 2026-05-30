@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -24,7 +24,7 @@ const FeedbackView = () => {
   const { user } = useAuthStore();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCat, setSelectedCat] = useState("food");
   const [currentRating, setCurrentRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -35,8 +35,27 @@ const FeedbackView = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [categoryAverages, setCategoryAverages] = useState({});
   const [avgRating, setAvgRating] = useState('–');
-  const [messFilter, setMessFilter] = useState('Adhik boys mess');
-  const [submissionMess, setSubmissionMess] = useState('Adhik boys mess');
+  const [messFilter, setMessFilter] = useState('');
+  const [submissionMess, setSubmissionMess] = useState('');
+  const [messes, setMesses] = useState([]);
+
+  // Fetch active messes dynamically on mount
+  useEffect(() => {
+    if (user?.collegeId) {
+      api.get('/api/messes')
+        .then(({ data }) => {
+          const list = data.data || [];
+          setMesses(list);
+          if (list.length > 0) {
+            setMessFilter(list[0]._id);
+            setSubmissionMess(list[0]._id);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load messes', err);
+        });
+    }
+  }, [user]);
 
   // Check if there is already a feedback submitted for the selected date and mess
   const existingFeedbackForDate = feedbacks.find(
@@ -48,7 +67,7 @@ const FeedbackView = () => {
     (r) => r.category === selectedCat
   );
   
-  const fetchFeedback = async (pageNum = 1, filterVal = messFilter) => {
+  const fetchFeedback = useCallback(async (pageNum = 1, filterVal = messFilter) => {
     if (pageNum === 1) setLoading(true);
     else setLoadingMore(true);
     try { 
@@ -70,12 +89,20 @@ const FeedbackView = () => {
       setLoading(false); 
       setLoadingMore(false);
     }
-  };
+  }, [messFilter]);
 
   useEffect(() => { 
-    setPage(1);
-    fetchFeedback(1, messFilter); 
-  }, [messFilter]);
+    const timer1 = setTimeout(() => {
+      setPage(1);
+    }, 0);
+    const timer2 = setTimeout(() => {
+      fetchFeedback(1, messFilter); 
+    }, 0);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [messFilter, fetchFeedback]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -91,9 +118,12 @@ const FeedbackView = () => {
 
   useEffect(() => {
     if (page > 1) {
-      fetchFeedback(page, messFilter);
+      const timer = setTimeout(() => {
+        fetchFeedback(page, messFilter);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [page]);
+  }, [page, messFilter, fetchFeedback]);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -151,9 +181,9 @@ const FeedbackView = () => {
                     value={messFilter}
                     onChange={(e) => setMessFilter(e.target.value)}
                   >
-                    <option value="Adhik boys mess" className="text-gray-900">Adhik boys mess</option>
-                    <option value="Samruddhi Girls mess" className="text-gray-900">Samruddhi Girls mess</option>
-                    <option value="New girls mess" className="text-gray-900">New girls mess</option>
+                    {messes.map((m) => (
+                      <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -200,10 +230,15 @@ const FeedbackView = () => {
                   className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                   value={submissionMess}
                   onChange={(e) => { setSubmissionMess(e.target.value); setCurrentRating(0); }}
+                  required
                 >
-                  <option value="Adhik boys mess">Adhik boys mess</option>
-                  <option value="Samruddhi Girls mess">Samruddhi Girls mess</option>
-                  <option value="New girls mess">New girls mess</option>
+                  {messes.length === 0 ? (
+                    <option value="">No active messes</option>
+                  ) : (
+                    messes.map((m) => (
+                      <option key={m._id} value={m._id}>{m.name}</option>
+                    ))
+                  )}
                 </select>
               </div>
               

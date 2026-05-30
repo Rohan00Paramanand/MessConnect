@@ -21,6 +21,7 @@ export const createNotice = async (req, res) => {
 
         const notice = await Notice.create({
             createdBy: req.user._id,
+            collegeId: req.collegeId,
             title,
             description,
             image,
@@ -59,7 +60,9 @@ export const getNotices = async (req, res) => {
             ]
         };
 
-        if (!['super_admin'].includes(userRole)) {
+        // Enforce college isolation for all non-super-admin users
+        if (userRole !== 'super_admin') {
+            query.collegeId = req.collegeId;
             query.targetRole = { $in: ['all', userRole] };
         }
 
@@ -86,10 +89,11 @@ export const updateNotice = async (req, res) => {
             return res.status(403).json({ status: 'error', message: 'Only mess committee can update notices' });
         }
 
-        let notice = await Notice.findById(req.params.id);
+        // Scope to own college to prevent cross-college mutations
+        let notice = await Notice.findOne({ _id: req.params.id, collegeId: req.collegeId });
 
         if (!notice) {
-            return res.status(404).json({ status: 'error', message: 'Notice not found' });
+            return res.status(404).json({ status: 'error', message: 'Notice not found or does not belong to your college' });
         }
 
         // Only the creator can update the notice, or allow any committee member?
@@ -134,10 +138,11 @@ export const deleteNotice = async (req, res) => {
             return res.status(403).json({ status: 'error', message: 'Only mess committee can delete notices' });
         }
 
-        const notice = await Notice.findById(req.params.id);
+        // Scope to own college to prevent cross-college deletion
+        const notice = await Notice.findOne({ _id: req.params.id, collegeId: req.collegeId });
 
         if (!notice) {
-            return res.status(404).json({ status: 'error', message: 'Notice not found' });
+            return res.status(404).json({ status: 'error', message: 'Notice not found or does not belong to your college' });
         }
 
         await notice.deleteOne();

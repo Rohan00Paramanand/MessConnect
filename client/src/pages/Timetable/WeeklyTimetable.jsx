@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -20,9 +20,26 @@ const WeeklyTimetable = () => {
   const [activeCell, setActiveCell] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [itemsInput, setItemsInput] = useState('');
-  const [messFilter, setMessFilter] = useState('Adhik boys mess');
+  const [messFilter, setMessFilter] = useState('');
+  const [messes, setMesses] = useState([]);
 
-  const fetchTimetable = async (filterVal = messFilter) => {
+  useEffect(() => {
+    if (user?.collegeId) {
+      api.get('/api/messes')
+        .then(({ data }) => {
+          const list = data.data || [];
+          setMesses(list);
+          if (list.length > 0) {
+            setMessFilter(list[0]._id);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load messes', err);
+        });
+    }
+  }, [user]);
+
+  const fetchTimetable = useCallback(async (filterVal = messFilter) => {
     try { 
       const params = {};
       if (['student', 'mess_committee'].includes(user?.role) && filterVal) {
@@ -32,8 +49,14 @@ const WeeklyTimetable = () => {
       setTimetable(data.data || data); 
     }
     catch { toast.error('Failed to load timetable'); } finally { setLoading(false); }
-  };
-  useEffect(() => { fetchTimetable(messFilter); }, [messFilter]);
+  }, [user, messFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTimetable(messFilter);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [messFilter, fetchTimetable]);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -114,9 +137,9 @@ const WeeklyTimetable = () => {
                 value={messFilter}
                 onChange={(e) => setMessFilter(e.target.value)}
               >
-                <option value="Adhik boys mess" className="text-gray-900">Adhik boys mess</option>
-                <option value="Samruddhi Girls mess" className="text-gray-900">Samruddhi Girls mess</option>
-                <option value="New girls mess" className="text-gray-900">New girls mess</option>
+                {messes.map((m) => (
+                  <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
+                ))}
               </select>
             </div>
           )}

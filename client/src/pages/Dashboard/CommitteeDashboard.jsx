@@ -30,17 +30,20 @@ const CommitteeDashboard = () => {
           { to: '/feedback',   label: 'Metrics',  title: 'Feedback',   Icon: TrendingUp,   color: 'text-green-500', bg: 'from-green-100 to-emerald-50', hover: 'hover:text-green-500' },
           { to: '/notices',    label: 'Post',     title: 'Notices',    Icon: AlertTriangle, color: 'text-violet-500', bg: 'from-violet-100 to-purple-50',hover: 'hover:text-violet-500' },
           { to: '/staff',      label: 'Directory', title: 'Staff',     Icon: Users,        color: 'text-amber-500', bg: 'from-amber-100 to-orange-50',  hover: 'hover:text-amber-500' },
-        ].map(({ to, label, title, Icon, color, bg, hover }) => (
-          <NavLink key={to} to={to} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-              <h3 className={`text-xl font-black text-gray-900 ${hover} transition-colors`}>{title}</h3>
-            </div>
-            <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${bg} flex items-center justify-center ${color} shadow-inner group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
-              <Icon size={22} strokeWidth={2.5} />
-            </div>
-          </NavLink>
-        ))}
+        ].map((item) => {
+          const { to, label, title, Icon, color, bg, hover } = item;
+          return (
+            <NavLink key={to} to={to} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+                <h3 className={`text-xl font-black text-gray-900 ${hover} transition-colors`}>{title}</h3>
+              </div>
+              <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${bg} flex items-center justify-center ${color} shadow-inner group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
+                <Icon size={22} strokeWidth={2.5} />
+              </div>
+            </NavLink>
+          );
+        })}
       </div>
     </div>
   );

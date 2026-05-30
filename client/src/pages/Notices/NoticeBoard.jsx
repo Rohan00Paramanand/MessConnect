@@ -22,7 +22,12 @@ const NoticeBoard = () => {
     } catch { toast.error('Failed to load notices'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { fetchNotices(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchNotices();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -164,7 +169,7 @@ const NoticeBoard = () => {
                   <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{notice.description}</p>
                   <div className="mt-4 flex items-center gap-4 text-xs text-gray-400 font-medium">
                     {notice.createdBy?.name && <span>By {notice.createdBy.name}</span>}
-                    {notice.expiresAt && <span>Expires {new Date(notice.expiresAt).toLocaleDateString()}</span>}
+                    {notice.expiresAt && <span>Expires {new Date(notice.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>}
                   </div>
                 </div>
               </div>

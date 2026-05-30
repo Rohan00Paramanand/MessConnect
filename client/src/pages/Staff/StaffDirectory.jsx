@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -15,9 +15,26 @@ const StaffDirectory = () => {
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', phoneNumber: '', role: 'Cook', joiningDate: '', salary: '', isActive: true });
-  const [messFilter, setMessFilter] = useState('Adhik boys mess');
+  const [messFilter, setMessFilter] = useState('');
+  const [messes, setMesses] = useState([]);
 
-  const fetchStaff = async (filterVal = messFilter) => {
+  useEffect(() => {
+    if (user?.collegeId) {
+      api.get('/api/messes')
+        .then(({ data }) => {
+          const list = data.data || [];
+          setMesses(list);
+          if (list.length > 0) {
+            setMessFilter(list[0]._id);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load messes', err);
+        });
+    }
+  }, [user]);
+
+  const fetchStaff = useCallback(async (filterVal = messFilter) => {
     try {
       const params = {};
       if (user?.role === 'mess_committee' && filterVal) {
@@ -28,8 +45,14 @@ const StaffDirectory = () => {
     }
     catch { toast.error('Failed to load staff'); }
     finally { setLoading(false); }
-  };
-  useEffect(() => { fetchStaff(messFilter); }, [messFilter]);
+  }, [user, messFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchStaff(messFilter);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [messFilter, fetchStaff]);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setFormLoading(true);
@@ -87,9 +110,9 @@ const StaffDirectory = () => {
                   value={messFilter}
                   onChange={(e) => setMessFilter(e.target.value)}
                 >
-                  <option value="Adhik boys mess" className="text-gray-900">Adhik boys mess</option>
-                  <option value="Samruddhi Girls mess" className="text-gray-900">Samruddhi Girls mess</option>
-                  <option value="New girls mess" className="text-gray-900">New girls mess</option>
+                  {messes.map((m) => (
+                    <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
+                  ))}
                 </select>
               </div>
             )}

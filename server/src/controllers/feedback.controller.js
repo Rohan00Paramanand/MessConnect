@@ -1,4 +1,5 @@
 import Feedback from '../models/feedback.model.js';
+import Mess from '../models/mess.model.js';
 
 // @desc    Submit new feedback
 // @route   POST /api/feedback
@@ -13,6 +14,12 @@ export const submitFeedback = async (req, res) => {
 
         if (req.user.role !== 'student') {
             return res.status(403).json({ status: 'error', message: 'Only students can submit feedback' });
+        }
+
+        // Ensure the mess belongs to the student's own college
+        const messDoc = await Mess.findOne({ _id: mess, collegeId: req.collegeId });
+        if (!messDoc) {
+            return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
         }
 
         // Validate ratings array
@@ -67,6 +74,7 @@ export const submitFeedback = async (req, res) => {
 
         const feedback = await Feedback.create({
             user: req.user._id,
+            collegeId: req.collegeId,
             date: new Date(date), // use original date string
             mess, // assign the selected mess
             ratings,
@@ -95,9 +103,20 @@ export const getFeedback = async (req, res) => {
         const limit = parseInt(req.query.limit, 10) || 20;
         const skip = (page - 1) * limit;
 
-        let aggregateFilter = req.user.role === 'student' ? { user: req.user._id } : {};
-        
-        if (req.query.mess && ['mess_committee', 'super_admin'].includes(req.user.role)) {
+        // Always scope to the requesting user's college first
+        let aggregateFilter = { collegeId: req.collegeId };
+
+        if (req.user.role === 'student') {
+            aggregateFilter.user = req.user._id;
+        }
+
+        // mess_committee may filter further by a specific mess (already scoped to college above)
+        if (req.query.mess && req.user.role === 'mess_committee') {
+            // Validate the requested mess belongs to this college before trusting the param
+            const messDoc = await Mess.findOne({ _id: req.query.mess, collegeId: req.collegeId });
+            if (!messDoc) {
+                return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
+            }
             aggregateFilter.mess = req.query.mess;
         }
 

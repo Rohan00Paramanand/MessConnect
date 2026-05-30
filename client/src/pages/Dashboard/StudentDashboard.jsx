@@ -23,7 +23,7 @@ const StudentDashboard = () => {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
         setTrendingComplaints(sorted.slice(0, 3)); // Top 3
-      } catch (err) {
+      } catch {
         console.error('Failed to load recent complaints');
       } finally {
         setLoading(false);
@@ -63,6 +63,31 @@ const StudentDashboard = () => {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-100 to-white">{user?.name}</span>
           </h1>
           <p className="text-teal-100 font-medium mt-3 max-w-md text-sm sm:text-base">Manage your mess details, provide feedback, or check today's notices.</p>
+          <div className="mt-6 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 max-w-xs sm:max-w-sm">
+            <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-teal-50 mb-1.5">
+              <span className="flex items-center gap-1">🛡️ Trust Score</span>
+              <span>{user?.trustMeter ?? 100}%</span>
+            </div>
+            <div className="w-full bg-black/20 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  (user?.trustMeter ?? 100) >= 80 ? 'bg-emerald-300' :
+                  (user?.trustMeter ?? 100) >= 50 ? 'bg-amber-300' :
+                  'bg-red-400'
+                }`}
+                style={{ width: `${user?.trustMeter ?? 100}%` }}
+              ></div>
+            </div>
+            {user?.bannedUntil && new Date() < new Date(user.bannedUntil) ? (
+              <p className="text-[10px] text-red-200 mt-1.5 font-bold">
+                Suspended until {new Date(user.bannedUntil).toLocaleDateString()}
+              </p>
+            ) : (
+              <p className="text-[10px] text-teal-100/80 mt-1.5 font-medium">
+                {(user?.trustMeter ?? 100) === 100 ? 'Excellent! Thank you for filing genuine reports.' : 'Genuine resolved reports restore your score by +10.'}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -73,17 +98,20 @@ const StudentDashboard = () => {
           { to: '/feedback',   label: 'Today',  title: 'Feedback',   Icon: Star,           color: 'text-amber-500', bg: 'from-amber-100 to-orange-50', hover: 'hover:text-amber-500' },
           { to: '/notices',    label: 'Updates', title: 'Notices',   Icon: Bell,           color: 'text-purple-600', bg: 'from-purple-100 to-violet-50', hover: 'hover:text-purple-600' },
           { to: '/timetable',  label: 'Menu',   title: 'Timetable', Icon: ArrowRight,     color: 'text-teal-600', bg: 'from-teal-100 to-emerald-50', hover: 'hover:text-teal-500' },
-        ].map(({ to, label, title, Icon, color, bg, hover }) => (
-          <NavLink key={to} to={to} className={`bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200`}>
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-              <h3 className={`text-xl font-black text-gray-900 ${hover} transition-colors`}>{title}</h3>
-            </div>
-            <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${bg} flex items-center justify-center ${color} shadow-inner group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
-              <Icon size={22} strokeWidth={2.5} />
-            </div>
-          </NavLink>
-        ))}
+        ].map((item) => {
+          const { to, label, title, Icon, color, bg, hover } = item;
+          return (
+            <NavLink key={to} to={to} className={`bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200`}>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+                <h3 className={`text-xl font-black text-gray-900 ${hover} transition-colors`}>{title}</h3>
+              </div>
+              <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${bg} flex items-center justify-center ${color} shadow-inner group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
+                <Icon size={22} strokeWidth={2.5} />
+              </div>
+            </NavLink>
+          );
+        })}
       </div>
 
       {/* Trending Complaints Section */}

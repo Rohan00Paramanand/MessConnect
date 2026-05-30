@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, X, Menu, School } from 'lucide-react';
 
@@ -39,6 +39,7 @@ const getLinks = (role) => {
   } else if (role === 'college_admin') {
     base.push(
       { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
+      { name: 'Manage Messes', path: '/messes', icon: School },
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Notices', path: '/notices', icon: Bell },
       { name: 'Feedback', path: '/feedback', icon: Star }

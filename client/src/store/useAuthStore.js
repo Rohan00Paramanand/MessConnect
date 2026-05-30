@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useRecoilState } from 'recoil';
 import api from '../api/axios';
 import {
@@ -10,6 +11,10 @@ import {
 /**
  * useAuthStore – drop-in replacement for the former Zustand store.
  * Exposes the same shape: { user, token, isAuthenticated, loading, setAuth, logout, checkAuth }
+ *
+ * All returned functions are wrapped in useCallback so their references are stable
+ * across re-renders. Recoil state setters are guaranteed stable by Recoil itself,
+ * making the useCallback deps arrays safe and lint-clean.
  */
 const useAuthStore = () => {
   const [user, setUser] = useRecoilState(authUserAtom);
@@ -17,7 +22,7 @@ const useAuthStore = () => {
   const [isAuthenticated, setIsAuthenticated] = useRecoilState(authIsAuthenticatedAtom);
   const [loading, setLoading] = useRecoilState(authLoadingAtom);
 
-  const setAuth = (newUser, newToken) => {
+  const setAuth = useCallback((newUser, newToken) => {
     if (newToken) {
       localStorage.setItem('token', newToken);
       setToken(newToken);
@@ -25,9 +30,9 @@ const useAuthStore = () => {
     setUser(newUser);
     setIsAuthenticated(true);
     setLoading(false);
-  };
+  }, [setToken, setUser, setIsAuthenticated, setLoading]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await api.post('/api/auth/logout');
     } catch (e) {
@@ -39,9 +44,9 @@ const useAuthStore = () => {
       setIsAuthenticated(false);
       setLoading(false);
     }
-  };
+  }, [setUser, setToken, setIsAuthenticated, setLoading]);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/api/auth/me');
@@ -62,7 +67,7 @@ const useAuthStore = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setUser, setIsAuthenticated, setToken]);
 
   return { user, token, isAuthenticated, loading, setAuth, logout, checkAuth };
 };

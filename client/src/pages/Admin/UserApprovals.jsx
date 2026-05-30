@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import { CheckCircle } from 'lucide-react';
@@ -8,7 +8,7 @@ const UserApprovals = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchPending = async () => {
+  const fetchPending = useCallback(async () => {
     try {
       const { data } = await api.get('/api/admin/pending-users');
       setUsers(data.data || []);
@@ -17,11 +17,14 @@ const UserApprovals = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchPending();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchPending();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchPending]);
 
   const handleApprove = async (id) => {
     try {

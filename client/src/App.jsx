@@ -19,6 +19,7 @@ import AdminDashboard from './pages/Admin/AdminDashboard'
 import UserApprovals from './pages/Admin/UserApprovals'
 import SuperAdminDashboard from './pages/Admin/SuperAdminDashboard'
 import CollegeManagement from './pages/Admin/CollegeManagement'
+import MessManagement from './pages/Admin/MessManagement'
 
 // Modules
 import ComplaintsList from './pages/Complaints/ComplaintsList'
@@ -32,7 +33,7 @@ function App() {
 
   useEffect(() => {
     checkAuth()
-  }, [])
+  }, [checkAuth])
 
   return (
     <>
@@ -59,6 +60,7 @@ function App() {
             <Route path="/staff" element={<StaffDirectory />} />
             <Route path="/timetable" element={<WeeklyTimetable />} />
             <Route path="/approvals" element={<ProtectedRoute allowedRoles={['college_admin']}><UserApprovals /></ProtectedRoute>} />
+            <Route path="/messes" element={<ProtectedRoute allowedRoles={['college_admin']}><MessManagement /></ProtectedRoute>} />
 
             <Route path="/" element={
               <Navigate to={

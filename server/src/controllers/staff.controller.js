@@ -1,4 +1,5 @@
 import Staff from '../models/staff.model.js';
+import Mess from '../models/mess.model.js';
 
 // @desc    Add a new staff member
 // @route   POST /api/staff
@@ -22,6 +23,8 @@ export const addStaff = async (req, res) => {
 
         const staff = await Staff.create({
             vendor: req.user._id,
+            collegeId: req.collegeId,
+            mess: req.user.messAssigned,
             name,
             phoneNumber,
             role,
@@ -51,14 +54,19 @@ export const getStaff = async (req, res) => {
             return res.status(403).json({ status: 'error', message: 'Not authorized to view staff' });
         }
 
-        let query = {};
+        let query = { collegeId: req.collegeId };
         if (req.user.role === 'vendor') {
-            query = { vendor: req.user._id };
+            query.vendor = req.user._id;
         } else if (req.query.mess && req.user.role === 'mess_committee') {
+            // Validate the requested mess belongs to this college
+            const messDoc = await Mess.findOne({ _id: req.query.mess, collegeId: req.collegeId });
+            if (!messDoc) {
+                return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
+            }
             const User = (await import('../models/user.model.js')).default;
-            const vendorsInMess = await User.find({ role: 'vendor', messAssigned: req.query.mess }).select('_id');
+            const vendorsInMess = await User.find({ role: 'vendor', messAssigned: req.query.mess, collegeId: req.collegeId }).select('_id');
             const vendorIds = vendorsInMess.map(v => v._id);
-            query = { vendor: { $in: vendorIds } };
+            query.vendor = { $in: vendorIds };
         }
 
         const staffList = await Staff.find(query).populate('vendor', 'name email messAssigned');
