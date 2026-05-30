@@ -9,10 +9,12 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({ pendingCount: 0 });
 
   useEffect(() => {
-    api.get('/api/admin/pending-users')
-      .then(({ data }) => setStats({ pendingCount: data.data ? data.data.length : 0 }))
-      .catch(() => { console.warn('Failed to fetch pending users count'); });
-  }, []);
+    if (user) {
+      api.get('/api/admin/pending-users')
+        .then(({ data }) => setStats({ pendingCount: data.data ? data.data.length : 0 }))
+        .catch(() => { console.warn('Failed to fetch pending users count'); });
+    }
+  }, [user]);
 
   return (
     <div className="space-y-4">
@@ -24,7 +26,7 @@ const AdminDashboard = () => {
             <Server size={12} /> System Control Plane
           </p>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            Global Admin,<br/>
+            College Admin,<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-100 to-white">{user?.name}</span>
           </h1>
           <p className="text-indigo-100 font-medium mt-3 max-w-md text-sm sm:text-base">Review pending vendor and committee applications, and manage your college's mess portal.</p>

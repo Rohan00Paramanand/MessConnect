@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -21,7 +21,7 @@ const SuperAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [submittingInvite, setSubmittingInvite] = useState(false);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       // Fetch colleges
@@ -48,16 +48,21 @@ const SuperAdminDashboard = () => {
         totalAdminCount: totalAdminsList.length,
         pendingInvitationCount: pendingInvitesCount
       });
-    } catch (err) {
+    } catch {
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user) {
+      const timer = setTimeout(() => {
+        fetchDashboardData();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [user, fetchDashboardData]);
 
   const handleInviteAdmin = async (e) => {
     e.preventDefault();
@@ -280,7 +285,7 @@ const SuperAdminDashboard = () => {
                             {inv.email}
                           </p>
                           <p className="text-xs text-gray-400 font-semibold">
-                            Expires: {new Date(inv.expiresAt).toLocaleDateString()}
+                            Expires: {new Date(inv.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
                         </td>
                         <td className="p-4">
@@ -293,7 +298,7 @@ const SuperAdminDashboard = () => {
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             {!inv.isAccepted && (
-                              <>
+                              <React.Fragment>
                                 <button
                                   onClick={() => handleCopyLink(inv.token)}
                                   title="Copy Invite Link"
@@ -308,7 +313,7 @@ const SuperAdminDashboard = () => {
                                 >
                                   <RotateCcw size={16} />
                                 </button>
-                              </>
+                              </React.Fragment>
                             )}
                             {inv.isAccepted && (
                               <span className="text-xs text-emerald-600 font-bold inline-flex items-center gap-0.5 pr-2">

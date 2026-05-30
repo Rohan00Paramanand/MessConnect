@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone } from 'lucide-react';
@@ -18,21 +18,24 @@ const CollegeManagement = () => {
     contactPhone: ''
   });
 
-  const fetchColleges = async () => {
+  const fetchColleges = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await api.get('/api/superadmin/colleges');
       setColleges(data.data || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load colleges');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchColleges();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchColleges();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchColleges]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -90,7 +93,7 @@ const CollegeManagement = () => {
       
       // Update local state
       setColleges(colleges.map(c => c._id === id ? data.data : c));
-    } catch (err) {
+    } catch {
       toast.error('Failed to update college status');
     }
   };

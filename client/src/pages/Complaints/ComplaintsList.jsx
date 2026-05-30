@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -30,6 +30,20 @@ const ComplaintsList = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [messFilter, setMessFilter] = useState('');
+  const [messes, setMesses] = useState([]);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+  useEffect(() => {
+    if (user?.collegeId) {
+      api.get('/api/messes')
+        .then(({ data }) => {
+          setMesses(data.data || []);
+        })
+        .catch(err => {
+          console.error('Failed to load messes', err);
+        });
+    }
+  }, [user]);
 
   const sortComplaints = (list) => {
     return list.sort((a, b) => {
@@ -40,7 +54,7 @@ const ComplaintsList = () => {
     });
   };
 
-  const fetchComplaints = async () => {
+  const fetchComplaints = useCallback(async () => {
     try {
       const params = {};
       if (messFilter) params.mess = messFilter;
@@ -51,13 +65,25 @@ const ComplaintsList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [messFilter]);
 
-  useEffect(() => { fetchComplaints(); }, [messFilter]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchComplaints();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchComplaints]);
 
-  const handleStatusUpdate = async (id, status) => {
+  const handleStatusUpdate = async (id, value) => {
+    let status = value;
+    let rejectionReason = null;
+    if (value.startsWith('rejected:')) {
+      const parts = value.split(':');
+      status = parts[0];
+      rejectionReason = parts[1];
+    }
     try {
-      await api.patch(`/api/complaints/${id}/status`, { status });
+      await api.patch(`/api/complaints/${id}/status`, { status, rejectionReason });
       toast.success('Status updated');
       fetchComplaints();
     } catch (e) {
@@ -133,9 +159,9 @@ const ComplaintsList = () => {
                   onChange={(e) => setMessFilter(e.target.value)}
                 >
                   <option value="" className="text-gray-900">All Messes</option>
-                  <option value="Adhik boys mess" className="text-gray-900">Adhik boys mess</option>
-                  <option value="Samruddhi Girls mess" className="text-gray-900">Samruddhi Girls mess</option>
-                  <option value="New girls mess" className="text-gray-900">New girls mess</option>
+                  {messes.map((m) => (
+                    <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
+                  ))}
                 </select>
               </div>
             )}
@@ -179,6 +205,11 @@ const ComplaintsList = () => {
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <h3 className="text-lg font-bold text-gray-900">{complaint.title}</h3>
                     <StatusBadge status={complaint.status} />
+                    {complaint.status === 'rejected' && complaint.rejectionReason && (
+                      <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold text-red-600 bg-red-50 rounded-full border border-red-200">
+                        Reason: {complaint.rejectionReason.replace('_', ' ').toUpperCase()}
+                      </span>
+                    )}
                     <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold text-gray-500 bg-gray-100 rounded-full border border-gray-200">
                       {complaint.category}
                     </span>
@@ -202,29 +233,63 @@ const ComplaintsList = () => {
                   </div>
                   <p className="text-gray-600 text-sm leading-relaxed mb-4">{complaint.description}</p>
                   {complaint.image && (
-                    <img
-                      src={`http://localhost:5000/uploads/${complaint.image.split('\\').pop().split('/').pop()}`}
-                      alt="Proof"
-                      className="h-32 w-32 object-cover rounded-xl border border-gray-100 shadow-sm"
-                    />
+                    <div 
+                      onClick={() => setSelectedPhoto({
+                        url: `http://localhost:5000/uploads/${complaint.image.split('\\').pop().split('/').pop()}`,
+                        title: complaint.title,
+                        description: complaint.description,
+                        address: complaint.location?.address || (complaint.location?.latitude ? `${complaint.location.latitude.toFixed(4)}, ${complaint.location.longitude.toFixed(4)}` : null)
+                      })}
+                      className="relative w-32 h-32 mt-3 group cursor-pointer overflow-hidden rounded-xl border border-gray-200 shadow-sm hover:border-teal-300 hover:shadow-md transition-all duration-200"
+                      title="Click to view full image"
+                    >
+                      <img
+                        src={`http://localhost:5000/uploads/${complaint.image.split('\\').pop().split('/').pop()}`}
+                        alt="Proof"
+                        className="h-full w-full object-cover group-hover:scale-105 transition-all duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-200" />
+                      {complaint.location?.latitude && (
+                        <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 bg-black/65 backdrop-blur-md rounded-md text-[9px] text-white flex items-center gap-0.5 font-bold">
+                          <MapPin size={8} className="text-teal-400" />
+                          Geo-tagged
+                        </div>
+                      )}
+                    </div>
                   )}
-                  <p className="text-xs text-gray-400 mt-3 font-medium flex items-center gap-2 flex-wrap">
-                    <span>Submitted {new Date(complaint.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                    {complaint.user_id?.name && <span>· by {complaint.user_id.name}</span>}
+
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-gray-100/50">
+                    <p className="text-xs text-gray-400 font-medium flex items-center gap-2 flex-wrap">
+                      <span>Submitted {new Date(complaint.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      {complaint.user_id?.name && (
+                        <span className="flex items-center gap-1.5">
+                          <span>· by {complaint.user_id.name}</span>
+                          {complaint.user_id.role === 'student' && typeof complaint.user_id.trustMeter === 'number' && (
+                            <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              complaint.user_id.trustMeter >= 80 ? 'bg-green-50 text-green-700 border-green-200' :
+                              complaint.user_id.trustMeter >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-red-50 text-red-700 border-red-200'
+                            }`} title="Student Trust Score">
+                              🛡️ {complaint.user_id.trustMeter}% Trust
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </p>
                     {complaint.location?.latitude && (
-                      <span className="flex items-center gap-1 text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 max-w-full">
-                        <MapPin size={10} className="flex-shrink-0" />
-                        <span className="truncate">
+                      <div className="flex items-center gap-1 text-teal-600 bg-teal-50/60 px-2.5 py-1 rounded-xl border border-teal-100/70 w-fit max-w-full">
+                        <MapPin size={12} className="flex-shrink-0 text-teal-500" />
+                        <span className="text-xs truncate font-medium" title={complaint.location.address}>
                           {complaint.location.address || `${complaint.location.latitude.toFixed(4)}, ${complaint.location.longitude.toFixed(4)}`}
                         </span>
-                      </span>
+                      </div>
                     )}
-                  </p>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-2 min-w-[180px]">
                   {/* Committee Actions */}
-                  {user?.role === 'mess_committee' && (
+                  {user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status) && (
                     <div className="flex flex-col gap-2">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Update Status</label>
                       <select
@@ -232,10 +297,35 @@ const ComplaintsList = () => {
                         value={complaint.status}
                         onChange={(e) => handleStatusUpdate(complaint._id, e.target.value)}
                       >
-                        <option value="pending">⏳ Pending</option>
-                        <option value="assigned">🔁 Assigned to Vendor</option>
-                        <option value="resolved">✅ Resolved</option>
-                        <option value="rejected">❌ Rejected</option>
+                        {complaint.status === 'pending' && (
+                          <>
+                            <option value="pending">⏳ Pending</option>
+                            <option value="assigned">🔁 Assign to Vendor</option>
+                            <option disabled className="text-gray-400 font-bold bg-gray-50">❌ Reject Reason:</option>
+                            <option value="rejected:duplicate">❌ Reject (Duplicate - 0)</option>
+                            <option value="rejected:wrong_category">❌ Reject (Wrong Category - -2)</option>
+                            <option value="rejected:spam">❌ Reject (Spam - -10)</option>
+                            <option value="rejected:false_information">❌ Reject (False Info - -15)</option>
+                            <option value="rejected:inappropriate">❌ Reject (Inappropriate - -10)</option>
+                          </>
+                        )}
+                        {complaint.status === 'assigned' && (
+                          <>
+                            <option value="assigned">🔁 Assigned to Vendor</option>
+                            <option disabled className="text-gray-400 font-bold bg-gray-50">❌ Reject Reason:</option>
+                            <option value="rejected:duplicate">❌ Reject (Duplicate - 0)</option>
+                            <option value="rejected:wrong_category">❌ Reject (Wrong Category - -2)</option>
+                            <option value="rejected:spam">❌ Reject (Spam - -10)</option>
+                            <option value="rejected:false_information">❌ Reject (False Info - -15)</option>
+                            <option value="rejected:inappropriate">❌ Reject (Inappropriate - -10)</option>
+                          </>
+                        )}
+                        {complaint.status === 'vendor_completed' && (
+                          <>
+                            <option value="assigned">🔁 Re-assign to Vendor</option>
+                            <option value="resolved">✅ Resolve</option>
+                          </>
+                        )}
                       </select>
                       {complaint.status === 'vendor_completed' && (
                         <div className="text-xs text-center text-amber-600 bg-amber-50 rounded-xl px-3 py-2 font-bold border border-amber-200">
@@ -255,6 +345,42 @@ const ComplaintsList = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Full-Screen Photo Viewer Modal */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-all duration-300"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <button 
+            onClick={() => setSelectedPhoto(null)}
+            className="absolute top-6 right-6 p-2 text-white/70 bg-white/10 hover:bg-white/20 hover:text-white rounded-full transition-all duration-200"
+            title="Close viewer"
+          >
+            <XCircle size={32} />
+          </button>
+          <div 
+            className="relative max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-white/10 shadow-2xl flex flex-col bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={selectedPhoto.url} 
+              alt={selectedPhoto.title || "Evidence"} 
+              className="w-full h-auto max-h-[70vh] object-contain"
+            />
+            <div className="p-5 bg-gray-900/90 border-t border-white/10 text-white">
+              <h4 className="text-lg font-bold mb-1">{selectedPhoto.title}</h4>
+              <p className="text-sm text-gray-400 mb-2">{selectedPhoto.description}</p>
+              {selectedPhoto.address && (
+                <div className="flex items-center gap-1.5 text-xs text-teal-400 bg-teal-950/40 px-3 py-1.5 rounded-xl border border-teal-900/50 w-fit">
+                  <MapPin size={12} className="text-teal-400" />
+                  <span>{selectedPhoto.address}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
