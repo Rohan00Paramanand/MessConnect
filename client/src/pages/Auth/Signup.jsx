@@ -54,8 +54,17 @@ const Signup = () => {
     }
   }, [formData.role, formData.collegeSlug, colleges]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'phoneNumber') {
+      const sanitized = value.replace(/\D/g, '');
+      if (sanitized.length <= 10) {
+        setFormData(prev => ({ ...prev, [name]: sanitized }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -64,10 +73,53 @@ const Signup = () => {
       return;
     }
 
-    // Quick frontend validation for password length
+    if (formData.name.trim().length < 3) {
+      toast.error("Full Name must be at least 3 characters long.");
+      return;
+    }
+
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    const upperCaseRegex = /[A-Z]/;
+    const lowerCaseRegex = /[a-z]/;
+
     if (formData.password.length < 8) {
       toast.error("Password must be at least 8 characters long.");
       return;
+    }
+    if (!upperCaseRegex.test(formData.password)) {
+      toast.error("Password must contain at least one uppercase letter (A-Z).");
+      return;
+    }
+    if (!lowerCaseRegex.test(formData.password)) {
+      toast.error("Password must contain at least one lowercase letter (a-z).");
+      return;
+    }
+    if (!specialCharRegex.test(formData.password)) {
+      toast.error("Password must contain at least one special character (e.g. !@#$%^&*).");
+      return;
+    }
+
+    if (formData.phoneNumber.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits long.");
+      return;
+    }
+
+    // Validate email domain matches college allowedDomains for students/committee
+    if (formData.role === 'student' || formData.role === 'mess_committee') {
+      const emailParts = formData.email.split('@');
+      if (emailParts.length !== 2) {
+        toast.error("Please enter a valid email address.");
+        return;
+      }
+      const emailDomain = emailParts[1].toLowerCase();
+      const isDomainRegistered = colleges.some(college =>
+        college.allowedDomains && college.allowedDomains.map(d => d.toLowerCase()).includes(emailDomain)
+      );
+
+      if (!isDomainRegistered) {
+        toast.error(`Your email domain (${emailDomain}) is not registered with any college.`);
+        return;
+      }
     }
 
     setSendingOtp(true);
@@ -145,10 +197,24 @@ const Signup = () => {
           {!otpStep ? (
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <Input label="Full Name" name="name" required value={formData.name} onChange={handleChange} />
-                <Input label="Email address" type="email" name="email" required value={formData.email} onChange={handleChange} />
-                <Input label="Password" type="password" name="password" required value={formData.password} onChange={handleChange} />
-                <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} />
+                <div className="space-y-1">
+                  <Input label="Full Name" name="name" required value={formData.name} onChange={handleChange} />
+                  <p className="text-[10px] text-gray-400 font-semibold px-1">At least 3 characters</p>
+                </div>
+                <div className="space-y-1">
+                  <Input label="Email address" type="email" name="email" required value={formData.email} onChange={handleChange} />
+                  <p className="text-[10px] text-gray-400 font-semibold px-1">Institutional email address</p>
+                </div>
+                <div className="space-y-1">
+                  <Input label="Password" type="password" name="password" required value={formData.password} onChange={handleChange} />
+                  <p className="text-[10px] text-gray-400 font-semibold px-1 leading-normal">
+                    Min 8 chars, 1 uppercase, 1 lowercase, 1 special char
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} />
+                  <p className="text-[10px] text-gray-400 font-semibold px-1">At least 10 digits</p>
+                </div>
 
                 <div className="w-full md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">I am registering as</label>
