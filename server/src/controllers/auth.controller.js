@@ -83,6 +83,17 @@ const signup = async (req, res) => {
                 return res.status(400).json({ message: "Invalid college slug provided." });
             }
             collegeId = college._id;
+
+            // Check if there is already an approved vendor for the same mess in this college
+            const existingApprovedVendor = await User.findOne({
+                role: 'vendor',
+                collegeId,
+                messAssigned: data.messAssigned,
+                isApprovedByAdmin: true
+            });
+            if (existingApprovedVendor) {
+                return res.status(400).json({ message: 'A vendor is already registered and approved for this mess.' });
+            }
         }
         // For students and mess_committee, college is derived strictly from the email domain
         else {

@@ -25,7 +25,6 @@ const getLinks = (role) => {
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Feedback', path: '/feedback', icon: Star },
       { name: 'Notices', path: '/notices', icon: Bell },
-      { name: 'Manage Staff', path: '/staff', icon: Users },
       { name: 'Timetable', path: '/timetable', icon: Calendar }
     );
   } else if (role === 'mess_committee') {
