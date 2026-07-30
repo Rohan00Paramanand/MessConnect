@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone } from 'lucide-react';
+import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -9,6 +9,15 @@ const CollegeManagement = () => {
   const [colleges, setColleges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editingCollege, setEditingCollege] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    slug: '',
+    allowedDomains: '',
+    contactEmail: '',
+    contactPhone: ''
+  });
+  const [updating, setUpdating] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -98,8 +107,61 @@ const CollegeManagement = () => {
     }
   };
 
+  const startEdit = (college) => {
+    setEditingCollege(college);
+    setEditFormData({
+      name: college.name,
+      slug: college.slug,
+      allowedDomains: college.allowedDomains.join(', '),
+      contactEmail: college.contactEmail || '',
+      contactPhone: college.contactPhone || ''
+    });
+  };
+
+  const handleEditChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editFormData.name || !editFormData.slug || !editFormData.allowedDomains) {
+      toast.error('Name, slug, and allowed domains are required');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const domainsArray = editFormData.allowedDomains
+        .split(',')
+        .map(d => d.trim().toLowerCase())
+        .filter(d => d.length > 0);
+
+      const payload = {
+        name: editFormData.name,
+        slug: editFormData.slug.toLowerCase().trim().replace(/\s+/g, '-'),
+        allowedDomains: domainsArray,
+        contactEmail: editFormData.contactEmail || undefined,
+        contactPhone: editFormData.contactPhone || undefined
+      };
+
+      const { data } = await api.put(`/api/superadmin/colleges/${editingCollege._id}`, payload);
+      toast.success('College updated successfully!');
+      
+      // Update local state
+      setColleges(colleges.map(c => c._id === editingCollege._id ? data.data : c));
+      
+      // Close modal
+      setEditingCollege(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.response?.data?.errors?.[0]?.message || 'Failed to update college');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">College Management</h1>
@@ -184,17 +246,18 @@ const CollegeManagement = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="p-4 text-sm font-bold text-gray-600 w-2/5">College / Slug</th>
+                  <th className="p-4 text-sm font-bold text-gray-600 w-1/3">College / Slug</th>
                   <th className="p-4 text-sm font-bold text-gray-600 w-1/4">Email Domains</th>
                   <th className="p-4 text-sm font-bold text-gray-600 w-1/4">Contact</th>
-                  <th className="p-4 text-sm font-bold text-gray-600 w-auto text-center">Status</th>
+                  <th className="p-4 text-sm font-bold text-gray-600 w-1/6 text-center">Status</th>
+                  <th className="p-4 text-sm font-bold text-gray-600 w-auto text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-gray-500">Loading colleges...</td></tr>
+                  <tr><td colSpan="5" className="p-8 text-center text-gray-500">Loading colleges...</td></tr>
                 ) : colleges.length === 0 ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-gray-500">No colleges registered yet. Use the form to add one.</td></tr>
+                  <tr><td colSpan="5" className="p-8 text-center text-gray-500">No colleges registered yet. Use the form to add one.</td></tr>
                 ) : (
                   colleges.map((college) => (
                     <tr key={college._id} className="hover:bg-white/60 transition-colors">
@@ -241,6 +304,15 @@ const CollegeManagement = () => {
                           )}
                         </button>
                       </td>
+                      <td className="p-4 text-center">
+                        <Button
+                          onClick={() => startEdit(college)}
+                          variant="secondary"
+                          className="text-xs px-3 py-2 flex items-center justify-center gap-1 mx-auto"
+                        >
+                          <Edit size={14} /> Edit
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -250,6 +322,97 @@ const CollegeManagement = () => {
         </div>
       </div>
     </div>
+
+      {editingCollege && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <School className="text-violet-600" size={22} />
+                <h3 className="text-lg font-bold text-gray-900">Edit College Details</h3>
+              </div>
+              <button
+                onClick={() => setEditingCollege(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <Input
+                label="College Name"
+                name="name"
+                placeholder="e.g. DY Patil College"
+                required
+                value={editFormData.name}
+                onChange={handleEditChange}
+              />
+
+              <Input
+                label="Slug (lowercase, hyphens)"
+                name="slug"
+                placeholder="e.g. dy-patil"
+                required
+                value={editFormData.slug}
+                onChange={handleEditChange}
+              />
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Allowed Email Domains
+                </label>
+                <textarea
+                  name="allowedDomains"
+                  placeholder="e.g. dypatil.edu, dypatil.in"
+                  required
+                  rows={2}
+                  className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm font-medium"
+                  value={editFormData.allowedDomains}
+                  onChange={handleEditChange}
+                />
+                <p className="text-xs text-gray-400 mt-1">Separate multiple domains with commas.</p>
+              </div>
+
+              <Input
+                label="Contact Email (Optional)"
+                name="contactEmail"
+                type="email"
+                placeholder="e.g. admin@dypatil.edu"
+                value={editFormData.contactEmail}
+                onChange={handleEditChange}
+              />
+
+              <Input
+                label="Contact Phone (Optional)"
+                name="contactPhone"
+                placeholder="e.g. 9876543210"
+                value={editFormData.contactPhone}
+                onChange={handleEditChange}
+              />
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setEditingCollege(null)}
+                  disabled={updating}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updating}
+                  className="bg-violet-600 hover:bg-violet-700 text-white"
+                >
+                  {updating ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

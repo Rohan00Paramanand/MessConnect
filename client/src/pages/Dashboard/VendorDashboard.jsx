@@ -19,15 +19,14 @@ const VendorDashboard = () => {
             {user?.companyName || 'Your Mess'},<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-100 to-white">{user?.name}</span>
           </h1>
-          <p className="text-rose-100 font-medium mt-3 max-w-md text-sm sm:text-base">Manage your staff, update the meal timetable, and resolve assigned complaints.</p>
+          <p className="text-rose-100 font-medium mt-3 max-w-md text-sm sm:text-base">Update the meal timetable, review feedback, and resolve assigned complaints.</p>
         </div>
       </div>
 
       {/* Quick Action Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { to: '/complaints', label: 'Queue',     title: 'Tasks',     Icon: ClipboardList, color: 'text-rose-500',   bg: 'from-rose-100 to-pink-50',    hover: 'hover:text-rose-600' },
-          { to: '/staff',      label: 'Directory', title: 'Staff',     Icon: Users,         color: 'text-indigo-500', bg: 'from-indigo-100 to-blue-50',   hover: 'hover:text-indigo-600' },
           { to: '/timetable',  label: 'Schedule',  title: 'Timetable', Icon: Clock,         color: 'text-teal-500',   bg: 'from-teal-100 to-emerald-50', hover: 'hover:text-teal-600' },
           { to: '/feedback',   label: 'Reviews',   title: 'Feedback',  Icon: ArrowRight,    color: 'text-amber-500',  bg: 'from-amber-100 to-orange-50',  hover: 'hover:text-amber-500' },
         ].map((item) => {
