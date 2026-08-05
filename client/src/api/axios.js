@@ -1,7 +1,17 @@
 import axios from 'axios';
 
+// In production builds (Vercel), fall back to the Render URL if env var is missing
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD
+    ? 'https://messconnect-1rt7.onrender.com'
+    : 'http://localhost:5000');
+
+// TODO: remove after confirming deployment
+console.log('[MessConnect] API BASE_URL:', BASE_URL, '| PROD:', import.meta.env.PROD, '| VITE_API_URL:', import.meta.env.VITE_API_URL);
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: BASE_URL,
   withCredentials: true, // Required for HttpOnly cookies
 });
 
