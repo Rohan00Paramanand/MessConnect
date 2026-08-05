@@ -218,7 +218,7 @@ const login = async (req, res) => {
             httpOnly: true,
             sameSite: true
         });
-        console.log(token);
+
 
         res.status(200).json({
             message: "Logged in successfully",
