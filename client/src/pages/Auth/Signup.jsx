@@ -36,7 +36,7 @@ const Signup = () => {
   });
 
   useEffect(() => {
-    api.get('/api/auth/colleges')
+    api.get('/auth/colleges')
       .then(({ data }) => {
         setColleges(data.data || []);
       })
@@ -49,7 +49,7 @@ const Signup = () => {
     if (formData.role === 'vendor' && formData.collegeSlug) {
       const selectedCollege = colleges.find(c => c.slug === formData.collegeSlug);
       if (selectedCollege) {
-        api.get(`/api/auth/messes?collegeId=${selectedCollege._id}`)
+        api.get(`/auth/messes?collegeId=${selectedCollege._id}`)
           .then(({ data }) => {
             setTimeout(() => setMesses(data.data || []), 0);
           })
@@ -147,7 +147,7 @@ const Signup = () => {
 
     setSendingOtp(true);
     try {
-      const { data } = await api.post('/api/auth/send-otp', {
+      const { data } = await api.post('/auth/send-otp', {
         email: formData.email,
         phoneNumber: formData.phoneNumber,
         role: formData.role,
@@ -193,7 +193,7 @@ const Signup = () => {
         headers = { 'Content-Type': 'multipart/form-data' };
       }
 
-      const { data } = await api.post('/api/auth/signup', submitData, { headers });
+      const { data } = await api.post('/auth/signup', submitData, { headers });
       if (data.user || data.data) { // Depending on the actual response envelope
         const payload = data.data || data;
         setAuth(payload.user || data.user, payload.token || data.token || null);
@@ -223,7 +223,7 @@ const Signup = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
         <div className="flex justify-center mb-6">
-          <img src="/darkbg.png" alt="MessConnect Logo" className="w-16 h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200" />
+          <img src="/pcet.webp" alt="PCET MessConnect Logo" className="w-16 h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200" />
         </div>
         <h2 className="mt-2 text-center text-4xl font-black tracking-tight text-gray-900">Get started</h2>
         <p className="mt-3 text-center text-sm font-medium text-gray-500">

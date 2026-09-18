@@ -35,7 +35,7 @@ const ComplaintsList = () => {
 
   useEffect(() => {
     if (user?.collegeId) {
-      api.get('/api/messes')
+      api.get('/messes')
         .then(({ data }) => {
           setMesses(data.data || []);
         })
@@ -58,7 +58,7 @@ const ComplaintsList = () => {
     try {
       const params = {};
       if (messFilter) params.mess = messFilter;
-      const { data } = await api.get('/api/complaints', { params });
+      const { data } = await api.get('/complaints', { params });
       setComplaints(sortComplaints(data.data || data));
     } catch {
       toast.error('Failed to load complaints');
@@ -83,7 +83,7 @@ const ComplaintsList = () => {
       rejectionReason = parts[1];
     }
     try {
-      await api.patch(`/api/complaints/${id}/status`, { status, rejectionReason });
+      await api.patch(`/complaints/${id}/status`, { status, rejectionReason });
       toast.success('Status updated');
       fetchComplaints();
     } catch (e) {
@@ -94,7 +94,7 @@ const ComplaintsList = () => {
   const handleUpvote = async (id) => {
     if (user?.role !== 'student') return;
     try {
-      await api.post(`/api/complaints/${id}/upvote`);
+      await api.post(`/complaints/${id}/upvote`);
       toast.success('Me Too! Vote recorded.');
       setComplaints(prev => {
          const newList = prev.map(c => {
@@ -114,7 +114,7 @@ const ComplaintsList = () => {
 
   const handleVendorComplete = async (id) => {
     try {
-      await api.patch(`/api/complaints/${id}/vendor-complete`);
+      await api.patch(`/complaints/${id}/vendor-complete`);
       toast.success('Marked as completed!');
       fetchComplaints();
     } catch {

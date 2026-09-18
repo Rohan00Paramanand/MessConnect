@@ -58,7 +58,9 @@ const corsOptions = {
     optionsSuccessStatus: 200,
 };
 
-app.use(cors(corsOptions));
+if (process.env.NODE_ENV !== 'production') {
+    app.use(cors(corsOptions));
+}
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));

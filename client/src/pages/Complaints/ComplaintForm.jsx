@@ -26,7 +26,7 @@ const ComplaintForm = ({ onComplaintAdded }) => {
   // Fetch active messes dynamically on mount
   React.useEffect(() => {
     if (user?.collegeId) {
-      api.get('/api/messes')
+      api.get('/messes')
         .then(({ data }) => {
           const list = data.data || [];
           setMesses(list);  
@@ -193,7 +193,7 @@ const ComplaintForm = ({ onComplaintAdded }) => {
     }
 
     try {
-      const { data } = await api.post('/api/complaints', payload, {
+      const { data } = await api.post('/complaints', payload, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       if (data.status === 'success') {

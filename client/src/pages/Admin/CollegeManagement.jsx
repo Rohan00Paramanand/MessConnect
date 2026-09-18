@@ -30,7 +30,7 @@ const CollegeManagement = () => {
   const fetchColleges = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/api/superadmin/colleges');
+      const { data } = await api.get('/superadmin/colleges');
       setColleges(data.data || []);
     } catch {
       toast.error('Failed to load colleges');
@@ -73,7 +73,7 @@ const CollegeManagement = () => {
         contactPhone: formData.contactPhone || undefined
       };
 
-      const { data } = await api.post('/api/superadmin/colleges', payload);
+      const { data } = await api.post('/superadmin/colleges', payload);
       toast.success('College registered successfully!');
       
       // Reset form
@@ -97,7 +97,7 @@ const CollegeManagement = () => {
   const handleToggleStatus = async (id, currentStatus) => {
     try {
       const newStatus = !currentStatus;
-      const { data } = await api.patch(`/api/superadmin/colleges/${id}/status`, { isActive: newStatus });
+      const { data } = await api.patch(`/superadmin/colleges/${id}/status`, { isActive: newStatus });
       toast.success(`College ${newStatus ? 'activated' : 'deactivated'} successfully!`);
       
       // Update local state
@@ -144,7 +144,7 @@ const CollegeManagement = () => {
         contactPhone: editFormData.contactPhone || undefined
       };
 
-      const { data } = await api.put(`/api/superadmin/colleges/${editingCollege._id}`, payload);
+      const { data } = await api.put(`/superadmin/colleges/${editingCollege._id}`, payload);
       toast.success('College updated successfully!');
       
       // Update local state

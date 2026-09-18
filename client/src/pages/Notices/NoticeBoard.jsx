@@ -17,7 +17,7 @@ const NoticeBoard = () => {
 
   const fetchNotices = async () => {
     try {
-      const { data } = await api.get('/api/notices');
+      const { data } = await api.get('/notices');
       setNotices(data.data || data);
     } catch { toast.error('Failed to load notices'); }
     finally { setLoading(false); }
@@ -40,7 +40,7 @@ const NoticeBoard = () => {
     if (formData.expiresAt) payload.append('expiresAt', formData.expiresAt);
     if (image) payload.append('image', image);
     try {
-      const { data } = await api.post('/api/notices', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const { data } = await api.post('/notices', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (data.status === 'success') {
         toast.success('Notice published!');
         setNotices([data.data, ...notices]);
@@ -55,7 +55,7 @@ const NoticeBoard = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this notice?')) return;
     try {
-      await api.delete(`/api/notices/${id}`);
+      await api.delete(`/notices/${id}`);
       setNotices(notices.filter(n => n._id !== id));
       toast.success('Notice deleted');
     } catch { toast.error('Failed to delete notice'); }
@@ -144,7 +144,7 @@ const NoticeBoard = () => {
               <div className="flex flex-col sm:flex-row gap-0">
                 {notice.image && (
                   <div className="sm:w-48 flex-shrink-0">
-                    <img src={`http://localhost:5000/uploads/${notice.image.split('\\').pop().split('/').pop()}`} alt="Notice" className="w-full h-48 sm:h-full object-cover" />
+                    <img src={`/uploads/${notice.image.split('\\').pop().split('/').pop()}`} alt="Notice" className="w-full h-48 sm:h-full object-cover" />
                   </div>
                 )}
                 <div className="flex-1 p-6">
@@ -177,3 +177,4 @@ const NoticeBoard = () => {
   );
 };
 export default NoticeBoard;
+

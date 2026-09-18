@@ -1,0 +1,51 @@
+services:
+
+  mongodb:
+    image: mongo:8.0
+    container_name: messconnect-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - messconnect-network
+
+  backend:
+    build:
+      context: ./server
+    container_name: messconnect-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/messconnect
+      CLIENT_URL: http://localhost
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_SERVICE: ${SMTP_SERVICE}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - mongodb
+    networks:
+      - messconnect-network
+
+  frontend:
+    build:
+      context: ./client
+    container_name: messconnect-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - messconnect-network
+
+volumes:
+  mongodb_data:
+  uploads_data:
+
+networks:
+  messconnect-network:
+    driver: bridge

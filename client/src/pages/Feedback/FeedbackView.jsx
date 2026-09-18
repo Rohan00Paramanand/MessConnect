@@ -42,7 +42,7 @@ const FeedbackView = () => {
   // Fetch active messes dynamically on mount
   useEffect(() => {
     if (user?.collegeId) {
-      api.get('/api/messes')
+      api.get('/messes')
         .then(({ data }) => {
           const list = data.data || [];
           setMesses(list);
@@ -73,7 +73,7 @@ const FeedbackView = () => {
     try { 
       const params = { page: pageNum, limit: 12 };
       if (filterVal) params.mess = filterVal;
-      const { data } = await api.get(`/api/feedback`, { params }); 
+      const { data } = await api.get(`/feedback`, { params }); 
 
       if (pageNum === 1) {
          setFeedbacks(data.data || []);
@@ -134,7 +134,7 @@ const FeedbackView = () => {
     setSubmitting(true);
     try {
       const ratingsArray = [{ category: selectedCat, rating: currentRating }];
-      const { data } = await api.post('/api/feedback', { date, ratings: ratingsArray, comment, mess: submissionMess });
+      const { data } = await api.post('/feedback', { date, ratings: ratingsArray, comment, mess: submissionMess });
       if (data.status === 'success') {
         toast.success(`Feedback for ${selectedCat} submitted — thanks!`);
         // If it was an update, replace it in the array, otherwise unshift

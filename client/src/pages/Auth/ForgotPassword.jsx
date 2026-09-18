@@ -29,7 +29,7 @@ const ForgotPassword = () => {
 
     setSendingOtp(true);
     try {
-      const { data } = await api.post('/api/auth/send-otp', { email: formData.email });
+      const { data } = await api.post('/auth/send-otp', { email: formData.email });
       if (data.status === 'success') {
         toast.success('OTP sent successfully!');
         setOtpStep(true);
@@ -66,7 +66,7 @@ const ForgotPassword = () => {
         newPassword: formData.newPassword 
       };
 
-      const { data } = await api.post('/api/auth/reset-password', submitData);
+      const { data } = await api.post('/auth/reset-password', submitData);
       
       if (data.status === 'success' || data.message === 'Password reset successfully') {
         toast.success('Password reset successfully! Please login with your new password.');

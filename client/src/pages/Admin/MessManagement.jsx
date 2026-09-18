@@ -18,7 +18,7 @@ const MessManagement = () => {
   const fetchMesses = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/api/messes/admin');
+      const { data } = await api.get('/messes/admin');
       setMesses(data.data || []);
     } catch {
       toast.error('Failed to load messes list');
@@ -43,7 +43,7 @@ const MessManagement = () => {
 
     setSubmitting(true);
     try {
-      const { data } = await api.post('/api/messes/admin', { name: newName.trim() });
+      const { data } = await api.post('/messes/admin', { name: newName.trim() });
       toast.success('Mess registered successfully!');
       setNewName('');
       setMesses(prev => [...prev, data.data].sort((a, b) => a.name.localeCompare(b.name)));
@@ -57,7 +57,7 @@ const MessManagement = () => {
   const handleToggleStatus = async (id, currentStatus) => {
     try {
       const newStatus = !currentStatus;
-      const { data } = await api.put(`/api/messes/admin/${id}`, { isActive: newStatus });
+      const { data } = await api.put(`/messes/admin/${id}`, { isActive: newStatus });
       toast.success(`Mess ${newStatus ? 'activated' : 'deactivated'} successfully!`);
       setMesses(prev => prev.map(m => m._id === id ? data.data : m));
     } catch {
@@ -81,7 +81,7 @@ const MessManagement = () => {
       return;
     }
     try {
-      const { data } = await api.put(`/api/messes/admin/${id}`, { name: editName.trim() });
+      const { data } = await api.put(`/messes/admin/${id}`, { name: editName.trim() });
       toast.success('Mess name updated!');
       setMesses(prev => prev.map(m => m._id === id ? data.data : m));
       setEditingId(null);

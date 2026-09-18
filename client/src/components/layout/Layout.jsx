@@ -19,7 +19,7 @@ const Layout = () => {
   const isDashboard = location.pathname.startsWith('/dashboard');
   const pageTitle = isDashboard
     ? `${user?.name?.split(' ')[0]}'s Dashboard`
-    : (routeTitles[location.pathname] || 'MessConnect');
+    : (routeTitles[location.pathname] || 'PCET MessConnect');
 
   return (
     <div className="flex h-screen bg-transparent text-gray-900 overflow-hidden relative">

@@ -40,7 +40,7 @@ const AcceptInvitation = () => {
 
     const verifyToken = async () => {
       try {
-        const { data } = await api.get(`/api/auth/invitation/${token}`);
+        const { data } = await api.get(`/auth/invitation/${token}`);
         if (data.status === 'success') {
           setInvitationData({
             email: data.data.email,
@@ -81,7 +81,7 @@ const AcceptInvitation = () => {
 
     setLoading(true);
     try {
-      const { data } = await api.post('/api/auth/accept-invitation', {
+      const { data } = await api.post('/auth/accept-invitation', {
         token,
         name: formData.name,
         phoneNumber: formData.phoneNumber,

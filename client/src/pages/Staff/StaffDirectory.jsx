@@ -21,7 +21,7 @@ const StaffDirectory = () => {
 
   useEffect(() => {
     if (user?.collegeId && (user.role === 'mess_committee' || user.role === 'college_admin')) {
-      api.get('/api/messes')
+      api.get('/messes')
         .then(({ data }) => {
           const list = data.data || [];
           setMesses(list);
@@ -39,7 +39,7 @@ const StaffDirectory = () => {
       if ((user?.role === 'mess_committee' || user?.role === 'college_admin') && filterVal) {
         params.mess = filterVal;
       }
-      const { data } = await api.get('/api/staff', { params });
+      const { data } = await api.get('/staff', { params });
       setStaff(data.data || data);
     }
     catch { toast.error('Failed to load staff'); }
@@ -79,7 +79,7 @@ const StaffDirectory = () => {
       payload.append('policeVerification', staffDocs.policeVerification);
       payload.append('medicalReport', staffDocs.medicalReport);
 
-      const { data } = await api.post('/api/staff', payload, {
+      const { data } = await api.post('/staff', payload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -100,7 +100,7 @@ const StaffDirectory = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Remove staff member?')) return;
     try {
-      await api.delete(`/api/staff/${id}`);
+      await api.delete(`/staff/${id}`);
       setStaff(staff.filter(s => s._id !== id));
       toast.success('Staff member removed');
     } catch {

@@ -16,7 +16,7 @@ const UserApprovals = () => {
   const [denying, setDenying] = useState(false);
 
   useEffect(() => {
-    api.get('/api/messes')
+    api.get('/messes')
       .then(({ data }) => setMesses(data.data || []))
       .catch(err => console.error('Failed to load messes', err));
   }, []);
@@ -25,8 +25,8 @@ const UserApprovals = () => {
     try {
       setLoading(true);
       const [userRes, staffRes] = await Promise.all([
-        api.get('/api/admin/pending-users'),
-        api.get('/api/admin/pending-staff')
+        api.get('/admin/pending-users'),
+        api.get('/admin/pending-staff')
       ]);
       setUsers(userRes.data.data || []);
       setStaff(staffRes.data.data || []);
@@ -52,7 +52,7 @@ const UserApprovals = () => {
 
   const handleApproveUser = async (id) => {
     try {
-      await api.patch(`/api/admin/approve-user/${id}`);
+      await api.patch(`/admin/approve-user/${id}`);
       toast.success('User approved successfully!');
       setUsers(users.filter(u => u._id !== id));
     } catch (err) {
@@ -62,7 +62,7 @@ const UserApprovals = () => {
 
   const handleApproveStaff = async (id) => {
     try {
-      await api.patch(`/api/admin/approve-staff/${id}`);
+      await api.patch(`/admin/approve-staff/${id}`);
       toast.success('Staff member approved!');
       setStaff(staff.filter(s => s._id !== id));
     } catch (err) {
@@ -73,7 +73,7 @@ const UserApprovals = () => {
   const handleDenyStaff = async (id) => {
     if (!window.confirm('Reject and remove this staff member request?')) return;
     try {
-      await api.delete(`/api/admin/deny-staff/${id}`);
+      await api.delete(`/admin/deny-staff/${id}`);
       toast.success('Staff member request denied and removed');
       setStaff(staff.filter(s => s._id !== id));
     } catch (err) {
@@ -89,7 +89,7 @@ const UserApprovals = () => {
     }
     setDenying(true);
     try {
-      await api.post(`/api/admin/deny-user/${denyingUser._id}`, { reason: rejectionReason });
+      await api.post(`/admin/deny-user/${denyingUser._id}`, { reason: rejectionReason });
       toast.success('User registration request denied');
       setUsers(users.filter(u => u._id !== denyingUser._id));
       setDenyingUser(null);

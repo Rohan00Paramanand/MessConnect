@@ -10,7 +10,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (user) {
-      api.get('/api/admin/pending-users')
+      api.get('/admin/pending-users')
         .then(({ data }) => setStats({ pendingCount: data.data ? data.data.length : 0 }))
         .catch(() => { console.warn('Failed to fetch pending users count'); });
     }

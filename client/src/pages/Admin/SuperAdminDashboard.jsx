@@ -25,17 +25,17 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       // Fetch colleges
-      const collegesRes = await api.get('/api/superadmin/colleges');
+      const collegesRes = await api.get('/superadmin/colleges');
       const collegesList = collegesRes.data.data || [];
       setColleges(collegesList.filter(c => c.isActive));
       const activeCollegesCount = collegesList.filter(c => c.isActive).length;
 
       // Fetch all admins
-      const allAdminsRes = await api.get('/api/superadmin/admins');
+      const allAdminsRes = await api.get('/superadmin/admins');
       const totalAdminsList = allAdminsRes.data.data || [];
 
       // Fetch invitations
-      const invitationsRes = await api.get('/api/superadmin/admins/invitations');
+      const invitationsRes = await api.get('/superadmin/admins/invitations');
       const invitationsList = invitationsRes.data.data || [];
       setInvitations(invitationsList);
 
@@ -72,7 +72,7 @@ const SuperAdminDashboard = () => {
     }
     setSubmittingInvite(true);
     try {
-      await api.post('/api/superadmin/admins/invite', {
+      await api.post('/superadmin/admins/invite', {
         email: inviteForm.email,
         collegeId: inviteForm.collegeId
       });
@@ -88,7 +88,7 @@ const SuperAdminDashboard = () => {
 
   const handleResendInvite = async (email, collegeId) => {
     try {
-      await api.post('/api/superadmin/admins/invite', { email, collegeId });
+      await api.post('/superadmin/admins/invite', { email, collegeId });
       toast.success('Invitation resent successfully!');
       await fetchDashboardData();
     } catch (err) {

@@ -13,7 +13,7 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const { data } = await api.get('/api/complaints');
+        const { data } = await api.get('/complaints');
         const list = data.data || data;
         const activeComplaints = list.filter(c => c.status === 'pending' || c.status === 'assigned');
         const sorted = activeComplaints.sort((a, b) => {
@@ -34,7 +34,7 @@ const StudentDashboard = () => {
 
   const handleUpvote = async (id) => {
     try {
-      await api.post(`/api/complaints/${id}/upvote`);
+      await api.post(`/complaints/${id}/upvote`);
       toast.success('Vote updated.');
       setTrendingComplaints(prev => prev.map(c => {
          if (c._id === id) {

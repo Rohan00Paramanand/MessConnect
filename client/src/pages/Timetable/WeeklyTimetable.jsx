@@ -25,7 +25,7 @@ const WeeklyTimetable = () => {
 
   useEffect(() => {
     if (user?.collegeId) {
-      api.get('/api/messes')
+      api.get('/messes')
         .then(({ data }) => {
           const list = data.data || [];
           setMesses(list);
@@ -45,7 +45,7 @@ const WeeklyTimetable = () => {
       if (['student', 'mess_committee'].includes(user?.role) && filterVal) {
         params.mess = filterVal;
       }
-      const { data } = await api.get('/api/timetable', { params }); 
+      const { data } = await api.get('/timetable', { params }); 
       setTimetable(data.data || data); 
     }
     catch { toast.error('Failed to load timetable'); } finally { setLoading(false); }
@@ -69,7 +69,7 @@ const WeeklyTimetable = () => {
         items: itemsInput.split(',').map(i => i.trim()).filter(i => i) 
       };
       
-      const { data } = await api.post('/api/timetable', payload);
+      const { data } = await api.post('/timetable', payload);
       if (data.status === 'success') {
         toast.success('Meal added!'); 
         setTimetable([...timetable, data.data]);
@@ -85,7 +85,7 @@ const WeeklyTimetable = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this meal?')) return;
-    try { await api.delete(`/api/timetable/${id}`); setTimetable(timetable.filter(m => m._id !== id)); toast.success('Deleted!'); }
+    try { await api.delete(`/timetable/${id}`); setTimetable(timetable.filter(m => m._id !== id)); toast.success('Deleted!'); }
     catch { toast.error('Failed to delete'); }
   };
 

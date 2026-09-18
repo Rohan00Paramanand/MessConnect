@@ -34,7 +34,7 @@ const useAuthStore = () => {
 
   const logout = useCallback(async () => {
     try {
-      await api.post('/api/auth/logout');
+      await api.post('/auth/logout');
     } catch (e) {
       console.error(e);
     } finally {
@@ -49,7 +49,7 @@ const useAuthStore = () => {
   const checkAuth = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/api/auth/me');
+      const { data } = await api.get('/auth/me');
       if (data.user) {
         setUser(data.user);
         setIsAuthenticated(true);

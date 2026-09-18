@@ -16,7 +16,7 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await api.post('/api/auth/login', formData);
+      const { data } = await api.post('/auth/login', formData);
       if (data.user || data.status === 'success') {
         const payloadUser = data.user || data.data?.user;
         const payloadToken = data.token || data.data?.token;
@@ -45,8 +45,8 @@ const Login = () => {
         
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <img src="/lightbg.png" alt="MessConnect Logo" className="w-12 h-12 flex-shrink-0 object-cover rounded-xl shadow-lg ring-1 ring-white/20" />
-          <span className="text-white font-bold text-xl tracking-tight">MessConnect</span>
+          <img src="/pcet.webp" alt="PCET Logo" className="w-12 h-12 flex-shrink-0 object-cover rounded-xl shadow-lg ring-1 ring-white/20" />
+          <span className="text-white font-bold text-xl tracking-tight">PCET MessConnect</span>
         </div>
         
         {/* Hero Content */}
