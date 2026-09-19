@@ -72,15 +72,14 @@ const SuperAdminDashboard = () => {
     }
     setSubmittingInvite(true);
     try {
-      await api.post('/superadmin/admins/invite', {
-        email: inviteForm.email,
-        collegeId: inviteForm.collegeId
+      const { data } = await api.post(`/superadmin/colleges/${inviteForm.collegeId}/assign-admin`, {
+        email: inviteForm.email
       });
-      toast.success('Invitation sent successfully!');
+      toast.success(data.message || 'Administrator assigned / invited successfully!');
       setInviteForm({ email: '', collegeId: '' });
       await fetchDashboardData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to send invitation');
+      toast.error(err.response?.data?.message || 'Failed to send invitation / assign admin');
     } finally {
       setSubmittingInvite(false);
     }

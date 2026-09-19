@@ -1,5 +1,15 @@
 import express from 'express';
-import { createCollege, getColleges, updateCollege, updateCollegeStatus, getAdmins, inviteAdmin, getInvitations } from '../controllers/superadmin.controller.js';
+import {
+    createCollege,
+    getColleges,
+    updateCollege,
+    updateCollegeStatus,
+    getAdmins,
+    inviteAdmin,
+    getInvitations,
+    assignCollegeAdmin,
+    revokeAdminRole
+} from '../controllers/superadmin.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -11,8 +21,10 @@ router.post('/colleges', createCollege);
 router.get('/colleges', getColleges);
 router.put('/colleges/:id', updateCollege);
 router.patch('/colleges/:id/status', updateCollegeStatus);
+router.post('/colleges/:id/assign-admin', assignCollegeAdmin);
 
 router.get('/admins', getAdmins);
+router.post('/admins/:userId/revoke', revokeAdminRole);
 
 router.post('/admins/invite', inviteAdmin);
 router.get('/admins/invitations', getInvitations);

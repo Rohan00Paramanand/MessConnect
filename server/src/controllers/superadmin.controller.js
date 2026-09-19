@@ -101,11 +101,26 @@ export const createCollege = async (req, res) => {
 
 export const getColleges = async (req, res) => {
     try {
-        const colleges = await College.find();
+        const colleges = await College.find().lean();
+        const admins = await User.find({ role: 'college_admin' })
+            .select('name email role collegeId isActive')
+            .lean();
+
+        // Attach assigned admins to each college
+        const collegesWithAdmins = colleges.map((college) => {
+            const collegeAdmins = admins.filter(
+                (admin) => admin.collegeId && admin.collegeId.toString() === college._id.toString()
+            );
+            return {
+                ...college,
+                admins: collegeAdmins,
+                admin: collegeAdmins[0] || null,
+            };
+        });
 
         return res.status(200).json({
             status: 'success',
-            data: colleges
+            data: collegesWithAdmins
         });
 
     } catch (error) {
@@ -338,5 +353,135 @@ export const getInvitations = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ status: 'error', message: 'Something went wrong' });
+    }
+};
+
+const assignCollegeAdminSchema = z.object({
+    email: z.string().email('Invalid email address').transform(v => v.toLowerCase().trim()),
+    name: z.string().trim().optional(),
+});
+
+export const assignCollegeAdmin = async (req, res) => {
+    try {
+        const { id: collegeId } = req.params;
+        const { email, name } = assignCollegeAdminSchema.parse(req.body);
+
+        // 1. Check if college exists
+        const college = await College.findById(collegeId);
+        if (!college) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'College not found'
+            });
+        }
+
+        // 2. Check if user already exists
+        let user = await User.findOne({ email });
+
+        if (user) {
+            // Already an admin for this exact college
+            if (user.role === 'college_admin' && user.collegeId && user.collegeId.toString() === collegeId) {
+                return res.status(200).json({
+                    status: 'success',
+                    message: `${user.name || user.email} is already the administrator for ${college.name}`,
+                    data: { user, isNewUser: false }
+                });
+            }
+
+            // Promote or reassign user
+            user.role = 'college_admin';
+            user.collegeId = college._id;
+            user.isApprovedByAdmin = true;
+            user.isVerified = true;
+            if (name && (!user.name || user.name === '')) {
+                user.name = name;
+            }
+            await user.save();
+
+            // Clear pending invitations for this email
+            await Invitation.deleteMany({ email, isAccepted: false });
+
+            return res.status(200).json({
+                status: 'success',
+                message: `Successfully assigned ${user.name || user.email} as administrator for ${college.name}`,
+                data: { user, isNewUser: false }
+            });
+        }
+
+        // 3. User doesn't exist -> generate invitation
+        await Invitation.deleteMany({ email, isAccepted: false });
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        const invitation = await Invitation.create({
+            email,
+            collegeId: college._id,
+            token,
+            expiresAt
+        });
+
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+        const inviteLink = `${clientUrl}/accept-invite?token=${token}`;
+
+        await sendEmail({
+            email,
+            subject: 'MessConnect College Admin Invitation',
+            message: `You have been invited to manage the MessConnect portal for ${college.name} as a College Admin.\n\nPlease complete your registration within 7 days by clicking the link below:\n${inviteLink}\n\nIf you did not request this invitation, please ignore this email.`
+        });
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`\n[EMAIL MOCK] Sent invitation link to ${email}:\n${inviteLink}\n`);
+        }
+
+        return res.status(201).json({
+            status: 'success',
+            message: `Invitation email sent to ${email} to register as administrator for ${college.name}`,
+            data: { invitation, isNewUser: true, inviteLink }
+        });
+
+    } catch (error) {
+        if (error.name === 'ZodError') {
+            return res.status(400).json({ status: 'error', errors: error.errors });
+        }
+        console.error(error);
+        return res.status(500).json({ status: 'error', message: error.message || 'Something went wrong' });
+    }
+};
+
+export const revokeAdminRole = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'User not found'
+            });
+        }
+
+        if (user.role === 'super_admin') {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Cannot revoke super admin role'
+            });
+        }
+
+        user.role = 'student';
+        user.collegeId = null;
+        await user.save();
+
+        return res.status(200).json({
+            status: 'success',
+            message: `Revoked admin role from ${user.name || user.email}`,
+            data: user
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Something went wrong'
+        });
     }
 };
