@@ -223,7 +223,7 @@ const Signup = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
         <div className="flex justify-center mb-6">
-          <img src="/pcet.webp" alt="PCET MessConnect Logo" className="w-16 h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200" />
+          <img src="/pcet.png" alt="PCET MessConnect Logo" className="w-16 h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200" />
         </div>
         <h2 className="mt-2 text-center text-4xl font-black tracking-tight text-gray-900">Get started</h2>
         <p className="mt-3 text-center text-sm font-medium text-gray-500">

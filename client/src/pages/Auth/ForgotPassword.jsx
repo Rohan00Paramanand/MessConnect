@@ -93,7 +93,7 @@ const ForgotPassword = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
         <div className="flex justify-center mb-6">
           <img
-            src="/pcet.webp"
+            src="/pcet.png"
             alt="PCET MessConnect Logo"
             className="w-16 h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200"
           />
