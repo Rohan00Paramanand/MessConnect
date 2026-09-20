@@ -54,11 +54,50 @@ function App() {
             <Route path="/dashboard/super_admin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/colleges" element={<ProtectedRoute allowedRoles={['super_admin']}><CollegeManagement /></ProtectedRoute>} />
 
-            <Route path="/complaints" element={<ComplaintsList />} />
-            <Route path="/feedback" element={<FeedbackView />} />
-            <Route path="/notices" element={<NoticeBoard />} />
-            <Route path="/staff" element={<StaffDirectory />} />
-            <Route path="/timetable" element={<WeeklyTimetable />} />
+            <Route
+              path="/complaints"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee', 'college_admin']}>
+                  <ComplaintsList />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/feedback"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee', 'college_admin']}>
+                  <FeedbackView />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/notices"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee', 'college_admin']}>
+                  <NoticeBoard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/staff"
+              element={
+                <ProtectedRoute allowedRoles={['vendor', 'mess_committee', 'college_admin']}>
+                  <StaffDirectory />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/timetable"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee']}>
+                  <WeeklyTimetable />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/approvals" element={<ProtectedRoute allowedRoles={['college_admin']}><UserApprovals /></ProtectedRoute>} />
             <Route path="/messes" element={<ProtectedRoute allowedRoles={['college_admin']}><MessManagement /></ProtectedRoute>} />
 
