@@ -4,6 +4,7 @@ services:
     image: mongo:8.0
     container_name: messconnect-mongodb
     restart: unless-stopped
+    command: ["mongod", "--auth"]
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -17,7 +18,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      MONGODB_URI: mongodb://mongodb:27017/messconnect
+      MONGODB_URI: mongodb://messconnect_app:${MONGO_APP_PASSWORD}@mongodb:27017/messconnect?authSource=admin
       CLIENT_URL: http://pcet.connectmess.in
       JWT_SECRET: ${JWT_SECRET}
       SMTP_USER: ${SMTP_USER}
