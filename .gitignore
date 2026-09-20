@@ -76,3 +76,8 @@ coverage/
 .next/
 out/
 *.tsbuildinfo
+
+#cert key
+/certs/
+/backups/
+/backups/
