@@ -29,7 +29,7 @@ const ForgotPassword = () => {
 
     setSendingOtp(true);
     try {
-      const { data } = await api.post('/auth/send-otp', { email: formData.email });
+      const { data } = await api.post('/auth/send-reset-otp', { email: formData.email });
       if (data.status === 'success') {
         toast.success('OTP sent successfully!');
         setOtpStep(true);
@@ -60,26 +60,26 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const submitData = { 
-        email: formData.email, 
-        otp: formData.otp, 
-        newPassword: formData.newPassword 
+      const submitData = {
+        email: formData.email,
+        otp: formData.otp,
+        newPassword: formData.newPassword
       };
 
       const { data } = await api.post('/auth/reset-password', submitData);
-      
+
       if (data.status === 'success' || data.message === 'Password reset successfully') {
         toast.success('Password reset successfully! Please login with your new password.');
         navigate('/login');
       }
     } catch (error) {
-        if (error.response?.data?.error && Array.isArray(error.response.data.error)) {
-            // It's a Zod validation error array
-            const firstError = error.response.data.error[0];
-            toast.error(firstError.message || 'Invalid password format');
-        } else {
-            toast.error(error.response?.data?.message || 'Something went wrong while resetting password');
-        }
+      if (error.response?.data?.error && Array.isArray(error.response.data.error)) {
+        // It's a Zod validation error array
+        const firstError = error.response.data.error[0];
+        toast.error(firstError.message || 'Invalid password format');
+      } else {
+        toast.error(error.response?.data?.message || 'Something went wrong while resetting password');
+      }
     } finally {
       setLoading(false);
     }
@@ -92,9 +92,11 @@ const ForgotPassword = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-xl shadow-gray-900/20">
-            <span className="text-white font-black text-3xl">M</span>
-          </div>
+          <img
+            src="/pcet.webp"
+            alt="PCET MessConnect Logo"
+            className="w-16 h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200"
+          />
         </div>
         <h2 className="mt-2 text-center text-4xl font-black tracking-tight text-gray-900">Reset Password</h2>
         <p className="mt-3 text-center text-sm font-medium text-gray-500">
@@ -111,13 +113,13 @@ const ForgotPassword = () => {
           {!otpStep ? (
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div className="flex flex-col gap-5">
-                <Input 
-                    label="Email address" 
-                    type="email" 
-                    name="email" 
-                    required 
-                    value={formData.email} 
-                    onChange={handleChange} 
+                <Input
+                  label="Email address"
+                  type="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
                 />
               </div>
 
@@ -153,21 +155,21 @@ const ForgotPassword = () => {
               </div>
 
               <div className="flex flex-col gap-4">
-                 <Input 
-                    label="New Password" 
-                    type="password" 
-                    name="newPassword" 
-                    required 
-                    value={formData.newPassword} 
-                    onChange={handleChange} 
+                <Input
+                  label="New Password"
+                  type="password"
+                  name="newPassword"
+                  required
+                  value={formData.newPassword}
+                  onChange={handleChange}
                 />
-                <Input 
-                    label="Confirm New Password" 
-                    type="password" 
-                    name="confirmPassword" 
-                    required 
-                    value={formData.confirmPassword} 
-                    onChange={handleChange} 
+                <Input
+                  label="Confirm New Password"
+                  type="password"
+                  name="confirmPassword"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
                 />
               </div>
 

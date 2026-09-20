@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { signup, login, logout, sendOtp, getMe, resetPassword, getActiveColleges, getMesses, getInvitationByToken, acceptInvitation } from '../controllers/auth.controller.js';
+import { signup, login, logout, sendOtp, sendResetOtp, getMe, resetPassword, getActiveColleges, getMesses, getInvitationByToken, acceptInvitation } from '../controllers/auth.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
 import { vendorDocUpload } from '../middleware/upload.middleware.js';
@@ -29,6 +29,7 @@ router.post('/signup', authLimiter, vendorDocUpload, signup);
 router.post('/login', authLimiter, login);
 router.post('/logout', protect, logout);    // protect ensures only authenticated users can logout
 router.post('/send-otp', otpLimiter, sendOtp);
+router.post('/send-reset-otp', otpLimiter, sendResetOtp);
 router.post('/reset-password', authLimiter, resetPassword);
 router.get('/me', protect, getMe);
 

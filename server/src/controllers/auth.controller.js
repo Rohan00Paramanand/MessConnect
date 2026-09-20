@@ -348,6 +348,56 @@ const sendOtp = async (req, res) => {
     }
 };
 
+const sendResetOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                message: "Email is required"
+            });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+
+        // Reset password only makes sense for an existing account
+        const user = await User.findOne({ email: normalizedEmail });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "No account found with this email address."
+            });
+        }
+
+        // Generate 6 digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store OTP
+        await Otp.create({
+            email: normalizedEmail,
+            otp
+        });
+
+        // Send reset OTP
+        await sendEmail({
+            email: normalizedEmail,
+            subject: 'MessConnect Password Reset OTP',
+            message: `Your password reset OTP is: ${otp}. It is valid for 5 minutes.`
+        });
+
+        res.status(200).json({
+            status: "success",
+            message: "Password reset OTP sent successfully"
+        });
+
+    } catch (error) {
+        console.error("[RESET OTP ERROR]", error);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+
 /* =============================
    RESET PASSWORD
 ============================= */
@@ -567,4 +617,4 @@ const acceptInvitation = async (req, res) => {
     }
 };
 
-export { signup, login, logout, sendOtp, resetPassword, getActiveColleges, getMesses, getMe, getInvitationByToken, acceptInvitation };
+export { signup, login, logout, sendOtp, sendResetOtp, resetPassword, getActiveColleges, getMesses, getMe, getInvitationByToken, acceptInvitation };
