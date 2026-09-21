@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import OtpInput from '../../components/ui/OtpInput';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendingOtp, setResendingOtp] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60);
   const [otpStep, setOtpStep] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -19,6 +22,19 @@ const ForgotPassword = () => {
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // 60-second countdown timer when in OTP verification step
+  useEffect(() => {
+    let intervalId;
+    if (otpStep && resendTimer > 0) {
+      intervalId = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [otpStep, resendTimer]);
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -33,11 +49,30 @@ const ForgotPassword = () => {
       if (data.status === 'success') {
         toast.success('OTP sent successfully!');
         setOtpStep(true);
+        setResendTimer(60);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setSendingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0 || resendingOtp) return;
+
+    setResendingOtp(true);
+    try {
+      const { data } = await api.post('/auth/send-reset-otp', { email: formData.email });
+      if (data.status === 'success') {
+        toast.success('New reset OTP sent successfully!');
+        setResendTimer(60);
+        setFormData((prev) => ({ ...prev, otp: '' }));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to resend OTP');
+    } finally {
+      setResendingOtp(false);
     }
   };
 
@@ -141,17 +176,37 @@ const ForgotPassword = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col items-center justify-center mb-4">
+              <div className="flex flex-col items-center justify-center mb-2">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Enter 6-digit OTP</label>
-                <input
-                  name="otp"
-                  type="text"
-                  maxLength="6"
-                  required
-                  className="w-48 px-4 py-3 text-center tracking-[0.5em] text-2xl h-14 bg-white/80 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:teal-500 font-black shadow-inner transition-all"
+                <OtpInput
                   value={formData.otp}
-                  onChange={handleChange}
+                  length={6}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, otp: val }))}
                 />
+              </div>
+
+              {/* 1-Minute Resend Timer / Action */}
+              <div className="flex items-center justify-center text-sm mb-4">
+                {resendTimer > 0 ? (
+                  <p className="text-gray-500 font-medium">
+                    Resend OTP in{' '}
+                    <span className="font-bold text-teal-600">
+                      {Math.floor(resendTimer / 60)}:{(resendTimer % 60).toString().padStart(2, '0')}
+                    </span>
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500">Didn't receive code?</span>
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendingOtp}
+                      className="font-bold text-teal-600 hover:text-teal-700 underline focus:outline-none transition-colors disabled:opacity-50"
+                    >
+                      {resendingOtp ? 'Sending...' : 'Resend OTP'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-4">

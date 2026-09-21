@@ -5,12 +5,15 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import OtpInput from '../../components/ui/OtpInput';
 
 const Signup = () => {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendingOtp, setResendingOtp] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60);
   const [otpStep, setOtpStep] = useState(false);
   const [colleges, setColleges] = useState([]);
   const [messes, setMesses] = useState([]);
@@ -162,11 +165,50 @@ const Signup = () => {
       if (data.status === 'success') {
         toast.success('OTP sent successfully!');
         setOtpStep(true);
+        setResendTimer(60);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setSendingOtp(false);
+    }
+  };
+
+  // 60-second countdown timer when in OTP verification step
+  useEffect(() => {
+    let intervalId;
+    if (otpStep && resendTimer > 0) {
+      intervalId = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [otpStep, resendTimer]);
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0 || resendingOtp) return;
+
+    setResendingOtp(true);
+    try {
+      const { data } = await api.post('/auth/send-otp', {
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        role: formData.role,
+        collegeId: formData.collegeId,
+        messAssigned: formData.messAssigned
+      });
+      if (data.status === 'success') {
+        toast.success('New OTP sent successfully!');
+        setResendTimer(60);
+        // Clear previous entered OTP
+        setFormData(prev => ({ ...prev, otp: '' }));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to resend OTP');
+    } finally {
+      setResendingOtp(false);
     }
   };
 
@@ -397,20 +439,40 @@ const Signup = () => {
               </div>
 
               <div className="flex flex-col items-center justify-center">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Enter 6-digit OTP</label>
-                <input
-                  name="otp"
-                  type="text"
-                  maxLength="6"
-                  required
-                  className="w-48 px-4 py-3 text-center tracking-[0.5em] text-2xl h-14 bg-white/80 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500 font-black shadow-inner transition-all"
+                <label className="block text-sm font-bold text-gray-700 mb-3">Enter 6-digit OTP</label>
+                <OtpInput
                   value={formData.otp}
-                  onChange={handleChange}
+                  length={6}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, otp: val }))}
                 />
               </div>
 
+              {/* 1-Minute Resend Timer / Action */}
+              <div className="flex items-center justify-center text-sm mt-2">
+                {resendTimer > 0 ? (
+                  <p className="text-gray-500 font-medium">
+                    Resend OTP in{' '}
+                    <span className="font-bold text-teal-600">
+                      {Math.floor(resendTimer / 60)}:{(resendTimer % 60).toString().padStart(2, '0')}
+                    </span>
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500">Didn't receive the code?</span>
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendingOtp}
+                      className="font-bold text-teal-600 hover:text-teal-700 underline focus:outline-none transition-colors disabled:opacity-50"
+                    >
+                      {resendingOtp ? 'Sending...' : 'Resend OTP'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="flex flex-col gap-3 mt-6">
-                <Button type="submit" disabled={loading} variant="primary" className="w-full">
+                <Button type="submit" disabled={loading || formData.otp?.length !== 6} variant="primary" className="w-full">
                   {loading ? 'Creating Account...' : 'Complete Registration'}
                 </Button>
                 <button type="button" onClick={() => setOtpStep(false)} className="text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors">
