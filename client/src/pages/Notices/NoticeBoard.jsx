@@ -61,7 +61,7 @@ const NoticeBoard = () => {
     } catch { toast.error('Failed to delete notice'); }
   };
 
-  const targetRoleColor = { all: 'bg-gray-100 text-gray-700', student: 'bg-teal-100 text-teal-700', vendor: 'bg-rose-100 text-rose-700', mess_committee: 'bg-amber-100 text-amber-700' };
+  const targetRoleColor = { all: 'bg-gray-100 text-gray-700', user: 'bg-teal-100 text-teal-700', student: 'bg-teal-100 text-teal-700', vendor: 'bg-rose-100 text-rose-700', mess_committee: 'bg-amber-100 text-amber-700' };
 
   return (
     <div className="space-y-6 pb-8">
@@ -103,7 +103,7 @@ const NoticeBoard = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Target Audience</label>
                 <select className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40" value={formData.targetRole} onChange={e => setFormData({...formData, targetRole: e.target.value})}>
                   <option value="all">Everyone</option>
-                  <option value="student">Students</option>
+                  <option value="user">Users (Students & Faculty)</option>
                   <option value="vendor">Vendor</option>
                   <option value="mess_committee">Committee</option>
                 </select>

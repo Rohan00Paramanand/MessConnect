@@ -169,7 +169,7 @@ const FeedbackView = () => {
             </div>
             <h1 className="text-3xl font-black mb-1">Daily Mess Ratings</h1>
             <p className="text-white/70 font-medium">
-              {user?.role === 'student' ? "Rate today's meals and share your thoughts" : 'View all feedback submitted by students'}
+              {(user?.role === 'user' || user?.role === 'student') ? "Rate today's meals and share your thoughts" : 'View all feedback submitted by users'}
             </p>
           </div>
           {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && (
@@ -212,7 +212,7 @@ const FeedbackView = () => {
       )}
 
       {/* Submit Feedback (Student only) */}
-      {user?.role === 'student' && (
+      {(user?.role === 'user' || user?.role === 'student') && (
         <div className="bg-white/70 backdrop-blur-xl border border-amber-100 rounded-[2rem] p-8 shadow-[0_8px_30px_rgba(245,158,11,0.08)]">
           <h3 className="text-xl font-black text-gray-900 mb-6">Rate Today's Meals</h3>
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -279,7 +279,7 @@ const FeedbackView = () => {
                 onChange={(e) => setComment(e.target.value)}
               />
             </div>
-            <Button type="submit" variant="student" disabled={submitting || hasRatedCategory}>
+            <Button type="submit" variant="user" disabled={submitting || hasRatedCategory}>
               {submitting ? 'Submitting...' : hasRatedCategory ? 'Already Submitted for this Category' : '★ Submit Feedback'}
             </Button>
           </form>

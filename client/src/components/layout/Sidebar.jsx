@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
-import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, X, Menu, School } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, ChevronLeft, Menu, School } from 'lucide-react';
 
 const roleColors = {
+  user:           { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
   student:        { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
   mess_committee: { pill: 'bg-amber-500/10 text-amber-700 border-amber-200', dot: 'bg-amber-500',   active: 'from-amber-500 to-orange-500' },
   vendor:         { pill: 'bg-rose-500/10 text-rose-700 border-rose-200',    dot: 'bg-rose-500',    active: 'from-rose-600 to-pink-600' },
@@ -12,8 +13,8 @@ const roleColors = {
 };
 
 const getLinks = (role) => {
-  const base = [{ name: 'Dashboard', path: `/dashboard/${role}`, icon: LayoutDashboard }];
-  if (role === 'student') {
+  const base = [{ name: 'Dashboard', path: `/dashboard/${role === 'student' ? 'user' : role}`, icon: LayoutDashboard }];
+  if (role === 'user' || role === 'student') {
     base.push(
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Feedback', path: '/feedback', icon: Star },
@@ -163,15 +164,15 @@ const Sidebar = () => {
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="absolute top-4 right-4">
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto pt-2">
+        {/* Close button on the right edge of the sidebar */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-1/2 -translate-y-1/2 -right-4 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors z-10"
+          aria-label="Close menu"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <div className="flex-1 overflow-y-auto">
           <SidebarContent user={user} role={role} links={links} onLinkClick={() => setMobileOpen(false)} />
         </div>
       </aside>

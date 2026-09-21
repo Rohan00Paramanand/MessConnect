@@ -27,12 +27,12 @@ const Signup = () => {
     name: '',
     email: '',
     password: '',
-    role: 'student',
+    role: 'user',
     confirmPassword: '',
     phoneNumber: '',
     companyName: '',
     messAssigned: '',
-    collegeSlug: '',
+    collegeId: '',
     otp: ''
   });
 
@@ -47,8 +47,8 @@ const Signup = () => {
   }, []);
 
   useEffect(() => {
-    if (formData.role === 'vendor' && formData.collegeSlug) {
-      const selectedCollege = colleges.find(c => c.slug === formData.collegeSlug);
+    if (formData.role === 'vendor' && formData.collegeId) {
+      const selectedCollege = colleges.find(c => c._id === formData.collegeId);
       if (selectedCollege) {
         api.get(`/auth/messes?collegeId=${selectedCollege._id}`)
           .then(({ data }) => {
@@ -61,7 +61,7 @@ const Signup = () => {
     } else {
       setTimeout(() => setMesses([]), 0);
     }
-  }, [formData.role, formData.collegeSlug, colleges]);
+  }, [formData.role, formData.collegeId, colleges]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -109,8 +109,8 @@ const Signup = () => {
       return;
     }
 
-    // Validate email domain matches college allowedDomains for students/committee
-    if (formData.role === 'student' || formData.role === 'mess_committee') {
+    // Validate email domain matches college allowedDomains for users/committee
+    if (formData.role === 'user' || formData.role === 'mess_committee') {
       const emailParts = formData.email.split('@');
       if (emailParts.length !== 2) {
         toast.error("Please enter a valid email address.");
@@ -129,7 +129,7 @@ const Signup = () => {
 
     // Validate vendor specific fields before sending OTP
     if (formData.role === 'vendor') {
-      if (!formData.collegeSlug) {
+      if (!formData.collegeId) {
         toast.error("Please select a college.");
         return;
       }
@@ -156,7 +156,7 @@ const Signup = () => {
         email: formData.email,
         phoneNumber: formData.phoneNumber,
         role: formData.role,
-        collegeSlug: formData.collegeSlug,
+        collegeId: formData.collegeId,
         messAssigned: formData.messAssigned
       });
       if (data.status === 'success') {
@@ -280,21 +280,21 @@ const Signup = () => {
                 <div className="w-full md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">I am registering as</label>
                   <div className="grid grid-cols-3 gap-3">
-                    {['student', 'vendor', 'mess_committee'].map(role => (
+                    {['user', 'vendor', 'mess_committee'].map(role => (
                       <button
                         key={role}
                         type="button"
-                        onClick={() => setFormData({ ...formData, role, collegeSlug: '', messAssigned: '' })}
+                        onClick={() => setFormData({ ...formData, role, collegeId: '', messAssigned: '' })}
                         className={`py-2 px-3 text-sm font-bold rounded-xl border transition-all ${formData.role === role ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}
                       >
-                        {role === 'mess_committee' ? 'Committee' : role.charAt(0).toUpperCase() + role.slice(1)}
+                        {role === 'user' ? 'User' : role === 'mess_committee' ? 'Committee' : role.charAt(0).toUpperCase() + role.slice(1)}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {formData.role !== 'student' && (
+              {formData.role !== 'user' && (
                 <div className={`mt-6 p-6 rounded-2xl border backdrop-blur-sm transition-colors duration-300 ${roleThemes[formData.role]}`}>
 
                 {formData.role === 'vendor' && (
@@ -328,7 +328,7 @@ const Signup = () => {
                         value={formData.messAssigned}
                         onChange={handleChange}
                         className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500"
-                        disabled={!formData.collegeSlug}
+                        disabled={!formData.collegeId}
                       >
                         <option value="">{formData.collegeSlug ? 'Select Mess' : 'Select a college first'}</option>
                         {messes.map(m => (

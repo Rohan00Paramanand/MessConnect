@@ -1,6 +1,12 @@
 import College from '../models/college.model.js';
 import User from '../models/user.model.js';
 import Invitation from '../models/invitation.model.js';
+import Mess from '../models/mess.model.js';
+import Complaint from '../models/complaint.model.js';
+import Feedback from '../models/feedback.model.js';
+import Notice from '../models/notice.model.js';
+import Staff from '../models/staff.model.js';
+import TimeTable from '../models/timeTable.model.js';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { sendEmail } from '../utils/sendEmail.js';
@@ -8,15 +14,7 @@ import { sendEmail } from '../utils/sendEmail.js';
 const createCollegeSchema = z.object({
     name: z.string().trim().min(2, 'College name is required'),
 
-    slug: z
-        .string()
-        .trim()
-        .toLowerCase()
-        .min(2, 'Slug is required')
-        .regex(
-            /^[a-z0-9-]+$/,
-            'Slug can only contain lowercase letters, numbers and hyphens'
-        ),
+    slug: z.string().trim().optional(),
 
     allowedDomains: z
         .array(
@@ -51,15 +49,15 @@ export const createCollege = async (req, res) => {
         // 1. Validate request
         const validatedData = createCollegeSchema.parse(req.body);
 
-        // 2. Check duplicate
+        // 2. Check duplicate by name
         const collegeExists = await College.findOne({
-            slug: validatedData.slug
+            name: { $regex: new RegExp(`^${validatedData.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
         });
 
         if (collegeExists) {
             return res.status(400).json({
                 status: 'error',
-                message: 'College slug already exists'
+                message: 'A college with this name already exists'
             });
         }
 
@@ -85,7 +83,7 @@ export const createCollege = async (req, res) => {
         if (error.code === 11000) {
             return res.status(400).json({
                 status: 'error',
-                message: 'College slug already exists'
+                message: 'A college with this name already exists'
             });
         }
 
@@ -183,16 +181,16 @@ export const updateCollege = async (req, res) => {
         // 1. Validate request
         const validatedData = createCollegeSchema.parse(req.body);
 
-        // 2. Check duplicate slug for other colleges
+        // 2. Check duplicate name for other colleges
         const collegeExists = await College.findOne({
-            slug: validatedData.slug,
+            name: { $regex: new RegExp(`^${validatedData.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
             _id: { $ne: id }
         });
 
         if (collegeExists) {
             return res.status(400).json({
                 status: 'error',
-                message: 'College slug already exists'
+                message: 'A college with this name already exists'
             });
         }
 
@@ -228,7 +226,7 @@ export const updateCollege = async (req, res) => {
         if (error.code === 11000) {
             return res.status(400).json({
                 status: 'error',
-                message: 'College slug already exists'
+                message: 'A college with this name already exists'
             });
         }
 
@@ -246,7 +244,7 @@ export const getAdmins = async (req, res) => {
     try {
         const admins = await User.find({
             role: 'college_admin'
-        }).populate('collegeId', 'name slug').select('-password');
+        }).populate('collegeId', 'name').select('-password');
 
         return res.status(200).json({
             status: 'success',
@@ -343,7 +341,7 @@ If you did not request this invitation, please ignore this email.`
 export const getInvitations = async (req, res) => {
     try {
         const invitations = await Invitation.find()
-            .populate('collegeId', 'name slug')
+            .populate('collegeId', 'name')
             .sort({ createdAt: -1 });
 
         res.status(200).json({
@@ -468,7 +466,7 @@ export const revokeAdminRole = async (req, res) => {
             });
         }
 
-        user.role = 'student';
+        user.role = 'user';
         user.collegeId = null;
         await user.save();
 
@@ -519,3 +517,78 @@ export const deleteCollegeAdmin = async (req, res) => {
         });
     }
 };
+
+export const deleteCollege = async (req, res) => {
+    try {
+        const { id: collegeId } = req.params;
+
+        const college = await College.findById(collegeId);
+        if (!college) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'College not found'
+            });
+        }
+
+        // Cascade delete all accounts and data associated with this college:
+        // 1. All Users belonging to this college (students, faculty, mess committee, vendors, college admins)
+        // 2. All Messes
+        // 3. All Complaints
+        // 4. All Feedback
+        // 5. All Notices
+        // 6. All Staff
+        // 7. All TimeTable entries
+        // 8. All Invitations
+        // 9. The College itself
+        await Promise.all([
+            User.deleteMany({ collegeId }),
+            Mess.deleteMany({ collegeId }),
+            Complaint.deleteMany({ collegeId }),
+            Feedback.deleteMany({ collegeId }),
+            Notice.deleteMany({ collegeId }),
+            Staff.deleteMany({ collegeId }),
+            TimeTable.deleteMany({ collegeId }),
+            Invitation.deleteMany({ collegeId }),
+            College.findByIdAndDelete(collegeId)
+        ]);
+
+        return res.status(200).json({
+            status: 'success',
+            message: `College '${college.name}' and all associated accounts and data have been permanently deleted.`
+        });
+    } catch (error) {
+        console.error('Error deleting college and cascade data:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: error.message || 'Failed to delete college and associated data'
+        });
+    }
+};
+
+export const deleteInvitation = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const invitation = await Invitation.findById(id);
+        if (!invitation) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Invitation not found'
+            });
+        }
+
+        await Invitation.findByIdAndDelete(id);
+
+        return res.status(200).json({
+            status: 'success',
+            message: `Invitation for ${invitation.email} deleted successfully`
+        });
+    } catch (error) {
+        console.error('Error deleting invitation:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: error.message || 'Failed to delete invitation'
+        });
+    }
+};
+

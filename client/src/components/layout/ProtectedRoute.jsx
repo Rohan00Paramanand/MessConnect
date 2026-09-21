@@ -26,9 +26,15 @@ const ProtectedRoute = ({ allowedRoles, children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    // Redirect the user to their own rightful dashboard
-    return <Navigate to={`/dashboard/${user?.role}`} replace />;
+  if (allowedRoles) {
+    // Treat legacy 'student' role as 'user'
+    const roleToCheck = user?.role === 'student' ? 'user' : user?.role;
+    const isAllowed = allowedRoles.includes(user?.role) || allowedRoles.includes(roleToCheck);
+
+    if (!isAllowed) {
+      const effectiveRole = user?.role === 'student' ? 'user' : user?.role;
+      return <Navigate to={`/dashboard/${effectiveRole}`} replace />;
+    }
   }
 
   // Render children if provided (pattern 2), otherwise fall back to Outlet (pattern 1)

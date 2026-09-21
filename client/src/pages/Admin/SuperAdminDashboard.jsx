@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw } from 'lucide-react';
+import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw, Trash2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 
@@ -101,6 +101,19 @@ const SuperAdminDashboard = () => {
     toast.success('Invitation link copied!');
   };
 
+  const handleDeleteInvitation = async (id, email) => {
+    if (!window.confirm(`Are you sure you want to delete the invitation for ${email}?`)) {
+      return;
+    }
+    try {
+      const { data } = await api.delete(`/superadmin/admins/invitations/${id}`);
+      toast.success(data.message || 'Invitation deleted successfully');
+      await fetchDashboardData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete invitation');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
@@ -179,7 +192,6 @@ const SuperAdminDashboard = () => {
               <input
                 type="email"
                 required
-                placeholder="dean@university.edu"
                 className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition-all font-medium"
                 value={inviteForm.email}
                 onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
@@ -289,7 +301,6 @@ const SuperAdminDashboard = () => {
                         </td>
                         <td className="p-4">
                           <p className="font-bold text-gray-900 text-sm">{inv.collegeId?.name || 'N/A'}</p>
-                          <p className="text-xs text-gray-400 font-semibold">Slug: {inv.collegeId?.slug || 'N/A'}</p>
                         </td>
                         <td className="p-4">
                           {statusBadge}
@@ -319,6 +330,13 @@ const SuperAdminDashboard = () => {
                                 <CheckCircle size={14} /> Completed
                               </span>
                             )}
+                            <button
+                              onClick={() => handleDeleteInvitation(inv._id, inv.email)}
+                              title="Delete Invitation"
+                              className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </td>
                       </tr>

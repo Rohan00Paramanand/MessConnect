@@ -90,10 +90,10 @@ export const getComplaints = async (req, res) => {
 
         let complaints;
 
-        if (req.user.role === 'student') {
-            // Students should not see any rejected complaints
-            let studentFilter = { ...queryFilter, $and: [...queryFilter.$and, { status: { $ne: 'rejected' } }] };
-            complaints = await Complaint.find(studentFilter)
+        if (req.user.role === 'user') {
+            // Users should not see any rejected complaints
+            let userFilter = { ...queryFilter, $and: [...queryFilter.$and, { status: { $ne: 'rejected' } }] };
+            complaints = await Complaint.find(userFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
                 .populate('mess', 'name')
@@ -223,26 +223,26 @@ export const updateComplaintStatus = async (req, res) => {
         if (status === 'resolved' || status === 'rejected') {
             try {
                 const User = (await import('../models/user.model.js')).default;
-                const student = await User.findById(complaint.user_id);
-                if (student && student.role === 'student') {
+                const authorUser = await User.findById(complaint.user_id);
+                if (authorUser && authorUser.role === 'user') {
                     if (status === 'rejected') {
                         const penalty = penaltyMap[complaint.rejectionReason] || 0;
                         if (penalty !== 0) {
-                            student.trustMeter = Math.max(0, (student.trustMeter ?? 100) + penalty);
-                            if (student.trustMeter === 0) {
-                                // Ban the student for 7 days
-                                student.bannedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                            authorUser.trustMeter = Math.max(0, (authorUser.trustMeter ?? 100) + penalty);
+                            if (authorUser.trustMeter === 0) {
+                                // Ban the user for 7 days
+                                authorUser.bannedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
                             }
-                            await student.save();
+                            await authorUser.save();
                         }
                     } else if (status === 'resolved') {
                         // Reward positive submission
-                        student.trustMeter = Math.min(100, (student.trustMeter ?? 100) + 10);
-                        await student.save();
+                        authorUser.trustMeter = Math.min(100, (authorUser.trustMeter ?? 100) + 10);
+                        await authorUser.save();
                     }
                 }
             } catch (trustError) {
-                console.error('Failed to update student trust meter:', trustError.message);
+                console.error('Failed to update user trust meter:', trustError.message);
             }
         }
 
@@ -251,13 +251,13 @@ export const updateComplaintStatus = async (req, res) => {
             (async () => {
                 try {
                     const User = (await import('../models/user.model.js')).default;
-                    const student = await User.findById(complaint.user_id);
-                    if (student && student.email) {
+                    const authorUser = await User.findById(complaint.user_id);
+                    if (authorUser && authorUser.email) {
                         const rejectDetails = status === 'rejected' ? `\nReason for Rejection: ${complaint.rejectionReason.replace('_', ' ').toUpperCase()}` : '';
                         await sendEmail({
-                            email: student.email,
+                            email: authorUser.email,
                             subject: `Complaint Status Update - MessConnect`,
-                            message: `Hello ${student.name},\n\nYour complaint titled "${complaint.title}" has been marked as ${status.toUpperCase()} by the Mess Committee.${rejectDetails}\n\nDetails:\n- Title: ${complaint.title}\n- Category: ${complaint.category}\n- Status: ${status.toUpperCase()}\n\nThank you for your feedback,\nMessConnect Team`
+                            message: `Hello ${authorUser.name},\n\nYour complaint titled "${complaint.title}" has been marked as ${status.toUpperCase()} by the Mess Committee.${rejectDetails}\n\nDetails:\n- Title: ${complaint.title}\n- Category: ${complaint.category}\n- Status: ${status.toUpperCase()}\n\nThank you for your feedback,\nMessConnect Team`
                         });
                     }
                 } catch (emailError) {
@@ -307,8 +307,8 @@ export const markVendorCompleted = async (req, res) => {
 // @access  Private (Student)
 export const upvoteComplaint = async (req, res) => {
     try {
-        if (req.user.role !== 'student') {
-            return res.status(403).json({ status: 'error', message: 'Only students can upvote complaints' });
+        if (req.user.role !== 'user') {
+            return res.status(403).json({ status: 'error', message: 'Only users can upvote complaints' });
         }
 
         const complaint = await Complaint.findById(req.params.id);

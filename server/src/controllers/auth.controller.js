@@ -28,9 +28,10 @@ const baseSchema = z.object({
         .regex(specialCharRegex, { message: "Must contain one special char." })
         .regex(upperCaseRegex, { message: "Must contain one upper case char." })
         .regex(lowerCaseRegex, { message: "Must contain one lower case char." }),
-    role: z.enum(["student", "vendor", "mess_committee"]),
+    role: z.enum(["user", "vendor", "mess_committee"]),
     phoneNumber: z.string().min(10),
 
+    collegeId: z.string().optional(),
     collegeSlug: z.string().optional(),
     messAssigned: z.string().optional(), // ObjectId of the Mess
     companyName: z.string().optional(),
@@ -73,14 +74,21 @@ const signup = async (req, res) => {
 
         const emailDomain = data.email.split("@")[1];
 
-        // Vendors provide their college via collegeSlug in the request body
+        // Vendors provide their college via collegeId or collegeSlug in the request body
         if (data.role === "vendor") {
-            if (!data.collegeSlug) {
-                return res.status(400).json({ message: "collegeSlug is required for vendors" });
+            const collegeIdentifier = data.collegeId || data.collegeSlug;
+            if (!collegeIdentifier) {
+                return res.status(400).json({ message: "College is required for vendors" });
             }
-            const college = await College.findOne({ slug: data.collegeSlug });
+            let college = null;
+            if (data.collegeId) {
+                college = await College.findById(data.collegeId);
+            }
+            if (!college && data.collegeSlug) {
+                college = await College.findOne({ slug: data.collegeSlug });
+            }
             if (!college) {
-                return res.status(400).json({ message: "Invalid college slug provided." });
+                return res.status(400).json({ message: "Invalid college provided." });
             }
             collegeId = college._id;
 
@@ -95,16 +103,12 @@ const signup = async (req, res) => {
                 return res.status(400).json({ message: 'A vendor is already registered and approved for this mess.' });
             }
         }
-        // For students and mess_committee, college is derived strictly from the email domain
+        // For users and mess_committee, college is derived strictly from the email domain
         else {
             const college = await College.findOne({ allowedDomains: emailDomain });
 
             if (!college) {
                 return res.status(400).json({ message: `Your email domain (${emailDomain}) is not registered with any college.` });
-            }
-
-            if (data.collegeSlug && college.slug !== data.collegeSlug) {
-                return res.status(400).json({ message: "Your email domain does not belong to this specific college portal." });
             }
 
             collegeId = college._id;
@@ -274,7 +278,7 @@ const logout = (req, res) => {
 
 const sendOtp = async (req, res) => {
     try {
-        const { email, phoneNumber, role, collegeSlug, messAssigned } = req.body;
+        const { email, phoneNumber, role, collegeId, collegeSlug, messAssigned } = req.body;
 
         if (!email && !phoneNumber) {
             return res.status(400).json({ message: "Email or Phone Number is required" });
@@ -307,10 +311,17 @@ const sendOtp = async (req, res) => {
             if (!messAssigned) {
                 return res.status(400).json({ message: "Vendor must select an assigned mess." });
             }
-            if (!collegeSlug) {
-                return res.status(400).json({ message: "College slug is required for vendor." });
+            const collegeIdentifier = collegeId || collegeSlug;
+            if (!collegeIdentifier) {
+                return res.status(400).json({ message: "College is required for vendor." });
             }
-            const college = await College.findOne({ slug: collegeSlug });
+            let college = null;
+            if (collegeId) {
+                college = await College.findById(collegeId);
+            }
+            if (!college && collegeSlug) {
+                college = await College.findOne({ slug: collegeSlug });
+            }
             if (!college) {
                 return res.status(400).json({ message: "Invalid college selected." });
             }
@@ -469,7 +480,7 @@ const getMe = async (req, res) => {
 
 const getActiveColleges = async (req, res) => {
     try {
-        const colleges = await College.find({ isActive: true }).select('name slug allowedDomains');
+        const colleges = await College.find({ isActive: true }).select('name allowedDomains');
         res.status(200).json({ status: 'success', data: colleges });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });

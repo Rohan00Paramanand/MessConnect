@@ -12,8 +12,8 @@ export const submitFeedback = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Mess is required' });
         }
 
-        if (req.user.role !== 'student') {
-            return res.status(403).json({ status: 'error', message: 'Only students can submit feedback' });
+        if (req.user.role !== 'user') {
+            return res.status(403).json({ status: 'error', message: 'Only users can submit feedback' });
         }
 
         // Ensure the mess belongs to the student's own college
@@ -106,7 +106,7 @@ export const getFeedback = async (req, res) => {
         // Always scope to the requesting user's college first
         let aggregateFilter = { collegeId: req.collegeId };
 
-        if (req.user.role === 'student') {
+        if (req.user.role === 'user') {
             aggregateFilter.user = req.user._id;
         }
 

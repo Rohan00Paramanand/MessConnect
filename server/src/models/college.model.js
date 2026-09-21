@@ -9,8 +9,8 @@ const collegeSchema = new Schema(
     },
     slug: {
       type: String,
-      required: true,
-      unique: true,
+      required: false,
+      sparse: true,
       lowercase: true,
       trim: true
     },
