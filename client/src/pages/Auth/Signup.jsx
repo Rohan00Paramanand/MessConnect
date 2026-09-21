@@ -28,6 +28,7 @@ const Signup = () => {
     email: '',
     password: '',
     role: 'student',
+    confirmPassword: '',
     phoneNumber: '',
     companyName: '',
     messAssigned: '',
@@ -92,6 +93,10 @@ const Signup = () => {
 
     if (formData.password.length < 8) {
       toast.error("Password must be at least 8 characters long.");
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match.");
       return;
     }
     if (!upperCaseRegex.test(formData.password)) {
@@ -252,6 +257,19 @@ const Signup = () => {
                   <Input label="Password" type="password" name="password" required value={formData.password} onChange={handleChange} />
                   <p className="text-[10px] text-gray-400 font-semibold px-1 leading-normal">
                     Min 8 chars, 1 uppercase, 1 lowercase, 1 special char
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Input
+                    label="Confirm Password"
+                    type="password"
+                    name="confirmPassword"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                  />
+                  <p className="text-[10px] text-gray-400 font-semibold px-1">
+                    Re-enter your password
                   </p>
                 </div>
                 <div className="space-y-1">

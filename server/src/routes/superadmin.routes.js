@@ -8,7 +8,8 @@ import {
     inviteAdmin,
     getInvitations,
     assignCollegeAdmin,
-    revokeAdminRole
+    revokeAdminRole,
+    deleteCollegeAdmin
 } from '../controllers/superadmin.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 
@@ -25,7 +26,7 @@ router.post('/colleges/:id/assign-admin', assignCollegeAdmin);
 
 router.get('/admins', getAdmins);
 router.post('/admins/:userId/revoke', revokeAdminRole);
-
+router.delete('/admins/:userId', deleteCollegeAdmin);
 router.post('/admins/invite', inviteAdmin);
 router.get('/admins/invitations', getInvitations);
 

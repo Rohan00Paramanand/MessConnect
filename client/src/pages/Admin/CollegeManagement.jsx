@@ -26,7 +26,7 @@ const CollegeManagement = () => {
   const [adminFormData, setAdminFormData] = useState({ email: '', name: '' });
   const [assigning, setAssigning] = useState(false);
   const [revoking, setRevoking] = useState(false);
-
+  const [deleting, setDeleting] = useState(false);
   // Create College form state
   const [formData, setFormData] = useState({
     name: '',
@@ -212,7 +212,27 @@ const CollegeManagement = () => {
       setRevoking(false);
     }
   };
+const handleDeleteAdmin = async (userId) => {
+  if (!window.confirm(
+    'Are you sure you want to permanently delete this college administrator? This action cannot be undone.'
+  )) {
+    return;
+  }
 
+  setDeleting(true);
+
+  try {
+    const { data } = await api.delete(`/superadmin/admins/${userId}`);
+
+    toast.success(data.message || 'College admin deleted successfully');
+    await fetchColleges();
+    setAssigningCollege(null);
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to delete admin');
+  } finally {
+    setDeleting(false);
+  }
+};
   return (
     <>
       <div className="space-y-6">
@@ -525,14 +545,25 @@ const CollegeManagement = () => {
                   <p className="text-sm font-bold text-gray-900">{assigningCollege.admin.name || 'Admin'}</p>
                   <p className="text-xs text-gray-600">{assigningCollege.admin.email}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleRevokeAdmin(assigningCollege.admin._id)}
-                  disabled={revoking}
-                  className="px-2.5 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors flex items-center gap-1"
-                >
-                  <UserX size={13} /> {revoking ? 'Revoking...' : 'Revoke'}
-                </button>
+                <div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={() => handleRevokeAdmin(assigningCollege.admin._id)}
+    disabled={revoking || deleting}
+    className="px-2.5 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors flex items-center gap-1"
+  >
+    <UserX size={13} /> {revoking ? 'Revoking...' : 'Revoke'}
+  </button>
+
+  <button
+    type="button"
+    onClick={() => handleDeleteAdmin(assigningCollege.admin._id)}
+    disabled={deleting || revoking}
+    className="px-2.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors flex items-center gap-1"
+  >
+    <X size={13} /> {deleting ? 'Deleting...' : 'Delete'}
+  </button>
+</div>
               </div>
             )}
 

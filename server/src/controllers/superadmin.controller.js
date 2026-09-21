@@ -485,3 +485,37 @@ export const revokeAdminRole = async (req, res) => {
         });
     }
 };
+export const deleteCollegeAdmin = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'User not found'
+            });
+        }
+
+        if (user.role !== 'college_admin') {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Only college admin users can be deleted'
+            });
+        }
+
+        await User.findByIdAndDelete(userId);
+
+        return res.status(200).json({
+            status: 'success',
+            message: `College admin ${user.name || user.email} deleted successfully`
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Something went wrong'
+        });
+    }
+};
