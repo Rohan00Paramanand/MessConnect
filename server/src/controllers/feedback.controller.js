@@ -3,7 +3,7 @@ import Mess from '../models/mess.model.js';
 
 // @desc    Submit new feedback
 // @route   POST /api/feedback
-// @access  Private (Student only)
+// @access  Private (User only)
 export const submitFeedback = async (req, res) => {
     try {
         const { date, ratings, comment, mess } = req.body;
@@ -12,11 +12,11 @@ export const submitFeedback = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Mess is required' });
         }
 
-        if (req.user.role !== 'student') {
-            return res.status(403).json({ status: 'error', message: 'Only students can submit feedback' });
+        if (req.user.role !== 'user') {
+            return res.status(403).json({ status: 'error', message: 'Only users can submit feedback' });
         }
 
-        // Ensure the mess belongs to the student's own college
+        // Ensure the mess belongs to the user's own college
         const messDoc = await Mess.findOne({ _id: mess, collegeId: req.collegeId });
         if (!messDoc) {
             return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
@@ -106,7 +106,7 @@ export const getFeedback = async (req, res) => {
         // Always scope to the requesting user's college first
         let aggregateFilter = { collegeId: req.collegeId };
 
-        if (req.user.role === 'student') {
+        if (req.user.role === 'user') {
             aggregateFilter.user = req.user._id;
         }
 

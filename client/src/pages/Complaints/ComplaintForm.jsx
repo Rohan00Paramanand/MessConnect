@@ -373,7 +373,7 @@ const ComplaintForm = ({ onComplaintAdded }) => {
           </div>
         )}
 
-        <Button type="submit" disabled={loading} variant="student">
+        <Button type="submit" disabled={loading} variant="user">
           {loading ? 'Submitting...' : 'Submit Complaint'}
         </Button>
       </form>

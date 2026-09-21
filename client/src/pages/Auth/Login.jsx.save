@@ -45,7 +45,7 @@ const Login = () => {
         
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <img src="/pcet.png" alt="PCET Logo" className="w-12 h-12 flex-shrink-0 object-cover rounded-xl shadow-lg ring-1 ring-white/20" />
+          <img src="/pcet.webp" alt="PCET Logo" className="w-12 h-12 flex-shrink-0 object-cover rounded-xl shadow-lg ring-1 ring-white/20" />
           <span className="text-white font-bold text-xl tracking-tight">PCET MessConnect</span>
         </div>
         
@@ -62,7 +62,7 @@ const Login = () => {
             From daily meal tracking to real-time complaint resolution
           </p>
           <div className="mt-10 grid grid-cols-3 gap-4">
-            {[['Users', 'Submit feedback & track complaints'], ['Committee', 'Manage operations & notices'], ['Vendors', 'Update menus & resolve tasks']].map(([role, desc]) => (
+            {[['Students', 'Submit feedback & track complaints'], ['Committee', 'Manage operations & notices'], ['Vendors', 'Update menus & resolve tasks']].map(([role, desc]) => (
               <div key={role} className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
                 <p className="text-white font-bold text-sm mb-1">{role}</p>
                 <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
@@ -77,14 +77,7 @@ const Login = () => {
       {/* Right Panel – Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative" style={{background: 'radial-gradient(at 20% 80%, hsla(189,100%,60%,0.08) 0px, transparent 60%), radial-gradient(at 80% 20%, hsla(28,100%,74%,0.1) 0px, transparent 60%), #fafafa'}}>
         {/* Mobile logo */}
-        <div className="absolute top-8 left-8 lg:hidden flex items-center gap-2">
-  	<img
-    	src="/pcet.png"
-    	alt="PCET MessConnect Logo"
-    	className="w-9 h-9 flex-shrink-0 object-cover rounded-lg shadow-sm ring-1 ring-gray-200"
-  	/>
-  	<span className="text-gray-900 font-bold">PCET MessConnect</span>
-      	</div>        
+                
         <div className="w-full max-w-md animate-fade-in">
           <div className="mb-10">
             <h2 className="text-3xl font-black text-gray-900 mb-2">Sign in</h2>

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --color-student: #086F64;
-  --color-student-light: #ccfbf1;
+  --color-user: #086F64;
+  --color-user-light: #ccfbf1;
   --color-committee: #B45309;
   --color-committee-light: #fef3c7;
   --color-vendor: #BE123C;

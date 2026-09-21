@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+ import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -169,7 +169,7 @@ const FeedbackView = () => {
             </div>
             <h1 className="text-3xl font-black mb-1">Daily Mess Ratings</h1>
             <p className="text-white/70 font-medium">
-              {user?.role === 'student' ? "Rate today's meals and share your thoughts" : 'View all feedback submitted by students'}
+              {user?.role === 'user' ? "Rate today's meals and share your thoughts" : 'View all feedback submitted by users'}
             </p>
           </div>
           {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && (
@@ -211,8 +211,8 @@ const FeedbackView = () => {
         </div>
       )}
 
-      {/* Submit Feedback (Student only) */}
-      {user?.role === 'student' && (
+      {/* Submit Feedback (User) */}
+      {user?.role === 'user' && (
         <div className="bg-white/70 backdrop-blur-xl border border-amber-100 rounded-[2rem] p-8 shadow-[0_8px_30px_rgba(245,158,11,0.08)]">
           <h3 className="text-xl font-black text-gray-900 mb-6">Rate Today's Meals</h3>
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -279,7 +279,7 @@ const FeedbackView = () => {
                 onChange={(e) => setComment(e.target.value)}
               />
             </div>
-            <Button type="submit" variant="student" disabled={submitting || hasRatedCategory}>
+            <Button type="submit" variant="user" disabled={submitting || hasRatedCategory}>
               {submitting ? 'Submitting...' : hasRatedCategory ? 'Already Submitted for this Category' : '★ Submit Feedback'}
             </Button>
           </form>
@@ -335,7 +335,7 @@ const FeedbackView = () => {
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
                     {(fb.user?.name || 'S').charAt(0)}
                   </div>
-                  <p className="text-xs text-gray-400 font-medium">{fb.user?.name || 'Student'}</p>
+                  <p className="text-xs text-gray-400 font-medium">{fb.user?.name || 'User'}</p>
                 </div>
               )}
             </div>

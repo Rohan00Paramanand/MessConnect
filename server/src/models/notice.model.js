@@ -22,7 +22,7 @@ const noticeSchema = new Schema({
 
     targetRole: {
         type: String,
-        enum: ['student', 'vendor', 'mess_committee', 'all'],
+        enum: ['user', 'vendor', 'mess_committee', 'all'],
         default: 'all'
     },
 

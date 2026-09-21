@@ -92,7 +92,7 @@ const ComplaintsList = () => {
   };
 
   const handleUpvote = async (id) => {
-    if (user?.role !== 'student') return;
+    if (user?.role !== 'user') return;
     try {
       await api.post(`/complaints/${id}/upvote`);
       toast.success('Me Too! Vote recorded.');
@@ -123,14 +123,14 @@ const ComplaintsList = () => {
   };
 
   const roleGradients = {
-    student: 'from-blue-600 via-indigo-600 to-violet-600',
+    user: 'from-blue-600 via-indigo-600 to-violet-600',
     mess_committee: 'from-amber-600 via-orange-500 to-amber-600',
     vendor: 'from-rose-600 via-pink-600 to-rose-600',
     college_admin: 'from-indigo-600 via-violet-600 to-purple-600',
     admin: 'from-indigo-600 via-violet-600 to-purple-600',
     super_admin: 'from-violet-700 via-purple-600 to-indigo-700',
   };
-  const gradient = roleGradients[user?.role] || roleGradients.student;
+  const gradient = roleGradients[user?.role] || roleGradients.user;
 
   return (
     <div className="space-y-6 pb-8">
@@ -148,11 +148,11 @@ const ComplaintsList = () => {
             </div>
             <h1 className="text-3xl font-black mb-1">Complaints</h1>
             <p className="text-white/70 font-medium">
-              {user?.role === 'student' ? 'Submit and track your mess complaints' : 'Review and manage all incoming complaints'}
+              {user?.role === 'user' ? 'Submit and track your mess complaints' : 'Review and manage all incoming complaints'}
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-3">
-            {['student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
+            {['user', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
               <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30 truncate">
                 <select 
                   className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"
@@ -174,8 +174,8 @@ const ComplaintsList = () => {
         </div>
       </div>
 
-      {/* Student Complaint Form */}
-      {user?.role === 'student' && (
+      {/* User Complaint Form */}
+      {user?.role === 'user' && (
         <ComplaintForm onComplaintAdded={(newCmp) => setComplaints(prev => sortComplaints([newCmp, ...prev]))} />
       )}
 
@@ -194,7 +194,7 @@ const ComplaintsList = () => {
           </div>
           <h3 className="font-bold text-gray-700 mb-1">No complaints yet</h3>
           <p className="text-gray-400 text-sm">
-            {user?.role === 'student' ? 'Use the form above to submit a complaint' : 'No complaints have been submitted yet'}
+            {user?.role === 'user' ? 'Use the form above to submit a complaint' : 'No complaints have been submitted yet'}
           </p>
         </div>
       ) : (
@@ -219,15 +219,15 @@ const ComplaintsList = () => {
                     <div className="ml-auto">
                       <button
                         onClick={() => handleUpvote(complaint._id)}
-                        disabled={user?.role !== 'student' || complaint.status !== 'pending'}
+                        disabled={user?.role !== 'user' || complaint.status !== 'pending'}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-bold transition-all ${
                           complaint.upvotes?.includes(user?._id)
                             ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-inner hover:bg-amber-50 hover:border-amber-400'
-                            : user?.role === 'student' && complaint.status === 'pending'
+                            : user?.role === 'user' && complaint.status === 'pending'
                               ? 'bg-white border-gray-200 text-gray-600 hover:bg-amber-50 hover:border-amber-400 hover:text-amber-600'
                               : 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed opacity-80'
                         }`}
-                        title={user?.role === 'student' ? (complaint.upvotes?.includes(user?._id) ? "Click to remove your vote" : "I'm experiencing this too") : `${complaint.upvotes?.length || 0} students experiencing this`}
+                        title={user?.role === 'user' ? (complaint.upvotes?.includes(user?._id) ? "Click to remove your vote" : "I'm experiencing this too") : `${complaint.upvotes?.length || 0} users experiencing this`}
                       >
                         <ThumbsUp size={14} className={complaint.upvotes?.includes(user?._id) ? "fill-amber-500 text-amber-500" : ""} />
                         {complaint.upvotes?.length || 0}
@@ -275,12 +275,12 @@ const ComplaintsList = () => {
                       {complaint.user_id?.name && (
                         <span className="flex items-center gap-1.5">
                           <span>· by {complaint.user_id.name}</span>
-                          {complaint.user_id.role === 'student' && typeof complaint.user_id.trustMeter === 'number' && (
+                          {complaint.user_id.role === 'user' && typeof complaint.user_id.trustMeter === 'number' && (
                             <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                               complaint.user_id.trustMeter >= 80 ? 'bg-green-50 text-green-700 border-green-200' :
                               complaint.user_id.trustMeter >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' :
                               'bg-red-50 text-red-700 border-red-200'
-                            }`} title="Student Trust Score">
+                            }`} title="User Trust Score">
                               🛡️ {complaint.user_id.trustMeter}% Trust
                             </span>
                           )}

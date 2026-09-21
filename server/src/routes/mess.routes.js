@@ -7,7 +7,7 @@ const router = express.Router();
 // Apply auth protection to all mess endpoints
 router.use(protect);
 
-// Read-only endpoint for logged-in students/vendors/committees to get active messes
+// Read-only endpoint for logged-in users/vendors/committees to get active messes
 router.get('/', getMesses);
 
 // Administrative endpoints for college admins to manage messes

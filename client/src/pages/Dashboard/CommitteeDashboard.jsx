@@ -19,7 +19,7 @@ const CommitteeDashboard = () => {
             Operations,<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 to-white">{user?.name}</span>
           </h1>
-          <p className="text-amber-100 font-medium mt-3 max-w-md text-sm sm:text-base">Oversee daily operations, manage student feedback, and audit complaints.</p>
+          <p className="text-amber-100 font-medium mt-3 max-w-md text-sm sm:text-base">Oversee daily operations, manage user feedback, and audit complaints.</p>
         </div>
       </div>
 

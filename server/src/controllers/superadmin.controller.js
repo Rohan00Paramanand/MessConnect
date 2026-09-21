@@ -468,7 +468,7 @@ export const revokeAdminRole = async (req, res) => {
             });
         }
 
-        user.role = 'student';
+        user.role = 'user';
         user.collegeId = null;
         await user.save();
 
