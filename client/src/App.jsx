@@ -12,7 +12,7 @@ import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
 import ForgotPassword from './pages/Auth/ForgotPassword'
 import AcceptInvitation from './pages/Auth/AcceptInvitation'
-import UserDashboard from './pages/Dashboard/UserDashboard'
+import StudentDashboard from './pages/Dashboard/StudentDashboard'
 import CommitteeDashboard from './pages/Dashboard/CommitteeDashboard'
 import VendorDashboard from './pages/Dashboard/VendorDashboard'
 import AdminDashboard from './pages/Admin/AdminDashboard'
@@ -47,7 +47,7 @@ function App() {
         {/* Protected Dashboard Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route path="/dashboard/user" element={<ProtectedRoute allowedRoles={['user']}><UserDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/student" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/mess_committee" element={<ProtectedRoute allowedRoles={['mess_committee']}><CommitteeDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/vendor" element={<ProtectedRoute allowedRoles={['vendor']}><VendorDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/college_admin" element={<ProtectedRoute allowedRoles={['college_admin']}><AdminDashboard /></ProtectedRoute>} />
@@ -57,7 +57,7 @@ function App() {
             <Route
               path="/complaints"
               element={
-                <ProtectedRoute allowedRoles={['user', 'vendor', 'mess_committee', 'college_admin']}>
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee', 'college_admin']}>
                   <ComplaintsList />
                 </ProtectedRoute>
               }
@@ -66,7 +66,7 @@ function App() {
             <Route
               path="/feedback"
               element={
-                <ProtectedRoute allowedRoles={['user', 'vendor', 'mess_committee', 'college_admin']}>
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee', 'college_admin']}>
                   <FeedbackView />
                 </ProtectedRoute>
               }
@@ -75,7 +75,7 @@ function App() {
             <Route
               path="/notices"
               element={
-                <ProtectedRoute allowedRoles={['user', 'vendor', 'mess_committee', 'college_admin']}>
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee', 'college_admin']}>
                   <NoticeBoard />
                 </ProtectedRoute>
               }
@@ -93,7 +93,7 @@ function App() {
             <Route
               path="/timetable"
               element={
-                <ProtectedRoute allowedRoles={['user', 'vendor', 'mess_committee']}>
+                <ProtectedRoute allowedRoles={['student', 'vendor', 'mess_committee']}>
                   <WeeklyTimetable />
                 </ProtectedRoute>
               }
@@ -105,7 +105,7 @@ function App() {
               <Navigate to={
                 user?.role === 'super_admin' ? '/dashboard/super_admin' :
                 user?.role === 'college_admin' ? '/dashboard/college_admin' :
-                user?.role === 'user' ? '/dashboard/user' :
+                user?.role === 'student' ? '/dashboard/student' :
                 user?.role === 'vendor' ? '/dashboard/vendor' :
                 user?.role === 'mess_committee' ? '/dashboard/mess_committee' :
                 '/login'

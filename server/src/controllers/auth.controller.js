@@ -28,7 +28,7 @@ const baseSchema = z.object({
         .regex(specialCharRegex, { message: "Must contain one special char." })
         .regex(upperCaseRegex, { message: "Must contain one upper case char." })
         .regex(lowerCaseRegex, { message: "Must contain one lower case char." }),
-    role: z.enum(["user", "vendor", "mess_committee"]),
+    role: z.enum(["student", "vendor", "mess_committee"]),
     phoneNumber: z.string().min(10),
 
     collegeSlug: z.string().optional(),
@@ -95,7 +95,7 @@ const signup = async (req, res) => {
                 return res.status(400).json({ message: 'A vendor is already registered and approved for this mess.' });
             }
         }
-        // For users and mess_committee, college is derived strictly from the email domain
+        // For students and mess_committee, college is derived strictly from the email domain
         else {
             const college = await College.findOne({ allowedDomains: emailDomain });
 

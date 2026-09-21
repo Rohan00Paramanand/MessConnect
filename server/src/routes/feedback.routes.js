@@ -9,7 +9,7 @@ router.use(protect);
 
 router.route('/')
     .get(getFeedback)
-    .post(authorizeRoles('user'), submitFeedback);
+    .post(authorizeRoles('student'), submitFeedback);
 
 
 

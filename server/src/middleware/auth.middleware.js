@@ -24,8 +24,8 @@ export const protect = async (req, res, next) => {
             return res.status(401).json({ status: 'error', message: 'Not authorized, user not found' });
         }
 
-        // Lazy recovery: If user was banned and the ban duration has expired, restore trust to 20 baseline
-        if (req.user.role === 'user' && req.user.trustMeter === 0 && req.user.bannedUntil && new Date() >= new Date(req.user.bannedUntil)) {
+        // Lazy recovery: If student was banned and the ban duration has expired, restore trust to 20 baseline
+        if (req.user.role === 'student' && req.user.trustMeter === 0 && req.user.bannedUntil && new Date() >= new Date(req.user.bannedUntil)) {
             req.user.trustMeter = 20;
             req.user.bannedUntil = null;
             await req.user.save();

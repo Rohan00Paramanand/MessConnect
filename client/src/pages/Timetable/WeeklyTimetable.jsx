@@ -42,7 +42,7 @@ const WeeklyTimetable = () => {
   const fetchTimetable = useCallback(async (filterVal = messFilter) => {
     try { 
       const params = {};
-      if (['user', 'mess_committee'].includes(user?.role) && filterVal) {
+      if (['student', 'mess_committee'].includes(user?.role) && filterVal) {
         params.mess = filterVal;
       }
       const { data } = await api.get('/timetable', { params }); 
@@ -130,7 +130,7 @@ const WeeklyTimetable = () => {
               </span>
             </div>
           )}
-          {['user', 'mess_committee'].includes(user?.role) && (
+          {['student', 'mess_committee'].includes(user?.role) && (
             <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30 truncate">
               <select 
                 className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"

@@ -4,7 +4,7 @@ import { sendEmail } from '../utils/sendEmail.js';
 
 // @desc    Create new complaint
 // @route   POST /api/complaints
-// @access  Private (User/Mess Committee)
+// @access  Private (Student/Mess Committee)
 export const createComplaint = async (req, res) => {
     try {
         const { title, description, category, latitude, longitude, address, mess } = req.body;
@@ -13,7 +13,7 @@ export const createComplaint = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Mess is required' });
         }
 
-        // Check if the user is currently banned
+        // Check if the student is currently banned
         if (req.user.bannedUntil && new Date() < new Date(req.user.bannedUntil)) {
             return res.status(403).json({
                 status: 'error',
@@ -76,7 +76,7 @@ export const getComplaints = async (req, res) => {
             queryFilter.collegeId = req.collegeId;
         }
 
-        // Users, Mess Committee, Admins can filter via parameter if provided
+        // Students, Mess Committee, Admins can filter via parameter if provided
         if (req.query.mess && req.user.role !== 'vendor') {
             queryFilter.mess = req.query.mess;
         }
@@ -90,10 +90,10 @@ export const getComplaints = async (req, res) => {
 
         let complaints;
 
-        if (req.user.role === 'user') {
-            // Users should not see any rejected complaints
-            let userFilter = { ...queryFilter, $and: [...queryFilter.$and, { status: { $ne: 'rejected' } }] };
-            complaints = await Complaint.find(userFilter)
+        if (req.user.role === 'student') {
+            // Students should not see any rejected complaints
+            let studentFilter = { ...queryFilter, $and: [...queryFilter.$and, { status: { $ne: 'rejected' } }] };
+            complaints = await Complaint.find(studentFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
                 .populate('mess', 'name')
@@ -223,26 +223,26 @@ export const updateComplaintStatus = async (req, res) => {
         if (status === 'resolved' || status === 'rejected') {
             try {
                 const User = (await import('../models/user.model.js')).default;
-                const user = await User.findById(complaint.user_id);
-                if (user && user.role === 'user') {
+                const student = await User.findById(complaint.user_id);
+                if (student && student.role === 'student') {
                     if (status === 'rejected') {
                         const penalty = penaltyMap[complaint.rejectionReason] || 0;
                         if (penalty !== 0) {
-                            user.trustMeter = Math.max(0, (user.trustMeter ?? 100) + penalty);
-                            if (user.trustMeter === 0) {
-                                // Ban the user for 7 days
-                                user.bannedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                            student.trustMeter = Math.max(0, (student.trustMeter ?? 100) + penalty);
+                            if (student.trustMeter === 0) {
+                                // Ban the student for 7 days
+                                student.bannedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
                             }
-                            await user.save();
+                            await student.save();
                         }
                     } else if (status === 'resolved') {
                         // Reward positive submission
-                        user.trustMeter = Math.min(100, (user.trustMeter ?? 100) + 10);
-                        await user.save();
+                        student.trustMeter = Math.min(100, (student.trustMeter ?? 100) + 10);
+                        await student.save();
                     }
                 }
             } catch (trustError) {
-                console.error('Failed to update user trust meter:', trustError.message);
+                console.error('Failed to update student trust meter:', trustError.message);
             }
         }
 
@@ -251,13 +251,13 @@ export const updateComplaintStatus = async (req, res) => {
             (async () => {
                 try {
                     const User = (await import('../models/user.model.js')).default;
-                    const user = await User.findById(complaint.user_id);
-                    if (user && user.email) {
+                    const student = await User.findById(complaint.user_id);
+                    if (student && student.email) {
                         const rejectDetails = status === 'rejected' ? `\nReason for Rejection: ${complaint.rejectionReason.replace('_', ' ').toUpperCase()}` : '';
                         await sendEmail({
-                            email: user.email,
+                            email: student.email,
                             subject: `Complaint Status Update - MessConnect`,
-                            message: `Hello ${user.name},\n\nYour complaint titled "${complaint.title}" has been marked as ${status.toUpperCase()} by the Mess Committee.${rejectDetails}\n\nDetails:\n- Title: ${complaint.title}\n- Category: ${complaint.category}\n- Status: ${status.toUpperCase()}\n\nThank you for your feedback,\nMessConnect Team`
+                            message: `Hello ${student.name},\n\nYour complaint titled "${complaint.title}" has been marked as ${status.toUpperCase()} by the Mess Committee.${rejectDetails}\n\nDetails:\n- Title: ${complaint.title}\n- Category: ${complaint.category}\n- Status: ${status.toUpperCase()}\n\nThank you for your feedback,\nMessConnect Team`
                         });
                     }
                 } catch (emailError) {
@@ -304,11 +304,11 @@ export const markVendorCompleted = async (req, res) => {
 
 // @desc    Upvote a complaint
 // @route   POST /api/complaints/:id/upvote
-// @access  Private (User)
+// @access  Private (Student)
 export const upvoteComplaint = async (req, res) => {
     try {
-        if (req.user.role !== 'user') {
-            return res.status(403).json({ status: 'error', message: 'Only users can upvote complaints' });
+        if (req.user.role !== 'student') {
+            return res.status(403).json({ status: 'error', message: 'Only students can upvote complaints' });
         }
 
         const complaint = await Complaint.findById(req.params.id);

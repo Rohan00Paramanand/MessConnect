@@ -1,4 +1,4 @@
- import Staff from '../models/staff.model.js';
+import Staff from '../models/staff.model.js';
 import Mess from '../models/mess.model.js';
 
 // @desc    Add a new staff member

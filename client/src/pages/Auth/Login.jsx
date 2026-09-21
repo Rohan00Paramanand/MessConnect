@@ -62,7 +62,7 @@ const Login = () => {
             From daily meal tracking to real-time complaint resolution
           </p>
           <div className="mt-10 grid grid-cols-3 gap-4">
-            {[['Users', 'Submit feedback & track complaints'], ['Committee', 'Manage operations & notices'], ['Vendors', 'Update menus & resolve tasks']].map(([role, desc]) => (
+            {[['Students', 'Submit feedback & track complaints'], ['Committee', 'Manage operations & notices'], ['Vendors', 'Update menus & resolve tasks']].map(([role, desc]) => (
               <div key={role} className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
                 <p className="text-white font-bold text-sm mb-1">{role}</p>
                 <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>

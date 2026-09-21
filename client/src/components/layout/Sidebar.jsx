@@ -4,7 +4,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, X, Menu, School } from 'lucide-react';
 
 const roleColors = {
-  user:        { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
+  student:        { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
   mess_committee: { pill: 'bg-amber-500/10 text-amber-700 border-amber-200', dot: 'bg-amber-500',   active: 'from-amber-500 to-orange-500' },
   vendor:         { pill: 'bg-rose-500/10 text-rose-700 border-rose-200',    dot: 'bg-rose-500',    active: 'from-rose-600 to-pink-600' },
   college_admin:  { pill: 'bg-indigo-500/10 text-indigo-700 border-indigo-200', dot: 'bg-indigo-500', active: 'from-indigo-600 to-violet-600' },
@@ -13,7 +13,7 @@ const roleColors = {
 
 const getLinks = (role) => {
   const base = [{ name: 'Dashboard', path: `/dashboard/${role}`, icon: LayoutDashboard }];
-  if (role === 'user') {
+  if (role === 'student') {
     base.push(
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Feedback', path: '/feedback', icon: Star },
@@ -85,16 +85,10 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-6 pb-4">
-  <div className="flex items-center gap-3 mb-5 min-w-0">
-    <img
-      src="/pcet.png"
-      alt="MessConnect Logo"
-      className="w-10 h-10 flex-shrink-0 object-cover rounded-xl shadow-md ring-1 ring-gray-200"
-    />
-    <h1 className="text-xl font-black text-gray-900 tracking-tight truncate min-w-0 flex-1">
-      PCET MessConnect
-    </h1>
-  </div>
+        <div className="flex items-center gap-3 mb-5">
+          <img src="/pcet.png" alt="MessConnect Logo" className="w-10 h-10 flex-shrink-0 object-cover rounded-xl shadow-md ring-1 ring-gray-200" />
+          <h1 className="text-xl font-black text-gray-900 tracking-tight truncate min-w-0">PCET MessConnect</h1>
+        </div>
         {role && (
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-xl border ${theme.pill}`}>
             <span className={`w-2 h-2 rounded-full ${theme.dot} animate-pulse flex-shrink-0`}></span>

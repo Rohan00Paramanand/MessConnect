@@ -27,7 +27,7 @@ const Signup = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user',
+    role: 'student',
     confirmPassword: '',
     phoneNumber: '',
     companyName: '',
@@ -109,8 +109,8 @@ const Signup = () => {
       return;
     }
 
-    // Validate email domain matches college allowedDomains for users/committee
-    if (formData.role === 'user' || formData.role === 'mess_committee') {
+    // Validate email domain matches college allowedDomains for students/committee
+    if (formData.role === 'student' || formData.role === 'mess_committee') {
       const emailParts = formData.email.split('@');
       if (emailParts.length !== 2) {
         toast.error("Please enter a valid email address.");
@@ -216,7 +216,7 @@ const Signup = () => {
   };
 
   const roleThemes = {
-    user: 'bg-teal-500/10 border-teal-200 shadow-teal-500/5',
+    student: 'bg-teal-500/10 border-teal-200 shadow-teal-500/5',
     vendor: 'bg-coral-500/10 border-coral-200 shadow-rose-500/5',
     mess_committee: 'bg-amber-500/10 border-amber-200 shadow-amber-500/5'
   };
@@ -280,7 +280,7 @@ const Signup = () => {
                 <div className="w-full md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">I am registering as</label>
                   <div className="grid grid-cols-3 gap-3">
-                    {['user', 'vendor', 'mess_committee'].map(role => (
+                    {['student', 'vendor', 'mess_committee'].map(role => (
                       <button
                         key={role}
                         type="button"
@@ -294,7 +294,7 @@ const Signup = () => {
                 </div>
               </div>
 
-              {formData.role !== 'user' && (
+              {formData.role !== 'student' && (
                 <div className={`mt-6 p-6 rounded-2xl border backdrop-blur-sm transition-colors duration-300 ${roleThemes[formData.role]}`}>
 
                 {formData.role === 'vendor' && (

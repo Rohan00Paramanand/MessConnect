@@ -108,7 +108,7 @@ const StaffDirectory = () => {
     }
   };
 
-  if (user?.role === 'user') {
+  if (user?.role === 'student') {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center bg-white/70 backdrop-blur-xl border border-white/60 rounded-[2rem] p-12">

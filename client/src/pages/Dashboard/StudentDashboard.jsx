@@ -5,7 +5,7 @@ import { MessageSquare, Star, Bell, ArrowRight, TrendingUp, ThumbsUp } from 'luc
 import { NavLink, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-const UserDashboard = () => {
+const StudentDashboard = () => {
   const { user } = useAuthStore();
   const [trendingComplaints, setTrendingComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,4 +178,4 @@ const UserDashboard = () => {
   );
 };
 
-export default UserDashboard;
+export default StudentDashboard;

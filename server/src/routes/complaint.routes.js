@@ -10,7 +10,7 @@ router.use(protect);
 
 router.route('/')
     .get(getComplaints)
-    .post(authorizeRoles('user'), upload.single('image'), createComplaint);
+    .post(authorizeRoles('student'), upload.single('image'), createComplaint);
 
 
 
@@ -23,6 +23,6 @@ router.route('/:id/vendor-complete')
 
 
 router.route('/:id/upvote')
-    .post(authorizeRoles('user'), upvoteComplaint);
+    .post(authorizeRoles('student'), upvoteComplaint);
 
 export default router;
