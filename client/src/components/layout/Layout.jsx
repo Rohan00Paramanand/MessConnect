@@ -35,17 +35,6 @@ const Layout = () => {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
-
-          {/* Right: User avatar pill */}
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="text-sm font-bold text-gray-900 leading-tight">{user?.name}</span>
-              <span className="text-xs text-gray-400 capitalize">{user?.role?.replace('_', ' ')}</span>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center text-white font-black text-sm shadow-md flex-shrink-0">
-              {(user?.name || 'U').charAt(0)}
-            </div>
-          </div>
         </header>
 
         {/* ─── Page Content ─── */}
