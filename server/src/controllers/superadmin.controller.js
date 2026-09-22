@@ -14,8 +14,6 @@ import { sendEmail } from '../utils/sendEmail.js';
 const createCollegeSchema = z.object({
     name: z.string().trim().min(2, 'College name is required'),
 
-    slug: z.string().trim().optional(),
-
     allowedDomains: z
         .array(
             z.string()
@@ -588,6 +586,425 @@ export const deleteInvitation = async (req, res) => {
         return res.status(500).json({
             status: 'error',
             message: error.message || 'Failed to delete invitation'
+        });
+    }
+};
+
+export const getSuperAdminAnalytics = async (req, res) => {
+    try {
+        const now = new Date();
+
+        // 1. Execute parallel queries across all relevant models
+        const [
+            colleges,
+            admins,
+            totalUsers,
+            usersByRoleAgg,
+            totalMesses,
+            totalNotices,
+            totalStaff,
+            complaintsByStatusAgg,
+            complaintsByCategoryAgg,
+            complaintResolutionAgg,
+            feedbackCategoryAgg,
+            feedbackOverallAgg,
+            feedbackByCollegeAgg,
+            complaintsByCollegeAgg,
+            usersByCollegeAndRoleAgg,
+            messesByCollegeAgg,
+            totalInvitations,
+            acceptedInvitations,
+            pendingInvitations,
+            expiredInvitations,
+            recentInvitations,
+            userGrowthAgg,
+            [pendingApprovalsCount, lowTrustCount, bannedCount, inactiveCount]
+        ] = await Promise.all([
+            College.find().select('_id name isActive contactEmail contactPhone createdAt allowedDomains').lean(),
+            User.find({ role: 'college_admin' }).select('_id name email collegeId isActive createdAt').lean(),
+            User.countDocuments({ role: { $ne: 'super_admin' } }),
+            User.aggregate([
+                { $match: { role: { $ne: 'super_admin' } } },
+                {
+                    $group: {
+                        _id: '$role',
+                        count: { $sum: 1 },
+                        active: { $sum: { $cond: ['$isActive', 1, 0] } }
+                    }
+                }
+            ]),
+            Mess.countDocuments(),
+            Notice.countDocuments(),
+            Staff.countDocuments(),
+            Complaint.aggregate([
+                {
+                    $group: {
+                        _id: '$status',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Complaint.aggregate([
+                {
+                    $group: {
+                        _id: '$category',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Complaint.aggregate([
+                {
+                    $match: {
+                        status: 'resolved',
+                        resolvedAt: { $exists: true, $ne: null }
+                    }
+                },
+                {
+                    $project: {
+                        durationHours: {
+                            $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60 * 60]
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        avgHours: { $avg: '$durationHours' },
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Feedback.aggregate([
+                { $unwind: '$ratings' },
+                {
+                    $group: {
+                        _id: '$ratings.category',
+                        avgRating: { $avg: '$ratings.rating' },
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Feedback.aggregate([
+                { $unwind: '$ratings' },
+                {
+                    $group: {
+                        _id: null,
+                        avgRating: { $avg: '$ratings.rating' },
+                        totalRatingsCount: { $sum: 1 }
+                    }
+                }
+            ]),
+            Feedback.aggregate([
+                { $unwind: '$ratings' },
+                {
+                    $group: {
+                        _id: '$collegeId',
+                        avgRating: { $avg: '$ratings.rating' },
+                        ratingCount: { $sum: 1 }
+                    }
+                }
+            ]),
+            Complaint.aggregate([
+                {
+                    $group: {
+                        _id: '$collegeId',
+                        total: { $sum: 1 },
+                        pending: {
+                            $sum: { $cond: [{ $in: ['$status', ['pending', 'assigned']] }, 1, 0] }
+                        },
+                        resolved: {
+                            $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] }
+                        },
+                        rejected: {
+                            $sum: { $cond: [{ $eq: ['$status', 'rejected'] }, 1, 0] }
+                        }
+                    }
+                }
+            ]),
+            User.aggregate([
+                { $match: { collegeId: { $exists: true, $ne: null } } },
+                {
+                    $group: {
+                        _id: { collegeId: '$collegeId', role: '$role' },
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Mess.aggregate([
+                {
+                    $group: {
+                        _id: '$collegeId',
+                        total: { $sum: 1 },
+                        active: { $sum: { $cond: ['$isActive', 1, 0] } }
+                    }
+                }
+            ]),
+            Invitation.countDocuments(),
+            Invitation.countDocuments({ isAccepted: true }),
+            Invitation.countDocuments({ isAccepted: false, expiresAt: { $gte: now } }),
+            Invitation.countDocuments({ isAccepted: false, expiresAt: { $lt: now } }),
+            Invitation.find()
+                .sort({ createdAt: -1 })
+                .limit(8)
+                .populate('collegeId', 'name')
+                .lean(),
+            User.aggregate([
+                {
+                    $match: {
+                        createdAt: {
+                            $gte: new Date(new Date().setMonth(new Date().getMonth() - 5, 1))
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: '$createdAt' },
+                            month: { $month: '$createdAt' },
+                            role: '$role'
+                        },
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { '_id.year': 1, '_id.month': 1 } }
+            ]),
+            Promise.all([
+                User.countDocuments({ role: { $in: ['user', 'vendor', 'mess_committee'] }, isApprovedByAdmin: false }),
+                User.countDocuments({ role: { $ne: 'super_admin' }, trustMeter: { $lt: 50 } }),
+                User.countDocuments({ bannedUntil: { $gt: now } }),
+                User.countDocuments({ role: { $ne: 'super_admin' }, isActive: false })
+            ])
+        ]);
+
+        // 2. Lookup Maps
+        const feedbackMap = {};
+        feedbackByCollegeAgg.forEach(f => {
+            if (f._id) feedbackMap[f._id.toString()] = f.avgRating;
+        });
+
+        const complaintsMap = {};
+        complaintsByCollegeAgg.forEach(c => {
+            if (c._id) complaintsMap[c._id.toString()] = c;
+        });
+
+        const messesMap = {};
+        messesByCollegeAgg.forEach(m => {
+            if (m._id) messesMap[m._id.toString()] = m;
+        });
+
+        const userCountsMap = {};
+        usersByCollegeAndRoleAgg.forEach(u => {
+            if (u._id && u._id.collegeId) {
+                const cId = u._id.collegeId.toString();
+                if (!userCountsMap[cId]) userCountsMap[cId] = {};
+                userCountsMap[cId][u._id.role] = u.count;
+            }
+        });
+
+        // 3. College Health Matrix
+        const collegeHealth = colleges.map(college => {
+            const cId = college._id.toString();
+            const collegeAdmins = admins.filter(a => a.collegeId && a.collegeId.toString() === cId);
+            const userCounts = userCountsMap[cId] || {};
+            const comp = complaintsMap[cId] || { total: 0, pending: 0, resolved: 0, rejected: 0 };
+            const messInfo = messesMap[cId] || { total: 0, active: 0 };
+            const avgRating = feedbackMap[cId] ? Number(feedbackMap[cId].toFixed(1)) : 0;
+
+            const totalStudents = userCounts['user'] || 0;
+            const totalVendors = userCounts['vendor'] || 0;
+            const totalCommittee = userCounts['mess_committee'] || 0;
+            const totalCollegeUsers = totalStudents + totalVendors + totalCommittee;
+
+            // Health Score calculation (0 - 100)
+            let score = 0;
+            if (college.isActive) score += 15;
+            if (collegeAdmins.length > 0) score += 25;
+            if (totalCollegeUsers > 0) score += 15;
+            if (messInfo.active > 0) score += 15;
+            // Resolution rate
+            if (comp.total > 0) {
+                score += Math.round((comp.resolved / comp.total) * 20);
+            } else {
+                score += 20; // No complaints is good
+            }
+            // Feedback score
+            if (avgRating > 0) {
+                score += Math.round((avgRating / 5) * 10);
+            } else {
+                score += 5;
+            }
+
+            return {
+                id: college._id,
+                name: college.name,
+                isActive: college.isActive,
+                createdAt: college.createdAt,
+                allowedDomains: college.allowedDomains || [],
+                admins: collegeAdmins,
+                hasAdmin: collegeAdmins.length > 0,
+                studentCount: totalStudents,
+                vendorCount: totalVendors,
+                committeeCount: totalCommittee,
+                totalUsers: totalCollegeUsers,
+                messCount: messInfo.total,
+                activeMessCount: messInfo.active,
+                totalComplaints: comp.total,
+                pendingComplaints: comp.pending,
+                resolvedComplaints: comp.resolved,
+                avgRating,
+                healthScore: Math.min(100, Math.max(0, score))
+            };
+        });
+
+        // 4. Monthly User Growth Timeline (last 6 months)
+        const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const userGrowthByMonth = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const y = d.getFullYear();
+            const m = d.getMonth() + 1;
+            const label = `${monthLabels[m - 1]} ${y}`;
+
+            let students = 0;
+            let vendors = 0;
+            let committee = 0;
+            let collegeAdmins = 0;
+
+            userGrowthAgg.forEach(item => {
+                if (item._id.year === y && item._id.month === m) {
+                    if (item._id.role === 'user') students += item.count;
+                    else if (item._id.role === 'vendor') vendors += item.count;
+                    else if (item._id.role === 'mess_committee') committee += item.count;
+                    else if (item._id.role === 'college_admin') collegeAdmins += item.count;
+                }
+            });
+
+            userGrowthByMonth.push({
+                month: label,
+                students,
+                vendors,
+                committee,
+                admins: collegeAdmins,
+                total: students + vendors + committee + collegeAdmins
+            });
+        }
+
+        // 5. Categorize Role Totals
+        const roleCounts = {
+            student: 0,
+            vendor: 0,
+            mess_committee: 0,
+            college_admin: 0
+        };
+        usersByRoleAgg.forEach(r => {
+            if (r._id === 'user') roleCounts.student = r.count;
+            else if (r._id === 'vendor') roleCounts.vendor = r.count;
+            else if (r._id === 'mess_committee') roleCounts.mess_committee = r.count;
+            else if (r._id === 'college_admin') roleCounts.college_admin = r.count;
+        });
+
+        // 6. Complaint breakdown
+        const complaintStatusMap = { pending: 0, assigned: 0, resolved: 0, rejected: 0, vendor_completed: 0 };
+        complaintsByStatusAgg.forEach(s => {
+            if (s._id) complaintStatusMap[s._id] = s.count;
+        });
+
+        const totalComplaints = Object.values(complaintStatusMap).reduce((a, b) => a + b, 0);
+
+        const complaintCategoryMap = {};
+        complaintsByCategoryAgg.forEach(c => {
+            if (c._id) complaintCategoryMap[c._id] = c.count;
+        });
+
+        const avgResolutionHours = complaintResolutionAgg[0]?.avgHours
+            ? Number(complaintResolutionAgg[0].avgHours.toFixed(1))
+            : null;
+
+        // 7. Feedback Breakdown
+        const feedbackRatingsByCategory = feedbackCategoryAgg.map(f => ({
+            category: f._id,
+            avgRating: Number(f.avgRating.toFixed(1)),
+            count: f.count
+        }));
+
+        const platformOverallRating = feedbackOverallAgg[0]?.avgRating
+            ? Number(feedbackOverallAgg[0].avgRating.toFixed(1))
+            : 0;
+
+        // 8. Ranked Colleges
+        const topComplainedColleges = [...collegeHealth]
+            .filter(c => c.totalComplaints > 0)
+            .sort((a, b) => b.totalComplaints - a.totalComplaints)
+            .slice(0, 5);
+
+        const topRatedColleges = [...collegeHealth]
+            .filter(c => c.avgRating > 0)
+            .sort((a, b) => b.avgRating - a.avgRating)
+            .slice(0, 5);
+
+        // 9. Invitation Analytics
+        const acceptanceRate = totalInvitations > 0
+            ? Math.round((acceptedInvitations / totalInvitations) * 100)
+            : 0;
+
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                summary: {
+                    totalColleges: colleges.length,
+                    activeColleges: colleges.filter(c => c.isActive).length,
+                    totalUsers,
+                    roleCounts,
+                    totalMesses,
+                    totalNotices,
+                    totalStaff,
+                    totalComplaints,
+                    pendingComplaints: complaintStatusMap.pending + complaintStatusMap.assigned,
+                    resolvedComplaints: complaintStatusMap.resolved,
+                    avgPlatformRating: platformOverallRating,
+                    totalInvitations,
+                    pendingInvitations,
+                    acceptedInvitations,
+                    expiredInvitations,
+                    invitationAcceptanceRate: acceptanceRate
+                },
+                collegeHealth,
+                userGrowthByMonth,
+                complaints: {
+                    byStatus: complaintStatusMap,
+                    byCategory: complaintCategoryMap,
+                    total: totalComplaints,
+                    avgResolutionHours,
+                    topComplainedColleges
+                },
+                feedback: {
+                    overallRating: platformOverallRating,
+                    totalReviews: feedbackOverallAgg[0]?.totalRatingsCount || 0,
+                    byCategory: feedbackRatingsByCategory,
+                    topRatedColleges
+                },
+                invitations: {
+                    total: totalInvitations,
+                    accepted: acceptedInvitations,
+                    pending: pendingInvitations,
+                    expired: expiredInvitations,
+                    acceptanceRate,
+                    recent: recentInvitations
+                },
+                healthSignals: {
+                    pendingApprovals: pendingApprovalsCount,
+                    lowTrustUsers: lowTrustCount,
+                    bannedUsers: bannedCount,
+                    inactiveUsers: inactiveCount
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching superadmin analytics:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: error.message || 'Failed to fetch analytics'
         });
     }
 };

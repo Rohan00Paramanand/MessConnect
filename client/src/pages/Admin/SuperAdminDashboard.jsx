@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw, Trash2 } from 'lucide-react';
+import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw, Trash2, BarChart3 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 
@@ -98,25 +98,23 @@ const SuperAdminDashboard = () => {
   const handleCopyLink = (token) => {
     const inviteLink = `${window.location.origin}/accept-invite?token=${token}`;
     navigator.clipboard.writeText(inviteLink);
-    toast.success('Invitation link copied!');
+    toast.success('Invitation link copied to clipboard!');
   };
 
-  const handleDeleteInvitation = async (id, email) => {
-    if (!window.confirm(`Are you sure you want to delete the invitation for ${email}?`)) {
-      return;
-    }
+  const handleDeleteInvite = async (id) => {
+    if (!window.confirm('Are you sure you want to revoke this invitation?')) return;
     try {
-      const { data } = await api.delete(`/superadmin/admins/invitations/${id}`);
-      toast.success(data.message || 'Invitation deleted successfully');
+      await api.delete(`/superadmin/admins/invitations/${id}`);
+      toast.success('Invitation revoked');
       await fetchDashboardData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete invitation');
+      toast.error(err.response?.data?.message || 'Failed to revoke invitation');
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Hero Banner */}
+    <div className="space-y-8 pb-12">
+      {/* Hero Header */}
       <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-6 sm:p-10 bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 text-white shadow-[0_8px_30px_rgba(109,40,217,0.25)] group">
         <div className="absolute -left-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
         <div className="relative z-10">
@@ -132,17 +130,32 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <NavLink to="/colleges" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Active Colleges</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-4xl font-black text-gray-900 group-hover:text-violet-600 transition-colors">{stats.collegeCount}</h3>
-              <span className="text-sm text-gray-500 font-medium">registered</span>
+              <h3 className="text-3xl font-black text-gray-900 group-hover:text-violet-600 transition-colors">{stats.collegeCount}</h3>
+              <span className="text-xs text-gray-500 font-medium">registered</span>
             </div>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-50 flex items-center justify-center text-violet-500 shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
             <School size={22} strokeWidth={2.5} />
+          </div>
+        </NavLink>
+
+        <NavLink to="/analytics" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Platform Analytics</p>
+            <div className="flex items-baseline gap-1">
+              <h3 className="text-lg font-black text-gray-900 group-hover:text-emerald-600 transition-colors">Cross-Campus</h3>
+            </div>
+            <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
+              View Insights <ArrowRight size={12} />
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-50 flex items-center justify-center text-emerald-600 shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
+            <BarChart3 size={22} strokeWidth={2.5} />
           </div>
         </NavLink>
 
