@@ -21,6 +21,8 @@ import UserApprovals from './pages/Admin/UserApprovals'
 import SuperAdminDashboard from './pages/Admin/SuperAdminDashboard'
 import CollegeManagement from './pages/Admin/CollegeManagement'
 import MessManagement from './pages/Admin/MessManagement'
+import SuperAdminAnalytics from './pages/Admin/SuperAdminAnalytics'
+import CollegeAdminAnalytics from './pages/Admin/CollegeAdminAnalytics'
 
 // Modules
 import ComplaintsList from './pages/Complaints/ComplaintsList'
@@ -70,6 +72,7 @@ function App() {
             <Route path="/dashboard/vendor" element={<ProtectedRoute allowedRoles={['vendor']}><VendorDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/college_admin" element={<ProtectedRoute allowedRoles={['college_admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/super_admin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminDashboard /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminAnalytics /></ProtectedRoute>} />
             <Route path="/colleges" element={<ProtectedRoute allowedRoles={['super_admin']}><CollegeManagement /></ProtectedRoute>} />
 
             <Route
@@ -118,6 +121,7 @@ function App() {
             />
             <Route path="/approvals" element={<ProtectedRoute allowedRoles={['college_admin']}><UserApprovals /></ProtectedRoute>} />
             <Route path="/messes" element={<ProtectedRoute allowedRoles={['college_admin']}><MessManagement /></ProtectedRoute>} />
+            <Route path="/college-analytics" element={<ProtectedRoute allowedRoles={['college_admin']}><CollegeAdminAnalytics /></ProtectedRoute>} />
 
             <Route path="/" element={
               <Navigate to={

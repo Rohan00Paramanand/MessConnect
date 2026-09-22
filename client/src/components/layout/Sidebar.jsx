@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
-import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, ChevronLeft, Menu, School } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, ChevronLeft, Menu, School, BarChart3 } from 'lucide-react';
 
 const roleColors = {
   user:           { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
@@ -39,6 +39,7 @@ const getLinks = (role) => {
     );
   } else if (role === 'college_admin') {
     base.push(
+      { name: 'Campus Analytics', path: '/college-analytics', icon: BarChart3 },
       { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
       { name: 'Manage Messes', path: '/messes', icon: School },
       { name: 'Staff', path: '/staff', icon: Users },
@@ -48,6 +49,7 @@ const getLinks = (role) => {
     );
   } else if (role === 'super_admin') {
     base.push(
+      { name: 'Analytics', path: '/analytics', icon: BarChart3 },
       { name: 'Manage Colleges', path: '/colleges', icon: School }
     );
   }
