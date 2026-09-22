@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
-import { ShieldCheck, Activity, ArrowRight, Server } from 'lucide-react';
+import { ShieldCheck, Activity, ArrowRight, Server, BarChart3 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -17,7 +17,7 @@ const AdminDashboard = () => {
   }, [user]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 pb-12">
       {/* Hero Banner */}
       <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-6 sm:p-10 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-[0_8px_30px_rgba(79,70,229,0.25)] group">
         <div className="absolute -left-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
@@ -34,7 +34,22 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats + Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <NavLink to="/college-analytics" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Campus Analytics</p>
+            <div className="flex items-baseline gap-1">
+              <h3 className="text-lg font-black text-gray-900 group-hover:text-indigo-600 transition-colors">Mess & Quality</h3>
+            </div>
+            <span className="text-[11px] text-indigo-600 font-bold flex items-center gap-1 mt-1">
+              View Insights <ArrowRight size={12} />
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-50 flex items-center justify-center text-indigo-600 shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
+            <BarChart3 size={22} strokeWidth={2.5} />
+          </div>
+        </NavLink>
+
         <NavLink to="/approvals" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Verification Queue</p>
@@ -58,12 +73,12 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <NavLink to="/complaints" className="sm:col-span-2 lg:col-span-1 bg-gray-900 rounded-2xl p-5 flex items-center justify-between group hover:bg-gray-800 hover:-translate-y-0.5 transition-all duration-200 text-white">
+        <NavLink to="/complaints" className="bg-gray-900 rounded-2xl p-5 flex items-center justify-between group hover:bg-gray-800 hover:-translate-y-0.5 transition-all duration-200 text-white">
           <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Global Audit</p>
-            <h3 className="text-xl font-black">View All Complaints →</h3>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Campus Audit</p>
+            <h3 className="text-base font-black">All Complaints →</h3>
           </div>
-          <ArrowRight className="text-gray-500 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all flex-shrink-0" size={22} />
+          <ArrowRight className="text-gray-500 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all flex-shrink-0" size={20} />
         </NavLink>
       </div>
     </div>

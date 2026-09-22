@@ -1,5 +1,13 @@
 import express from 'express';
-import { getPendingUsers, approveUser, denyUser, getPendingStaff, approveStaff, denyStaff } from '../controllers/admin.controller.js';
+import {
+    getPendingUsers,
+    approveUser,
+    denyUser,
+    getPendingStaff,
+    approveStaff,
+    denyStaff,
+    getCollegeAdminAnalytics
+} from '../controllers/admin.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -7,6 +15,7 @@ const router = express.Router();
 router.use(protect);
 router.use(authorizeRoles('college_admin'));
 
+router.get('/analytics', getCollegeAdminAnalytics);
 router.get('/pending-users', getPendingUsers);
 router.patch('/approve-user/:id', approveUser);
 router.post('/deny-user/:id', denyUser);
