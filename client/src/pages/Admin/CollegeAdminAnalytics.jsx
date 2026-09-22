@@ -339,11 +339,10 @@ export default function CollegeAdminAnalytics() {
 
                     <td className="px-6 py-4 text-right">
                       <span
-                        className={`inline-flex items-center text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                          mess.isActive
+                        className={`inline-flex items-center text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${mess.isActive
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-gray-100 text-gray-500 border-gray-200'
-                        }`}
+                          }`}
                       >
                         {mess.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -461,13 +460,12 @@ export default function CollegeAdminAnalytics() {
                       </div>
                       <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            cat.avgRating >= 4
+                          className={`h-full rounded-full transition-all duration-500 ${cat.avgRating >= 4
                               ? 'bg-emerald-500'
                               : cat.avgRating >= 3
-                              ? 'bg-amber-500'
-                              : 'bg-rose-500'
-                          }`}
+                                ? 'bg-amber-500'
+                                : 'bg-rose-500'
+                            }`}
                           style={{ width: `${pct}%` }}
                         ></div>
                       </div>

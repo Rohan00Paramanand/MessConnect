@@ -769,7 +769,7 @@ export const getSuperAdminAnalytics = async (req, res) => {
                 { $sort: { '_id.year': 1, '_id.month': 1 } }
             ]),
             Promise.all([
-                User.countDocuments({ role: { $in: ['user', 'vendor', 'mess_committee'] }, isApprovedByAdmin: false }),
+                User.countDocuments({ role: { $in: ['vendor', 'mess_committee'] }, isApprovedByAdmin: false }),
                 User.countDocuments({ role: { $ne: 'super_admin' }, trustMeter: { $lt: 50 } }),
                 User.countDocuments({ bannedUntil: { $gt: now } }),
                 User.countDocuments({ role: { $ne: 'super_admin' }, isActive: false })

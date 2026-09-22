@@ -150,7 +150,7 @@ const signup = async (req, res) => {
             messAssigned: data.messAssigned,
             collegeId: collegeId || undefined,
             isVerified: true,        // verified by OTP
-            isApprovedByAdmin: false  // pending college_admin review for vendor/committee
+            isApprovedByAdmin: data.role === 'user'  // students auto-approved; vendor/committee require college_admin review
         });
 
         // Cleanup OTP

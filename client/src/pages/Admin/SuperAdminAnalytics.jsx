@@ -168,7 +168,7 @@ export default function SuperAdminAnalytics() {
               <div className="flex items-center gap-4 mt-1 text-xs text-amber-800 flex-wrap">
                 {healthSignals.pendingApprovals > 0 && (
                   <span className="font-semibold underline">
-                    {healthSignals.pendingApprovals} user{healthSignals.pendingApprovals > 1 ? 's' : ''} awaiting campus admin verification
+                    {healthSignals.pendingApprovals} vendor/committee applicant{healthSignals.pendingApprovals > 1 ? 's' : ''} awaiting campus admin verification
                   </span>
                 )}
                 {healthSignals.lowTrustUsers > 0 && (
