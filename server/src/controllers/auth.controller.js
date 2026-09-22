@@ -32,7 +32,6 @@ const baseSchema = z.object({
     phoneNumber: z.string().min(10),
 
     collegeId: z.string().optional(),
-    collegeSlug: z.string().optional(),
     messAssigned: z.string().optional(), // ObjectId of the Mess
     companyName: z.string().optional(),
     otp: z.string().length(6, { message: "OTP must be exactly 6 digits." })
@@ -74,19 +73,12 @@ const signup = async (req, res) => {
 
         const emailDomain = data.email.split("@")[1];
 
-        // Vendors provide their college via collegeId or collegeSlug in the request body
+        // Vendors provide their college strictly via collegeId in the request body
         if (data.role === "vendor") {
-            const collegeIdentifier = data.collegeId || data.collegeSlug;
-            if (!collegeIdentifier) {
-                return res.status(400).json({ message: "College is required for vendors" });
+            if (!data.collegeId) {
+                return res.status(400).json({ message: "College ID is required for vendors" });
             }
-            let college = null;
-            if (data.collegeId) {
-                college = await College.findById(data.collegeId);
-            }
-            if (!college && data.collegeSlug) {
-                college = await College.findOne({ slug: data.collegeSlug });
-            }
+            const college = await College.findById(data.collegeId);
             if (!college) {
                 return res.status(400).json({ message: "Invalid college provided." });
             }
@@ -278,7 +270,7 @@ const logout = (req, res) => {
 
 const sendOtp = async (req, res) => {
     try {
-        const { email, phoneNumber, role, collegeId, collegeSlug, messAssigned } = req.body;
+        const { email, phoneNumber, role, collegeId, messAssigned } = req.body;
 
         if (!email && !phoneNumber) {
             return res.status(400).json({ message: "Email or Phone Number is required" });
@@ -311,17 +303,10 @@ const sendOtp = async (req, res) => {
             if (!messAssigned) {
                 return res.status(400).json({ message: "Vendor must select an assigned mess." });
             }
-            const collegeIdentifier = collegeId || collegeSlug;
-            if (!collegeIdentifier) {
-                return res.status(400).json({ message: "College is required for vendor." });
+            if (!collegeId) {
+                return res.status(400).json({ message: "College ID is required for vendor." });
             }
-            let college = null;
-            if (collegeId) {
-                college = await College.findById(collegeId);
-            }
-            if (!college && collegeSlug) {
-                college = await College.findOne({ slug: collegeSlug });
-            }
+            const college = await College.findById(collegeId);
             if (!college) {
                 return res.status(400).json({ message: "Invalid college selected." });
             }

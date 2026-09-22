@@ -52,20 +52,17 @@ const Signup = () => {
 
   useEffect(() => {
     if (formData.role === 'vendor' && formData.collegeId) {
-      const selectedCollege = colleges.find(c => c._id === formData.collegeId);
-      if (selectedCollege) {
-        api.get(`/auth/messes?collegeId=${selectedCollege._id}`)
-          .then(({ data }) => {
-            setTimeout(() => setMesses(data.data || []), 0);
-          })
-          .catch(() => {
-            setTimeout(() => setMesses([]), 0);
-          });
-      }
+      api.get(`/auth/messes?collegeId=${formData.collegeId}`)
+        .then(({ data }) => {
+          setMesses(data.data || []);
+        })
+        .catch(() => {
+          setMesses([]);
+        });
     } else {
-      setTimeout(() => setMesses([]), 0);
+      setMesses([]);
     }
-  }, [formData.role, formData.collegeId, colleges]);
+  }, [formData.role, formData.collegeId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -345,18 +342,22 @@ const Signup = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Select College</label>
                       <select
-                        name="collegeSlug"
+                        name="collegeId"
                         required
-                        value={formData.collegeSlug}
+                        value={formData.collegeId}
                         onChange={(e) => {
-                          const slug = e.target.value;
-                          setFormData({ ...formData, collegeSlug: slug, messAssigned: '' });
+                          const colId = e.target.value;
+                          setFormData(prev => ({
+                            ...prev,
+                            collegeId: colId,
+                            messAssigned: ''
+                          }));
                         }}
                         className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500"
                       >
                         <option value="">Select College</option>
                         {colleges.map(c => (
-                          <option key={c._id} value={c.slug}>{c.name}</option>
+                          <option key={c._id} value={c._id}>{c.name}</option>
                         ))}
                       </select>
                     </div>
@@ -373,7 +374,13 @@ const Signup = () => {
                         className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500"
                         disabled={!formData.collegeId}
                       >
-                        <option value="">{formData.collegeSlug ? 'Select Mess' : 'Select a college first'}</option>
+                        <option value="">
+                          {!formData.collegeId
+                            ? 'Select a college first'
+                            : messes.length === 0
+                            ? 'No active messes found for this college'
+                            : 'Select Mess'}
+                        </option>
                         {messes.map(m => (
                           <option key={m._id} value={m._id}>{m.name}</option>
                         ))}
