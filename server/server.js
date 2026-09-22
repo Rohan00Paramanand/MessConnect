@@ -71,6 +71,22 @@ app.use(cookieParser())
 const __dirname = path.resolve();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Health check endpoint (used by Docker, Nginx, and Maintenance auto-reconnect)
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Optional Maintenance Mode middleware (activated if MAINTENANCE_MODE=true in .env)
+app.use((req, res, next) => {
+    if (process.env.MAINTENANCE_MODE === 'true' && req.path !== '/api/health') {
+        return res.status(503).json({
+            status: 'maintenance',
+            message: 'PCET MessConnect is currently undergoing scheduled maintenance. Please check back shortly.'
+        });
+    }
+    next();
+});
+
 // ROUTES
 app.use('/api/auth', authRoutes);
 app.use('/api/complaints', complaintRoutes);

@@ -26,6 +26,21 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
     }
 
+    // When backend container is down, recomposing, or under maintenance (502, 503, or connection drop)
+    const isMaintenanceOrOffline =
+      error.response?.status === 502 ||
+      error.response?.status === 503 ||
+      error.code === 'ERR_NETWORK' ||
+      error.code === 'ECONNREFUSED' ||
+      error.message?.includes('Network Error');
+
+    // Do not trigger global maintenance screen on health-check endpoints themselves
+    const isHealthCheck = error.config?.url?.includes('/health');
+
+    if (isMaintenanceOrOffline && !isHealthCheck) {
+      window.dispatchEvent(new CustomEvent('app:maintenance', { detail: true }));
+    }
+
     return Promise.reject(error);
   }
 );

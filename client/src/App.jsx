@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import useAuthStore from './store/useAuthStore'
 
 // Layouts & Protected Routes
@@ -12,6 +12,7 @@ import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
 import ForgotPassword from './pages/Auth/ForgotPassword'
 import AcceptInvitation from './pages/Auth/AcceptInvitation'
+import Maintenance from './pages/Maintenance/Maintenance'
 import StudentDashboard from './pages/Dashboard/StudentDashboard'
 import CommitteeDashboard from './pages/Dashboard/CommitteeDashboard'
 import VendorDashboard from './pages/Dashboard/VendorDashboard'
@@ -30,15 +31,31 @@ import WeeklyTimetable from './pages/Timetable/WeeklyTimetable'
 
 function App() {
   const { user, checkAuth } = useAuthStore()
+  const [isMaintenance, setIsMaintenance] = useState(false)
 
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
 
+  // Listen for global 502/503/server offline events from axios
+  useEffect(() => {
+    const handleMaintenanceEvent = (event) => {
+      setIsMaintenance(Boolean(event.detail))
+    }
+    window.addEventListener('app:maintenance', handleMaintenanceEvent)
+    return () => window.removeEventListener('app:maintenance', handleMaintenanceEvent)
+  }, [])
+
+  // If server is recomposing or offline, render full-screen Maintenance view
+  if (isMaintenance) {
+    return <Maintenance onRestore={() => { setIsMaintenance(false); checkAuth(); }} />
+  }
+
   return (
     <>
       <Toaster position="top-right" />
       <Routes>
+        <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
