@@ -169,7 +169,9 @@ const Sidebar = () => {
         {/* Close button on the right edge of the sidebar */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-1/2 -translate-y-1/2 -right-4 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors z-10"
+          className={`absolute top-1/2 -translate-y-1/2 -right-4 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200 z-10 ${
+            mobileOpen ? 'opacity-100 scale-100' : 'opacity-0 pointer-events-none scale-75 invisible'
+          }`}
           aria-label="Close menu"
         >
           <ChevronLeft size={16} />
