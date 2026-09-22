@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import OtpInput from '../../components/ui/OtpInput';
+import Footer from '../../components/layout/Footer';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -264,7 +265,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen auth-gradient flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden select-none">
+    <div className="min-h-screen auth-gradient flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 relative overflow-x-hidden select-none">
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-teal-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow"></div>
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
 
@@ -484,6 +485,8 @@ const Signup = () => {
 
         </div>
       </div>
+
+      <Footer className="mt-12 relative z-10" />
     </div>
   );
 };

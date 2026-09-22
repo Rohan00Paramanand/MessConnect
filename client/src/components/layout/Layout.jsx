@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import Footer from './Footer';
 import useAuthStore from '../../store/useAuthStore';
 
 const routeTitles = {
@@ -38,9 +39,12 @@ const Layout = () => {
         </header>
 
         {/* ─── Page Content ─── */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
+          <div className="max-w-7xl mx-auto w-full flex-1">
             <Outlet />
+          </div>
+          <div className="max-w-7xl mx-auto w-full mt-8 pt-4 border-t border-gray-200/40">
+            <Footer />
           </div>
         </main>
       </div>

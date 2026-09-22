@@ -5,6 +5,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import Footer from '../../components/layout/Footer';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -75,17 +76,17 @@ const Login = () => {
       </div>
       
       {/* Right Panel – Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative" style={{background: 'radial-gradient(at 20% 80%, hsla(189,100%,60%,0.08) 0px, transparent 60%), radial-gradient(at 80% 20%, hsla(28,100%,74%,0.1) 0px, transparent 60%), #fafafa'}}>
+      <div className="w-full lg:w-1/2 flex flex-col justify-between items-center p-6 sm:p-8 min-h-screen relative" style={{background: 'radial-gradient(at 20% 80%, hsla(189,100%,60%,0.08) 0px, transparent 60%), radial-gradient(at 80% 20%, hsla(28,100%,74%,0.1) 0px, transparent 60%), #fafafa'}}>
         {/* Mobile logo */}
-        <div className="absolute top-8 left-8 lg:hidden flex items-center gap-2">
-  	<img
-    	src="/pcet.png"
-    	alt="PCET MessConnect Logo"
-    	className="w-9 h-9 flex-shrink-0 object-cover rounded-lg shadow-sm ring-1 ring-gray-200"
-  	/>
-  	<span className="text-gray-900 font-bold">PCET MessConnect</span>
-      	</div>        
-        <div className="w-full max-w-md animate-fade-in">
+        <div className="w-full lg:hidden flex items-center gap-2 mb-6">
+          <img
+            src="/pcet.png"
+            alt="PCET MessConnect Logo"
+            className="w-9 h-9 flex-shrink-0 object-cover rounded-lg shadow-sm ring-1 ring-gray-200"
+          />
+          <span className="text-gray-900 font-bold">PCET MessConnect</span>
+        </div>        
+        <div className="w-full max-w-md my-auto animate-fade-in">
           <div className="mb-10">
             <h2 className="text-3xl font-black text-gray-900 mb-2">Sign in</h2>
             <p className="text-gray-500">
@@ -130,6 +131,9 @@ const Login = () => {
             </form>
           </div>
         </div>
+
+        {/* Bottom Footer */}
+        <Footer className="mt-8 pt-4 w-full" />
       </div>
     </div>
   );

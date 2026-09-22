@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Wrench, ShieldAlert } from 'lucide-react';
 import api from '../../api/axios';
+import Footer from '../../components/layout/Footer';
 
 const Maintenance = ({ onRestore }) => {
   const [checking, setChecking] = useState(false);
@@ -29,8 +30,8 @@ const Maintenance = ({ onRestore }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 auth-gradient select-none">
-      <div className="max-w-md w-full bg-white/85 backdrop-blur-2xl border border-white/80 rounded-3xl p-8 sm:p-10 text-center shadow-2xl shadow-gray-400/20 relative z-10 animate-fade-in">
+    <div className="min-h-screen flex flex-col justify-between items-center p-4 auth-gradient select-none">
+      <div className="max-w-md w-full bg-white/85 backdrop-blur-2xl border border-white/80 rounded-3xl p-8 sm:p-10 text-center shadow-2xl shadow-gray-400/20 relative z-10 animate-fade-in my-auto">
         {/* Logo and Aura */}
         <div className="relative inline-block mb-6">
           <div className="absolute -inset-2 bg-teal-500/20 rounded-3xl blur-md animate-pulse"></div>
@@ -75,6 +76,8 @@ const Maintenance = ({ onRestore }) => {
           PCET MessConnect • Pimpri Chinchwad Education Trust
         </p>
       </div>
+
+      <Footer className="relative z-10" />
     </div>
   );
 };
