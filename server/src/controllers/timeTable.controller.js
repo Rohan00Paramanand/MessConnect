@@ -99,7 +99,9 @@ export const getTimeTable = async (req, res) => {
 
         const timeTable = await TimeTable.find(query)
             .populate('createdBy', 'name')
-            .sort({ date: 1, mealType: 1 }); // Sort by date, then meal type
+            .sort({ date: 1, mealType: 1 })
+            .lean();
+
 
         res.status(200).json({
             status: 'success',

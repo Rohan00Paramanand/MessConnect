@@ -70,7 +70,9 @@ export const getNotices = async (req, res) => {
 
         const notices = await Notice.find(query)
             .populate('createdBy', 'name email')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
+
 
         res.status(200).json({
             status: 'success',

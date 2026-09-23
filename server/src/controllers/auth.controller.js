@@ -465,7 +465,7 @@ const getMe = async (req, res) => {
 
 const getActiveColleges = async (req, res) => {
     try {
-        const colleges = await College.find({ isActive: true }).select('name allowedDomains');
+        const colleges = await College.find({ isActive: true }).select('name allowedDomains').lean();
         res.status(200).json({ status: 'success', data: colleges });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
@@ -482,12 +482,13 @@ const getMesses = async (req, res) => {
         if (!collegeId) {
             return res.status(400).json({ status: 'error', message: 'collegeId is required' });
         }
-        const messes = await Mess.find({ collegeId, isActive: true }).select('name');
+        const messes = await Mess.find({ collegeId, isActive: true }).select('name').lean();
         res.status(200).json({ status: 'success', data: messes });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
     }
 };
+
 
 /* =============================
    INVITATION — VERIFY TOKEN
