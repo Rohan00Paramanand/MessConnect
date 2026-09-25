@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import OtpInput from '../../components/ui/OtpInput';
-import Footer from '../../components/layout/Footer';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -242,8 +241,6 @@ const ForgotPassword = () => {
 
         </div>
       </div>
-
-      <Footer className="mt-12 relative z-10" />
     </div>
   );
 };

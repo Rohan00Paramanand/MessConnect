@@ -5,7 +5,6 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import Footer from '../../components/layout/Footer';
 
 const AcceptInvitation = () => {
   const [searchParams] = useSearchParams();
@@ -228,8 +227,6 @@ const AcceptInvitation = () => {
           </form>
         </div>
       </div>
-
-      <Footer className="mt-12 relative z-10" />
     </div>
   );
 };

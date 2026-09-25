@@ -5,7 +5,6 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import Footer from '../../components/layout/Footer';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -131,9 +130,6 @@ const Login = () => {
             </form>
           </div>
         </div>
-
-        {/* Bottom Footer */}
-        <Footer className="mt-8 pt-4 w-full" />
       </div>
     </div>
   );

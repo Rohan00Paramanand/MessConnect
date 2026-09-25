@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Wrench, ShieldAlert } from 'lucide-react';
 import api from '../../api/axios';
-import Footer from '../../components/layout/Footer';
 
 const Maintenance = ({ onRestore }) => {
   const [checking, setChecking] = useState(false);
@@ -71,13 +70,10 @@ const Maintenance = ({ onRestore }) => {
           <span>{checking ? 'Checking Connection...' : 'Check Connection Now'}</span>
         </button>
 
-        {/* Footer */}
         <p className="text-[11px] font-semibold text-gray-400 mt-5">
           PCET MessConnect • Pimpri Chinchwad Education Trust
         </p>
       </div>
-
-      <Footer className="relative z-10" />
     </div>
   );
 };
