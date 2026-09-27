@@ -90,12 +90,6 @@ export const createCollege = async (req, res) => {
             contactPhone: validatedData.contactPhone || undefined
         });
 
-        // 5. If registered by a college_admin who does not yet have a collegeId, bind them
-        if (req.user && req.user.role === 'college_admin' && !req.user.collegeId) {
-            req.user.collegeId = college._id;
-            await req.user.save();
-        }
-
         return res.status(201).json({
             status: 'success',
             data: college
@@ -216,14 +210,6 @@ export const updateCollegeStatus = async (req, res) => {
 export const updateCollege = async (req, res) => {
     try {
         const { id } = req.params;
-
-        // If college_admin, verify authorization
-        if (req.user && req.user.role === 'college_admin' && req.user.collegeId && req.user.collegeId.toString() !== id) {
-            return res.status(403).json({
-                status: 'error',
-                message: 'You are only authorized to edit your assigned college'
-            });
-        }
 
         // 1. Validate request
         const validatedData = createCollegeSchema.parse(req.body);
