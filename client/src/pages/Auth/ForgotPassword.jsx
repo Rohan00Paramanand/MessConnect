@@ -121,20 +121,20 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen auth-gradient flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 relative overflow-x-hidden select-none">
+    <div className="min-h-screen auth-gradient flex flex-col justify-between py-8 sm:py-12 px-3 sm:px-6 lg:px-8 relative overflow-x-hidden select-none">
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-teal-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow"></div>
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-rose-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-4 sm:mb-6">
           <img
             src="/pcet.png"
             alt="PCET MessConnect Logo"
-            className="w-16 h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200"
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200"
           />
         </div>
-        <h2 className="mt-2 text-center text-4xl font-black tracking-tight text-gray-900">Reset Password</h2>
-        <p className="mt-3 text-center text-sm font-medium text-gray-500">
+        <h2 className="mt-2 text-center text-3xl sm:text-4xl font-black tracking-tight text-gray-900">Reset Password</h2>
+        <p className="mt-2 sm:mt-3 text-center text-xs sm:text-sm font-medium text-gray-500">
           Remember your password?{' '}
           <Link to="/login" className="font-bold text-teal-600 hover:text-teal-500 transition-colors">
             Sign in
@@ -142,8 +142,8 @@ const ForgotPassword = () => {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <div className="glass-panel py-10 px-6 shadow-2xl shadow-gray-400/20 sm:rounded-3xl sm:px-12 border border-white/60">
+      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="glass-panel py-6 px-4 sm:py-10 sm:px-12 shadow-2xl shadow-gray-400/20 rounded-2xl sm:rounded-3xl border border-white/60">
 
           {!otpStep ? (
             <form onSubmit={handleSendOtp} className="space-y-6">
@@ -186,7 +186,7 @@ const ForgotPassword = () => {
               </div>
 
               {/* 1-Minute Resend Timer / Action */}
-              <div className="flex items-center justify-center text-sm mb-4">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs sm:text-sm mb-4 text-center">
                 {resendTimer > 0 ? (
                   <p className="text-gray-500 font-medium">
                     Resend OTP in{' '}
@@ -195,7 +195,7 @@ const ForgotPassword = () => {
                     </span>
                   </p>
                 ) : (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
                     <span className="text-gray-500">Didn't receive code?</span>
                     <button
                       type="button"

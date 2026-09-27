@@ -75,7 +75,7 @@ const Login = () => {
       </div>
       
       {/* Right Panel – Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-between items-center p-6 sm:p-8 min-h-screen relative" style={{background: 'radial-gradient(at 20% 80%, hsla(189,100%,60%,0.08) 0px, transparent 60%), radial-gradient(at 80% 20%, hsla(28,100%,74%,0.1) 0px, transparent 60%), #fafafa'}}>
+      <div className="w-full lg:w-1/2 flex flex-col justify-between items-center p-4 sm:p-8 min-h-screen relative" style={{background: 'radial-gradient(at 20% 80%, hsla(189,100%,60%,0.08) 0px, transparent 60%), radial-gradient(at 80% 20%, hsla(28,100%,74%,0.1) 0px, transparent 60%), #fafafa'}}>
         {/* Mobile logo */}
         <div className="w-full lg:hidden flex items-center gap-2 mb-6">
           <img
@@ -86,9 +86,9 @@ const Login = () => {
           <span className="text-gray-900 font-bold">PCET MessConnect</span>
         </div>        
         <div className="w-full max-w-md my-auto animate-fade-in">
-          <div className="mb-10">
-            <h2 className="text-3xl font-black text-gray-900 mb-2">Sign in</h2>
-            <p className="text-gray-500">
+          <div className="mb-6 sm:mb-10">
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">Sign in</h2>
+            <p className="text-sm sm:text-base text-gray-500">
               New to MessConnect?{' '}
               <Link to="/signup" className="font-bold text-teal-600 hover:text-teal-500 transition-colors">
                 Create account →
@@ -96,7 +96,7 @@ const Login = () => {
             </p>
           </div>
 
-          <div className="bg-white/60 backdrop-blur-xl border border-white rounded-3xl p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)]">
+          <div className="bg-white/60 backdrop-blur-xl border border-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)]">
             <form className="space-y-5" onSubmit={handleSubmit}>
               <Input
                 label="Email address"
