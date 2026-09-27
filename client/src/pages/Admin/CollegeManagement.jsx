@@ -1,11 +1,136 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle } from 'lucide-react';
+import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle, Globe } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import useAuthStore from '../../store/useAuthStore';
+
+// Dynamic multi-domain assignment component with interactive chips
+const DomainTagInput = ({ domains = [], onChange, label = "Allowed Email Domains", required = true }) => {
+  const [inputVal, setInputVal] = useState('');
+  const [inputError, setInputError] = useState('');
+
+  const addDomainFromText = (rawText) => {
+    setInputError('');
+    if (!rawText || !rawText.trim()) return;
+
+    // Split on commas, spaces, or semicolons so multiple domains can be pasted/entered
+    const tokens = rawText
+      .split(/[\s,;]+/)
+      .map(d => d.trim().toLowerCase())
+      .filter(Boolean);
+
+    const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const validToAdd = [];
+
+    for (const token of tokens) {
+      if (!domainRegex.test(token)) {
+        setInputError(`"${token}" is not a valid domain format (e.g. pccoe.org or college.edu)`);
+        return;
+      }
+      if (domains.includes(token) || validToAdd.includes(token)) {
+        setInputError(`"${token}" is already added.`);
+        return;
+      }
+      validToAdd.push(token);
+    }
+
+    if (validToAdd.length > 0) {
+      onChange([...domains, ...validToAdd]);
+      setInputVal('');
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addDomainFromText(inputVal);
+    }
+  };
+
+  const handleRemove = (domainToRemove) => {
+    onChange(domains.filter(d => d !== domainToRemove));
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-semibold text-gray-700">
+          {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+        <span className="text-xs font-semibold text-gray-400">
+          {domains.length} domain{domains.length === 1 ? '' : 's'} assigned
+        </span>
+      </div>
+
+      {/* Input Row */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="e.g. pccoepune.org (press Enter or Add)"
+            value={inputVal}
+            onChange={(e) => {
+              setInputVal(e.target.value);
+              setInputError('');
+            }}
+            onKeyDown={handleKeyDown}
+            className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm font-medium placeholder:text-gray-400"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => addDomainFromText(inputVal)}
+          className="px-4 py-2.5 bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-bold rounded-xl border border-violet-200 transition-colors flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+        >
+          <Plus size={14} />
+          <span>Add Domain</span>
+        </button>
+      </div>
+
+      {inputError && (
+        <p className="text-xs text-rose-500 font-semibold">{inputError}</p>
+      )}
+
+      {/* Render Domain Chips */}
+      {domains.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 border border-gray-200/80 rounded-xl min-h-[42px] items-center">
+          {domains.map((domain) => (
+            <span
+              key={domain}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-violet-800 text-xs font-bold rounded-lg border border-violet-200 shadow-xs"
+            >
+              <Globe size={11} className="text-violet-500" />
+              <span>{domain}</span>
+              <button
+                type="button"
+                onClick={() => handleRemove(domain)}
+                className="text-gray-400 hover:text-rose-600 focus:outline-none ml-0.5 transition-colors p-0.5 rounded hover:bg-rose-50 cursor-pointer"
+                title={`Remove ${domain}`}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-amber-700 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5">
+          ⚠️ Please assign at least one domain for this college.
+        </p>
+      )}
+
+      <p className="text-[11px] text-gray-400">
+        You can assign multiple domains. Type or paste comma-separated domains and press Enter.
+      </p>
+    </div>
+  );
+};
 
 const CollegeManagement = () => {
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.role === 'super_admin';
+
   const [colleges, setColleges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -14,7 +139,7 @@ const CollegeManagement = () => {
   const [editingCollege, setEditingCollege] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
-    allowedDomains: '',
+    allowedDomains: [],
     contactEmail: '',
     contactPhone: ''
   });
@@ -34,7 +159,7 @@ const CollegeManagement = () => {
   // Create College form state
   const [formData, setFormData] = useState({
     name: '',
-    allowedDomains: '',
+    allowedDomains: [],
     contactEmail: '',
     contactPhone: ''
   });
@@ -64,31 +189,30 @@ const CollegeManagement = () => {
 
   const handleCreateCollege = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.allowedDomains) {
-      toast.error('Name and allowed domains are required');
+    if (!formData.name.trim()) {
+      toast.error('College name is required');
+      return;
+    }
+    if (!formData.allowedDomains || formData.allowedDomains.length === 0) {
+      toast.error('Please assign at least one allowed domain for this college');
       return;
     }
 
     setSubmitting(true);
     try {
-      const domainsArray = formData.allowedDomains
-        .split(',')
-        .map(d => d.trim().toLowerCase())
-        .filter(d => d.length > 0);
-
       const payload = {
-        name: formData.name,
-        allowedDomains: domainsArray,
+        name: formData.name.trim(),
+        allowedDomains: formData.allowedDomains,
         contactEmail: formData.contactEmail || undefined,
         contactPhone: formData.contactPhone || undefined
       };
 
-      const { data } = await api.post('/superadmin/colleges', payload);
-      toast.success('College registered successfully!');
+      await api.post('/superadmin/colleges', payload);
+      toast.success('College registered successfully with assigned domains!');
       
       setFormData({
         name: '',
-        allowedDomains: '',
+        allowedDomains: [],
         contactEmail: '',
         contactPhone: ''
       });
@@ -118,7 +242,7 @@ const CollegeManagement = () => {
     setEditingCollege(college);
     setEditFormData({
       name: college.name,
-      allowedDomains: college.allowedDomains.join(', '),
+      allowedDomains: Array.isArray(college.allowedDomains) ? college.allowedDomains : [],
       contactEmail: college.contactEmail || '',
       contactPhone: college.contactPhone || ''
     });
@@ -130,27 +254,26 @@ const CollegeManagement = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!editFormData.name || !editFormData.allowedDomains) {
-      toast.error('Name and allowed domains are required');
+    if (!editFormData.name.trim()) {
+      toast.error('College name is required');
+      return;
+    }
+    if (!editFormData.allowedDomains || editFormData.allowedDomains.length === 0) {
+      toast.error('Please assign at least one allowed domain for this college');
       return;
     }
 
     setUpdating(true);
     try {
-      const domainsArray = editFormData.allowedDomains
-        .split(',')
-        .map(d => d.trim().toLowerCase())
-        .filter(d => d.length > 0);
-
       const payload = {
-        name: editFormData.name,
-        allowedDomains: domainsArray,
+        name: editFormData.name.trim(),
+        allowedDomains: editFormData.allowedDomains,
         contactEmail: editFormData.contactEmail || undefined,
         contactPhone: editFormData.contactPhone || undefined
       };
 
       await api.put(`/superadmin/colleges/${editingCollege._id}`, payload);
-      toast.success('College updated successfully!');
+      toast.success('College and domains updated successfully!');
       
       await fetchColleges();
       setEditingCollege(null);
@@ -274,22 +397,13 @@ const handleDeleteAdmin = async (userId) => {
                 required
                 value={formData.name}
                 onChange={handleChange}
+                placeholder="e.g. PCET Pimpri Chinchwad College of Engineering"
               />
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Allowed Email Domains
-                </label>
-                <textarea
-                  name="allowedDomains"
-                  required
-                  rows={2}
-                  className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm font-medium"
-                  value={formData.allowedDomains}
-                  onChange={handleChange}
-                />
-                <p className="text-xs text-gray-400 mt-1">Separate multiple domains with commas.</p>
-              </div>
+              <DomainTagInput
+                domains={formData.allowedDomains}
+                onChange={(domains) => setFormData({ ...formData, allowedDomains: domains })}
+              />
 
               <Input
                 label="Contact Email (Optional)"
@@ -297,6 +411,7 @@ const handleDeleteAdmin = async (userId) => {
                 type="email"
                 value={formData.contactEmail}
                 onChange={handleChange}
+                placeholder="admin@college.edu"
               />
 
               <Input
@@ -304,6 +419,7 @@ const handleDeleteAdmin = async (userId) => {
                 name="contactPhone"
                 value={formData.contactPhone}
                 onChange={handleChange}
+                placeholder="+91 9876543210"
               />
 
               <Button type="submit" disabled={submitting} className="w-full bg-violet-600 hover:bg-violet-700">
@@ -375,52 +491,64 @@ const handleDeleteAdmin = async (userId) => {
                             </div>
                           </td>
                           <td className="p-4 text-center">
-                            <button
-                              onClick={() => handleToggleStatus(college._id, college.isActive)}
-                              title={college.isActive ? 'Deactivate College' : 'Activate College'}
-                              className="focus:outline-none transition-transform hover:scale-105 active:scale-95"
-                            >
-                              {college.isActive ? (
-                                <div className="flex flex-col items-center">
-                                  <ToggleRight className="text-emerald-500 h-7 w-7" />
-                                  <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Active</span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center">
-                                  <ToggleLeft className="text-gray-300 h-7 w-7" />
-                                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Inactive</span>
-                                </div>
-                              )}
-                            </button>
+                            {isSuperAdmin ? (
+                              <button
+                                onClick={() => handleToggleStatus(college._id, college.isActive)}
+                                title={college.isActive ? 'Deactivate College' : 'Activate College'}
+                                className="focus:outline-none transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                              >
+                                {college.isActive ? (
+                                  <div className="flex flex-col items-center">
+                                    <ToggleRight className="text-emerald-500 h-7 w-7" />
+                                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Active</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center">
+                                    <ToggleLeft className="text-gray-300 h-7 w-7" />
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Inactive</span>
+                                  </div>
+                                )}
+                              </button>
+                            ) : (
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold ${college.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                                {college.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            )}
                           </td>
                           <td className="p-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                onClick={() => openAssignModal(college)}
-                                title={admin ? "Change Admin" : "Assign Admin"}
-                                className={`text-xs px-2.5 py-1.5 font-bold rounded-xl flex items-center gap-1 border transition-all ${
-                                  admin 
-                                    ? 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100' 
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                }`}
-                              >
-                                {admin ? <UserCheck size={13} /> : <UserPlus size={13} />}
-                                {admin ? 'Change Admin' : 'Assign Admin'}
-                              </button>
-                              <button
-                                onClick={() => startEdit(college)}
-                                title="Edit College"
-                                className="text-xs px-2.5 py-1.5 font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center gap-1 border border-gray-200 transition-all"
-                              >
-                                <Edit size={13} /> Edit
-                              </button>
-                              <button
-                                onClick={() => setDeletingCollege(college)}
-                                title="Delete College"
-                                className="text-xs px-2.5 py-1.5 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl flex items-center gap-1 border border-rose-200 transition-all"
-                              >
-                                <Trash2 size={13} /> Delete
-                              </button>
+                              {isSuperAdmin && (
+                                <button
+                                  onClick={() => openAssignModal(college)}
+                                  title={admin ? "Change Admin" : "Assign Admin"}
+                                  className={`text-xs px-2.5 py-1.5 font-bold rounded-xl flex items-center gap-1 border transition-all ${
+                                    admin 
+                                      ? 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100' 
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  }`}
+                                >
+                                  {admin ? <UserCheck size={13} /> : <UserPlus size={13} />}
+                                  {admin ? 'Change Admin' : 'Assign Admin'}
+                                </button>
+                              )}
+                              {(isSuperAdmin || (user?.collegeId && user.collegeId.toString() === college._id.toString())) && (
+                                <button
+                                  onClick={() => startEdit(college)}
+                                  title="Edit College & Domains"
+                                  className="text-xs px-2.5 py-1.5 font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center gap-1 border border-gray-200 transition-all cursor-pointer"
+                                >
+                                  <Edit size={13} /> Edit
+                                </button>
+                              )}
+                              {isSuperAdmin && (
+                                <button
+                                  onClick={() => setDeletingCollege(college)}
+                                  title="Delete College"
+                                  className="text-xs px-2.5 py-1.5 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl flex items-center gap-1 border border-rose-200 transition-all cursor-pointer"
+                                >
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -460,20 +588,10 @@ const handleDeleteAdmin = async (userId) => {
                 onChange={handleEditChange}
               />
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Allowed Email Domains
-                </label>
-                <textarea
-                  name="allowedDomains"
-                  required
-                  rows={2}
-                  className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm font-medium"
-                  value={editFormData.allowedDomains}
-                  onChange={handleEditChange}
-                />
-                <p className="text-xs text-gray-400 mt-1">Separate multiple domains with commas.</p>
-              </div>
+              <DomainTagInput
+                domains={editFormData.allowedDomains}
+                onChange={(domains) => setEditFormData({ ...editFormData, allowedDomains: domains })}
+              />
 
               <Input
                 label="Contact Email (Optional)"

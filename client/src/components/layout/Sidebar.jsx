@@ -40,6 +40,7 @@ const getLinks = (role) => {
   } else if (role === 'college_admin') {
     base.push(
       { name: 'Campus Analytics', path: '/college-analytics', icon: BarChart3 },
+      { name: 'Manage Colleges', path: '/colleges', icon: School },
       { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
       { name: 'Manage Messes', path: '/messes', icon: School },
       { name: 'Staff', path: '/staff', icon: Users },

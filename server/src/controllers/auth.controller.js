@@ -71,7 +71,7 @@ const signup = async (req, res) => {
     try {
         let collegeId = null;
 
-        const emailDomain = data.email.split("@")[1];
+        const emailDomain = (data.email.split("@")[1] || "").toLowerCase().trim();
 
         // Vendors provide their college strictly via collegeId in the request body
         if (data.role === "vendor") {
