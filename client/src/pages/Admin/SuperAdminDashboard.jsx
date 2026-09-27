@@ -101,16 +101,21 @@ const SuperAdminDashboard = () => {
     toast.success('Invitation link copied to clipboard!');
   };
 
-  const handleDeleteInvite = async (id) => {
-    if (!window.confirm('Are you sure you want to revoke this invitation?')) return;
+  const handleDeleteInvitation = async (id, email) => {
+    const confirmMessage = email
+      ? `Are you sure you want to revoke the invitation for ${email}?`
+      : 'Are you sure you want to revoke this invitation?';
+    if (!window.confirm(confirmMessage)) return;
     try {
       await api.delete(`/superadmin/admins/invitations/${id}`);
-      toast.success('Invitation revoked');
+      toast.success('Invitation revoked successfully');
       await fetchDashboardData();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to revoke invitation');
     }
   };
+
+  const handleDeleteInvite = handleDeleteInvitation;
 
   return (
     <div className="space-y-8 pb-12">
