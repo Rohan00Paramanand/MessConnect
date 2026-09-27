@@ -8,11 +8,6 @@ import {
     denyStaff,
     getCollegeAdminAnalytics
 } from '../controllers/admin.controller.js';
-import {
-    createCollege,
-    getColleges,
-    updateCollege
-} from '../controllers/superadmin.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -28,9 +23,5 @@ router.post('/deny-user/:id', denyUser);
 router.get('/pending-staff', getPendingStaff);
 router.patch('/approve-staff/:id', approveStaff);
 router.delete('/deny-staff/:id', denyStaff);
-
-router.post('/colleges', createCollege);
-router.get('/colleges', getColleges);
-router.put('/colleges/:id', updateCollege);
 
 export default router;

@@ -7,6 +7,7 @@ import Invitation from "../models/invitation.model.js";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { sendEmail } from "../utils/sendEmail.js";
+import { otpEmailTemplate } from "../utils/emailTemplates.js";
 
 const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
 const upperCaseRegex = /[A-Z]/;
@@ -71,7 +72,7 @@ const signup = async (req, res) => {
     try {
         let collegeId = null;
 
-        const emailDomain = (data.email.split("@")[1] || "").toLowerCase().trim();
+        const emailDomain = data.email.split("@")[1];
 
         // Vendors provide their college strictly via collegeId in the request body
         if (data.role === "vendor") {
@@ -270,7 +271,14 @@ const logout = (req, res) => {
 
 const sendOtp = async (req, res) => {
     try {
-        const { email, phoneNumber, role, collegeId, messAssigned } = req.body;
+        const {
+            name,
+            email,
+            phoneNumber,
+            role,
+            collegeId,
+            messAssigned
+        } = req.body;
 
         if (!email && !phoneNumber) {
             return res.status(400).json({ message: "Email or Phone Number is required" });
@@ -320,39 +328,25 @@ const sendOtp = async (req, res) => {
             }
         }
 
-        // Check for active OTP sent within the last 60 seconds to prevent rapid resend abuse
-        const normalizedEmail = email ? email.toLowerCase().trim() : null;
-
-        if (normalizedEmail) {
-            const recentOtp = await Otp.findOne({
-                email: normalizedEmail,
-                createdAt: { $gte: new Date(Date.now() - 60 * 1000) }
-            });
-            if (recentOtp) {
-                return res.status(200).json({
-                    status: "success",
-                    message: "An OTP was recently sent. Please check your inbox or wait 60 seconds before requesting again."
-                });
-            }
-        }
-
         // Generate 6 digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await Otp.create({
-            email: normalizedEmail || undefined,
+            email: email ? email.toLowerCase() : undefined,
             phoneNumber,
             otp
         });
 
-        // Send OTP via email asynchronously in the background (non-blocking)
-        if (normalizedEmail) {
-            sendEmail({
-                email: normalizedEmail,
+        // Send OTP via email
+        if (email) {
+            await sendEmail({
+                email,
                 subject: 'MessConnect Verification OTP',
-                message: `Your verification OTP is: ${otp}. It is valid for 5 minutes.`
-            }).catch((err) => {
-                console.error(`[ASYNC OTP SEND ERROR] Failed to send email to ${normalizedEmail}:`, err.message);
+                message: `Your verification OTP is: ${otp}. It is valid for 5 minutes.`,
+                html: otpEmailTemplate({
+                    name,
+                    otp
+                })
             });
         }
 
@@ -383,19 +377,6 @@ const sendResetOtp = async (req, res) => {
             });
         }
 
-        // Check for active reset OTP sent within the last 60 seconds
-        const recentResetOtp = await Otp.findOne({
-            email: normalizedEmail,
-            createdAt: { $gte: new Date(Date.now() - 60 * 1000) }
-        });
-
-        if (recentResetOtp) {
-            return res.status(200).json({
-                status: "success",
-                message: "A password reset OTP was recently sent. Please check your inbox or wait 60 seconds."
-            });
-        }
-
         // Generate 6 digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -405,13 +386,11 @@ const sendResetOtp = async (req, res) => {
             otp
         });
 
-        // Send reset OTP asynchronously in the background (non-blocking)
-        sendEmail({
+        // Send reset OTP
+        await sendEmail({
             email: normalizedEmail,
             subject: 'MessConnect Password Reset OTP',
             message: `Your password reset OTP is: ${otp}. It is valid for 5 minutes.`
-        }).catch((err) => {
-            console.error(`[ASYNC RESET OTP SEND ERROR] Failed to send email to ${normalizedEmail}:`, err.message);
         });
 
         res.status(200).json({
