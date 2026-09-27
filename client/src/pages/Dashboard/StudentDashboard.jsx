@@ -52,15 +52,15 @@ const StudentDashboard = () => {
   return (
     <div className="space-y-4">
       {/* Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-6 sm:p-10 bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-700 text-white shadow-[0_8px_30px_rgba(20,184,166,0.2)] group">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-5 sm:p-10 bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-700 text-white shadow-[0_8px_30px_rgba(20,184,166,0.2)] group">
         <div className="absolute -right-12 -top-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
         <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
             Welcome,<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-100 to-white">{user?.name}</span>
           </h1>
-          <p className="text-teal-100 font-medium mt-3 max-w-md text-sm sm:text-base">Manage your mess details, provide feedback, or check today's notices.</p>
-          <div className="mt-6 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 max-w-xs sm:max-w-sm">
+          <p className="text-teal-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">Manage your mess details, provide feedback, or check today's notices.</p>
+          <div className="mt-5 sm:mt-6 p-3.5 sm:p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 w-full sm:max-w-sm">
             <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-teal-50 mb-1.5">
               <span className="flex items-center gap-1">🛡️ Trust Score</span>
               <span>{user?.trustMeter ?? 100}%</span>
@@ -112,15 +112,15 @@ const StudentDashboard = () => {
       </div>
 
       {/* Trending Complaints Section */}
-      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-3xl p-6 sm:p-8 mt-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-3xl p-4 sm:p-8 mt-4 sm:mt-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center">
-              <TrendingUp size={20} strokeWidth={2.5} />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center">
+              <TrendingUp size={18} strokeWidth={2.5} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-gray-900">Trending Issues</h2>
-              <p className="text-gray-500 text-sm font-medium">Top reported active problems in the mess</p>
+              <h2 className="text-lg sm:text-xl font-black text-gray-900">Trending Issues</h2>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium">Top reported active problems in the mess</p>
             </div>
           </div>
           <Link to="/complaints" className="hidden sm:flex text-sm font-bold text-teal-600 hover:text-teal-700 items-center gap-1">
@@ -131,13 +131,13 @@ const StudentDashboard = () => {
         {loading ? (
           <div className="flex justify-center p-8"><div className="w-8 h-8 border-2 border-gray-200 border-t-rose-500 rounded-full animate-spin"></div></div>
         ) : trendingComplaints.length === 0 ? (
-          <div className="text-center p-8 bg-gray-50/50 rounded-2xl border border-gray-100 border-dashed">
-            <p className="text-gray-500 font-medium">No trending issues at the moment. Everything is running smoothly!</p>
+          <div className="text-center p-6 sm:p-8 bg-gray-50/50 rounded-2xl border border-gray-100 border-dashed">
+            <p className="text-gray-500 font-medium text-sm">No trending issues at the moment. Everything is running smoothly!</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {trendingComplaints.map(complaint => (
-              <div key={complaint._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-all hover:border-gray-200">
+              <div key={complaint._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 bg-white border border-gray-100 rounded-xl sm:rounded-2xl hover:shadow-md transition-all hover:border-gray-200">
                 <div>
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-wider rounded-lg">
