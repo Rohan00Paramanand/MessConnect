@@ -190,13 +190,31 @@ export const updateComplaintStatus = async (req, res) => {
         // Handle auto-assignment when changing to 'assigned'
         if (status === 'assigned') {
             const User = (await import('../models/user.model.js')).default;
-            const vendor = await User.findOne({
-                role: 'vendor',
-                messAssigned: complaint.mess,
-                collegeId: req.collegeId,
-                isActive: true,
-                isApprovedByAdmin: true
-            });
+            let vendor = null;
+
+            // 1. If complaint was previously assigned to a vendor, reuse that active vendor
+            if (complaint.assignedTo) {
+                vendor = await User.findOne({
+                    _id: complaint.assignedTo,
+                    role: 'vendor',
+                    isActive: true,
+                    isApprovedByAdmin: true
+                });
+            }
+
+            // 2. Otherwise find active vendor assigned to this mess
+            if (!vendor) {
+                const vendorQuery = {
+                    role: 'vendor',
+                    messAssigned: complaint.mess,
+                    isActive: true,
+                    isApprovedByAdmin: true
+                };
+                if (req.collegeId) {
+                    vendorQuery.collegeId = req.collegeId;
+                }
+                vendor = await User.findOne(vendorQuery);
+            }
 
             if (!vendor) {
                 return res.status(400).json({
@@ -205,6 +223,7 @@ export const updateComplaintStatus = async (req, res) => {
                 });
             }
             complaint.assignedTo = vendor._id;
+            complaint.vendorCompletedAt = null; // Clear completion timestamp on re-assignment
         }
 
         complaint.status = status;

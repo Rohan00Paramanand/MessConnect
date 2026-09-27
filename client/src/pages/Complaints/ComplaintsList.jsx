@@ -334,14 +334,37 @@ const ComplaintsList = () => {
                         )}
                         {complaint.status === 'vendor_completed' && (
                           <>
+                            <option value="vendor_completed" disabled>🔍 Select Action...</option>
                             <option value="assigned">🔁 Re-assign to Vendor</option>
                             <option value="resolved">✅ Resolve</option>
                           </>
                         )}
                       </select>
                       {complaint.status === 'vendor_completed' && (
-                        <div className="text-xs text-center text-amber-600 bg-amber-50 rounded-xl px-3 py-2 font-bold border border-amber-200">
-                          Vendor marked complete — awaiting your review
+                        <div className="space-y-2 mt-1">
+                          <div className="text-[11px] text-center text-amber-700 bg-amber-50 rounded-xl px-2.5 py-1.5 font-bold border border-amber-200">
+                            Vendor marked complete — awaiting review
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleStatusUpdate(complaint._id, 'assigned')}
+                              className="flex-1 py-2 px-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                              title="Send back to vendor for rework"
+                            >
+                              <RefreshCw size={12} />
+                              <span>Re-assign</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusUpdate(complaint._id, 'resolved')}
+                              className="flex-1 py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                              title="Approve and mark resolved"
+                            >
+                              <CheckCircle size={12} />
+                              <span>Resolve</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
