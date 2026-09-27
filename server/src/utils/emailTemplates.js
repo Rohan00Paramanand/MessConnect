@@ -89,7 +89,6 @@ const emailLayout = ({
               "
             >
 
-              <!-- PCET Logo -->
               <img
                 src="${LOGO_URL}"
                 alt="PCET"
@@ -111,7 +110,6 @@ const emailLayout = ({
                 font-size: 26px;
                 line-height: 32px;
                 font-weight: 700;
-                margin: 0;
               ">
                 MessConnect
               </div>
@@ -197,11 +195,10 @@ const emailLayout = ({
 };
 
 
-/**
- * OTP Verification Email
- *
- * OTP expires in 5 minutes.
- */
+/* =========================================================
+   OTP VERIFICATION
+========================================================= */
+
 export const otpEmailTemplate = ({ name, otp }) => {
   const safeName = escapeHtml(name || 'there');
   const safeOtp = escapeHtml(otp);
@@ -247,7 +244,6 @@ export const otpEmailTemplate = ({ name, otp }) => {
       address and continue with your MessConnect account.
     </p>
 
-    <!-- OTP Card -->
     <table
       role="presentation"
       width="100%"
@@ -293,7 +289,6 @@ export const otpEmailTemplate = ({ name, otp }) => {
       </tr>
     </table>
 
-    <!-- Expiry -->
     <table
       role="presentation"
       width="100%"
@@ -322,7 +317,6 @@ export const otpEmailTemplate = ({ name, otp }) => {
       </tr>
     </table>
 
-    <!-- Security Notice -->
     <p style="
       margin: 0;
       color: #94a3b8;
@@ -338,6 +332,597 @@ export const otpEmailTemplate = ({ name, otp }) => {
     title: 'Verify your MessConnect account',
     preheader:
       'Your MessConnect verification code expires in 5 minutes.',
+    content,
+  });
+};
+
+
+/* =========================================================
+   PASSWORD RESET OTP
+========================================================= */
+
+export const passwordResetEmailTemplate = ({ name, otp }) => {
+  const safeName = escapeHtml(name || 'there');
+  const safeOtp = escapeHtml(otp);
+
+  const content = `
+    <div style="
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    ">
+      Password Reset
+    </div>
+
+    <h2 style="
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: 25px;
+      line-height: 32px;
+      font-weight: 700;
+    ">
+      Reset your password
+    </h2>
+
+    <p style="
+      margin: 0 0 18px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Hello <strong>${safeName}</strong>,
+    </p>
+
+    <p style="
+      margin: 0 0 25px;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      We received a request to reset your MessConnect
+      account password. Use the verification code below
+      to continue.
+    </p>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="margin: 25px 0 28px;"
+    >
+      <tr>
+        <td align="center">
+
+          <div style="
+            display: inline-block;
+            padding: 18px 30px;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+          ">
+            <div style="
+              color: #64748b;
+              font-size: 11px;
+              line-height: 16px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 7px;
+            ">
+              Reset Code
+            </div>
+
+            <div style="
+              color: #1d4ed8;
+              font-size: 30px;
+              line-height: 36px;
+              font-weight: 700;
+              letter-spacing: 7px;
+              padding-left: 7px;
+            ">
+              ${safeOtp}
+            </div>
+          </div>
+
+        </td>
+      </tr>
+    </table>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        margin: 0 0 20px;
+        background-color: #f8fafc;
+        border-radius: 8px;
+      "
+    >
+      <tr>
+        <td style="
+          padding: 13px 15px;
+          color: #64748b;
+          font-size: 13px;
+          line-height: 20px;
+          text-align: center;
+        ">
+          This password reset code expires in
+          <strong style="color: #334155;">
+            5 minutes
+          </strong>.
+        </td>
+      </tr>
+    </table>
+
+    <p style="
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      If you did not request a password reset,
+      you can safely ignore this email. Your password
+      will not be changed unless you complete the reset process.
+    </p>
+  `;
+
+  return emailLayout({
+    title: 'Reset your MessConnect password',
+    preheader:
+      'Your MessConnect password reset code expires in 5 minutes.',
+    content,
+  });
+};
+
+
+/* =========================================================
+   COLLEGE ADMIN INVITATION
+========================================================= */
+
+export const invitationEmailTemplate = ({
+  collegeName,
+  inviteLink,
+}) => {
+  const safeCollegeName = escapeHtml(collegeName);
+  const safeInviteLink = escapeHtml(inviteLink);
+
+  const content = `
+    <div style="
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    ">
+      College Administration
+    </div>
+
+    <h2 style="
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: 25px;
+      line-height: 32px;
+      font-weight: 700;
+    ">
+      You're invited to MessConnect
+    </h2>
+
+    <p style="
+      margin: 0 0 18px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      You have been invited to manage the MessConnect
+      portal for <strong>${safeCollegeName}</strong> as a
+      College Admin.
+    </p>
+
+    <p style="
+      margin: 0 0 25px;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Please complete your registration within
+      <strong style="color: #334155;">7 days</strong>.
+    </p>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="margin: 0 0 28px;"
+    >
+      <tr>
+        <td align="center">
+
+          <a
+            href="${safeInviteLink}"
+            style="
+              display: inline-block;
+              padding: 13px 25px;
+              background-color: #2563eb;
+              color: #ffffff;
+              text-decoration: none;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: 700;
+            "
+          >
+            Complete Registration
+          </a>
+
+        </td>
+      </tr>
+    </table>
+
+    <p style="
+      margin: 0 0 8px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      If the button does not work, copy and paste this link
+      into your browser:
+    </p>
+
+    <p style="
+      margin: 0 0 20px;
+      word-break: break-all;
+      color: #2563eb;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      ${safeInviteLink}
+    </p>
+
+    <p style="
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      If you did not expect this invitation, you can safely
+      ignore this email.
+    </p>
+  `;
+
+  return emailLayout({
+    title: 'MessConnect College Admin Invitation',
+    preheader:
+      `You have been invited to manage ${collegeName} on MessConnect.`,
+    content,
+  });
+};
+
+
+/* =========================================================
+   REGISTRATION REJECTED
+========================================================= */
+
+export const registrationRejectedEmailTemplate = ({
+  name,
+  reason,
+}) => {
+  const safeName = escapeHtml(name || 'there');
+  const safeReason = escapeHtml(reason || 'No reason was provided.');
+
+  const content = `
+    <div style="
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    ">
+      Registration Update
+    </div>
+
+    <h2 style="
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: 25px;
+      line-height: 32px;
+      font-weight: 700;
+    ">
+      Registration request not approved
+    </h2>
+
+    <p style="
+      margin: 0 0 18px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Dear <strong>${safeName}</strong>,
+    </p>
+
+    <p style="
+      margin: 0 0 25px;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Your registration request for MessConnect has been
+      denied by the college administrator.
+    </p>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        margin: 0 0 25px;
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+      "
+    >
+      <tr>
+        <td style="
+          padding: 16px 18px;
+        ">
+          <div style="
+            color: #991b1b;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+          ">
+            Reason for denial
+          </div>
+
+          <div style="
+            color: #7f1d1d;
+            font-size: 14px;
+            line-height: 22px;
+          ">
+            ${safeReason}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <p style="
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      If you have questions regarding this decision,
+      please contact your college administrator.
+    </p>
+  `;
+
+  return emailLayout({
+    title: 'MessConnect Registration Update',
+    preheader:
+      'Your MessConnect registration request has been reviewed.',
+    content,
+  });
+};
+
+
+/* =========================================================
+   COMPLAINT STATUS
+========================================================= */
+
+export const complaintStatusEmailTemplate = ({
+  name,
+  title,
+  category,
+  status,
+  rejectionReason = '',
+}) => {
+  const safeName = escapeHtml(name || 'there');
+  const safeTitle = escapeHtml(title || 'Your complaint');
+  const safeCategory = escapeHtml(category || 'General');
+  const safeStatus = escapeHtml(status || '');
+  const safeRejectionReason = escapeHtml(
+    rejectionReason || ''
+  );
+
+  const isRejected = status === 'rejected';
+
+  const statusColor = isRejected ? '#dc2626' : '#16a34a';
+  const statusBackground = isRejected ? '#fef2f2' : '#f0fdf4';
+  const statusBorder = isRejected ? '#fecaca' : '#bbf7d0';
+
+  const rejectionBlock = isRejected && rejectionReason
+    ? `
+      <table
+        role="presentation"
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        style="
+          margin: 0 0 25px;
+          background-color: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 8px;
+        "
+      >
+        <tr>
+          <td style="padding: 16px 18px;">
+            <div style="
+              color: #991b1b;
+              font-size: 12px;
+              font-weight: 700;
+              text-transform: uppercase;
+              margin-bottom: 7px;
+            ">
+              Reason for Rejection
+            </div>
+
+            <div style="
+              color: #7f1d1d;
+              font-size: 14px;
+              line-height: 22px;
+            ">
+              ${safeRejectionReason}
+            </div>
+          </td>
+        </tr>
+      </table>
+    `
+    : '';
+
+  const content = `
+    <div style="
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    ">
+      Complaint Update
+    </div>
+
+    <h2 style="
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: 25px;
+      line-height: 32px;
+      font-weight: 700;
+    ">
+      Your complaint has been updated
+    </h2>
+
+    <p style="
+      margin: 0 0 20px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Hello <strong>${safeName}</strong>,
+    </p>
+
+    <p style="
+      margin: 0 0 25px;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Your complaint has been reviewed by the Mess Committee.
+    </p>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        margin: 0 0 25px;
+        background-color: ${statusBackground};
+        border: 1px solid ${statusBorder};
+        border-radius: 8px;
+      "
+    >
+      <tr>
+        <td style="padding: 16px 18px;">
+
+          <div style="
+            color: #64748b;
+            font-size: 11px;
+            line-height: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+          ">
+            Status
+          </div>
+
+          <div style="
+            color: ${statusColor};
+            font-size: 18px;
+            line-height: 25px;
+            font-weight: 700;
+          ">
+            ${safeStatus.toUpperCase()}
+          </div>
+
+        </td>
+      </tr>
+    </table>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        margin: 0 0 25px;
+        background-color: #f8fafc;
+        border-radius: 8px;
+      "
+    >
+      <tr>
+        <td style="padding: 16px 18px;">
+
+          <div style="
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          ">
+            Complaint
+          </div>
+
+          <div style="
+            color: #334155;
+            font-size: 14px;
+            line-height: 22px;
+            font-weight: 700;
+          ">
+            ${safeTitle}
+          </div>
+
+          <div style="
+            margin-top: 8px;
+            color: #64748b;
+            font-size: 13px;
+            line-height: 20px;
+          ">
+            Category: ${safeCategory}
+          </div>
+
+        </td>
+      </tr>
+    </table>
+
+    ${rejectionBlock}
+
+    <p style="
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      Thank you for helping us improve the mess experience.
+    </p>
+  `;
+
+  return emailLayout({
+    title: 'MessConnect Complaint Status Update',
+    preheader:
+      `Your complaint has been marked as ${status}.`,
     content,
   });
 };

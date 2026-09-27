@@ -7,7 +7,10 @@ import Invitation from "../models/invitation.model.js";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { sendEmail } from "../utils/sendEmail.js";
-import { otpEmailTemplate } from "../utils/emailTemplates.js";
+import {
+    otpEmailTemplate,
+    passwordResetEmailTemplate
+} from "../utils/emailTemplates.js";
 
 const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
 const upperCaseRegex = /[A-Z]/;
@@ -390,7 +393,11 @@ const sendResetOtp = async (req, res) => {
         await sendEmail({
             email: normalizedEmail,
             subject: 'MessConnect Password Reset OTP',
-            message: `Your password reset OTP is: ${otp}. It is valid for 5 minutes.`
+            message: `Your password reset OTP is: ${otp}. It is valid for 5 minutes.`,
+            html: passwordResetEmailTemplate({
+                name: user.name,
+                otp
+            })
         });
 
         res.status(200).json({

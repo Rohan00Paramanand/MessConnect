@@ -10,6 +10,8 @@ import TimeTable from '../models/timeTable.model.js';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { sendEmail } from '../utils/sendEmail.js';
+import { invitationEmailTemplate } from '../utils/emailTemplates.js';
+
 
 const createCollegeSchema = z.object({
     name: z.string().trim().min(2, 'College name is required'),
@@ -111,8 +113,8 @@ export const createCollege = async (req, res) => {
             const duplicateMsg = field === 'name'
                 ? 'A college with this name already exists'
                 : field === 'allowedDomains'
-                ? 'One or more of the specified domains is already registered to another college'
-                : `A college with this ${field || 'value'} already exists`;
+                    ? 'One or more of the specified domains is already registered to another college'
+                    : `A college with this ${field || 'value'} already exists`;
 
             return res.status(400).json({
                 status: 'error',
@@ -287,8 +289,8 @@ export const updateCollege = async (req, res) => {
             const duplicateMsg = field === 'name'
                 ? 'A college with this name already exists'
                 : field === 'allowedDomains'
-                ? 'One or more of the specified domains is already registered to another college'
-                : `A college with this ${field || 'value'} already exists`;
+                    ? 'One or more of the specified domains is already registered to another college'
+                    : `A college with this ${field || 'value'} already exists`;
 
             return res.status(400).json({
                 status: 'error',
@@ -333,7 +335,7 @@ const inviteAdminSchema = z.object({
 export const inviteAdmin = async (req, res) => {
     try {
         const validated = inviteAdminSchema.parse(req.body);
-        
+
         // 1. Check if user already exists
         const normalizedEmail = validated.email.toLowerCase().trim();
         const userExists = await User.findOne({ email: normalizedEmail });
@@ -352,7 +354,7 @@ export const inviteAdmin = async (req, res) => {
 
         // 4. Generate random token
         const token = crypto.randomBytes(32).toString('hex');
-        
+
         // Expiration in 7 days
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
@@ -377,7 +379,11 @@ export const inviteAdmin = async (req, res) => {
 Please complete your registration within 7 days by clicking the link below:
 ${inviteLink}
 
-If you did not request this invitation, please ignore this email.`
+If you did not request this invitation, please ignore this email.`,
+            html: invitationEmailTemplate({
+                collegeName: college.name,
+                inviteLink
+            })
         });
 
         if (process.env.NODE_ENV !== 'production') {
@@ -491,7 +497,16 @@ export const assignCollegeAdmin = async (req, res) => {
         await sendEmail({
             email,
             subject: 'MessConnect College Admin Invitation',
-            message: `You have been invited to manage the MessConnect portal for ${college.name} as a College Admin.\n\nPlease complete your registration within 7 days by clicking the link below:\n${inviteLink}\n\nIf you did not request this invitation, please ignore this email.`
+            message: `You have been invited to manage the MessConnect portal for ${college.name} as a College Admin.
+
+Please complete your registration within 7 days by clicking the link below:
+${inviteLink}
+
+If you did not request this invitation, please ignore this email.`,
+            html: invitationEmailTemplate({
+                collegeName: college.name,
+                inviteLink
+            })
         });
 
         if (process.env.NODE_ENV !== 'production') {
