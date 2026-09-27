@@ -66,24 +66,24 @@ const NoticeBoard = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* Premium Header */}
-      <div className="relative overflow-hidden rounded-[2rem] p-8 bg-gradient-to-r from-violet-700 via-purple-600 to-indigo-700 text-white shadow-[0_20px_50px_-12px_rgba(139,92,246,0.3)]">
+      <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-gradient-to-r from-violet-700 via-purple-600 to-indigo-700 text-white shadow-[0_20px_50px_-12px_rgba(139,92,246,0.3)]">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                <Bell size={20} />
+            <div className="flex items-center gap-3 mb-2 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                <Bell size={18} />
               </div>
-              <span className="text-white/70 text-sm font-bold uppercase tracking-widest">Announcements</span>
+              <span className="text-white/70 text-xs sm:text-sm font-bold uppercase tracking-widest">Announcements</span>
             </div>
-            <h1 className="text-3xl font-black mb-1">Notice Board</h1>
-            <p className="text-white/70 font-medium">Stay updated with important institutional announcements</p>
+            <h1 className="text-2xl sm:text-3xl font-black mb-1">Notice Board</h1>
+            <p className="text-white/70 text-sm sm:text-base font-medium">Stay updated with important institutional announcements</p>
           </div>
           {['mess_committee', 'college_admin'].includes(user?.role) && (
             <button
               onClick={() => setShowForm(!showForm)}
-              className="flex items-center gap-2 px-5 py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-2xl text-white font-bold text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5"
+              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 self-start sm:self-auto"
             >
               {showForm ? <><X size={16} /> Cancel</> : <><Plus size={16} /> New Notice</>}
             </button>
@@ -93,8 +93,8 @@ const NoticeBoard = () => {
 
       {/* Create Notice Form */}
       {showForm && ['mess_committee', 'college_admin'].includes(user?.role) && (
-        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[2rem] p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-fade-in">
-          <h3 className="text-xl font-black text-gray-900 mb-6">New Announcement</h3>
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-fade-in">
+          <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-6">New Announcement</h3>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input label="Title" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
@@ -110,14 +110,14 @@ const NoticeBoard = () => {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Image Attachment</label>
-                <input type="file" accept="image/*" onChange={e => setImage(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all" />
+                <input type="file" accept="image/*" onChange={e => setImage(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all cursor-pointer" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
               <textarea className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40" rows="4" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
             </div>
-            <Button type="submit" variant="committee" disabled={formLoading}>
+            <Button type="submit" variant="committee" disabled={formLoading} className="w-full sm:w-auto">
               {formLoading ? 'Publishing...' : '→ Publish Notice'}
             </Button>
           </form>
@@ -140,7 +140,7 @@ const NoticeBoard = () => {
       ) : (
         <div className="space-y-4">
           {notices.map(notice => (
-            <div key={notice._id} className={`bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.5rem] overflow-hidden hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 ${!notice.isActive ? 'opacity-60' : ''}`}>
+            <div key={notice._id} className={`bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] overflow-hidden hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 ${!notice.isActive ? 'opacity-60' : ''}`}>
               <div className="flex flex-col sm:flex-row gap-0">
                 {notice.image && (
                   <div className="sm:w-48 flex-shrink-0">

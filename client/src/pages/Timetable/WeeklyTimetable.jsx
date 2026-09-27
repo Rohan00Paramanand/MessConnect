@@ -109,31 +109,31 @@ const WeeklyTimetable = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* Premium Header */}
-      <div className="relative overflow-hidden rounded-[2rem] p-8 bg-gradient-to-r from-teal-700 via-emerald-700 to-teal-600 text-white shadow-[0_20px_50px_-12px_rgba(15,118,110,0.35)]">
+      <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-gradient-to-r from-teal-700 via-emerald-700 to-teal-600 text-white shadow-[0_20px_50px_-12px_rgba(15,118,110,0.35)]">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                <UtensilsCrossed size={20} />
+            <div className="flex items-center gap-3 mb-2 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                <UtensilsCrossed size={18} />
               </div>
-              <span className="text-white/70 text-sm font-bold uppercase tracking-widest">Schedule</span>
+              <span className="text-white/70 text-xs sm:text-sm font-bold uppercase tracking-widest">Schedule</span>
             </div>
-            <h1 className="text-3xl font-black mb-1">Weekly Mess Timetable</h1>
-            <p className="text-white/70 font-medium">Daily meal plan with food items for each session</p>
+            <h1 className="text-2xl sm:text-3xl font-black mb-1">Weekly Mess Timetable</h1>
+            <p className="text-white/70 text-sm sm:text-base font-medium">Daily meal plan with food items for each session</p>
           </div>
           {user?.role === 'vendor' && (
-            <div className="text-white/80 font-medium text-sm hidden md:block">
+            <div className="text-white/80 font-medium text-xs sm:text-sm self-start sm:self-auto">
               <span className="bg-white/20 px-3 py-1.5 rounded-lg border border-white/20 font-bold backdrop-blur-sm shadow-sm inline-flex items-center gap-2">
-                <Plus size={14} className="opacity-70" /> Click any empty cell to add a meal
+                <Plus size={14} className="opacity-70" /> Tap empty slot to add meal
               </span>
             </div>
           )}
           {['user', 'student', 'mess_committee'].includes(user?.role) && (
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30 truncate">
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2 border border-white/30 truncate self-start sm:self-auto">
               <select 
-                className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"
+                className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
                 value={messFilter}
                 onChange={(e) => setMessFilter(e.target.value)}
               >
@@ -148,16 +148,16 @@ const WeeklyTimetable = () => {
 
       {/* Add Meal Modal */}
       {activeCell && user?.role === 'vendor' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-fade-in">
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative">
             <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${mealTypeConfig[activeCell.mealType]?.gradient || 'from-teal-400 to-emerald-500'}`}></div>
             
-            <button onClick={() => {setActiveCell(null); setItemsInput('');}} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
+            <button onClick={() => {setActiveCell(null); setItemsInput('');}} className="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
               <X size={20} />
             </button>
             
-            <h3 className="text-2xl font-black text-gray-900 mb-1">Add Meal</h3>
-            <p className="text-gray-500 font-medium mb-6">
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-1">Add Meal</h3>
+            <p className="text-sm text-gray-500 font-medium mb-6">
               {activeCell.mealType} • {new Date(activeCell.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric'})}
             </p>
             
@@ -190,9 +190,9 @@ const WeeklyTimetable = () => {
           <div className="w-10 h-10 border-2 border-gray-300 border-t-teal-600 rounded-full animate-spin"></div>
         </div>
       ) : (
-        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[2rem] p-4 sm:p-8 shadow-sm relative z-0">
-          <div className="overflow-x-auto pb-4 custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[2rem] p-3 sm:p-8 shadow-sm relative z-0">
+          <div className="overflow-x-auto pb-4 custom-scrollbar -mx-1 sm:mx-0">
+            <table className="w-full text-left border-collapse min-w-[700px] sm:min-w-[800px]">
               <thead>
                 <tr>
                   <th className="p-4 bg-gray-50/80 backdrop-blur-md rounded-tl-2xl border-b border-r border-gray-200/60 sticky left-0 z-20 w-32 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">

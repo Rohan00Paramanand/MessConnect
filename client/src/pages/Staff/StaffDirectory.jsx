@@ -122,29 +122,29 @@ const StaffDirectory = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-[2rem] p-8 bg-gradient-to-r from-slate-800 via-gray-900 to-slate-900 text-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)]">
+      <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-gradient-to-r from-slate-800 via-gray-900 to-slate-900 text-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)]">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="absolute -left-16 -top-16 w-64 h-64 bg-teal-500/20 blur-3xl rounded-full"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                <Users size={20} />
+            <div className="flex items-center gap-3 mb-2 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                <Users size={18} />
               </div>
-              <span className="text-white/70 text-sm font-bold uppercase tracking-widest">Directory</span>
+              <span className="text-white/70 text-xs sm:text-sm font-bold uppercase tracking-widest">Directory</span>
             </div>
-            <h1 className="text-3xl font-black mb-1">Staff Management</h1>
-            <p className="text-white/70 font-medium">
+            <h1 className="text-2xl sm:text-3xl font-black mb-1">Staff Management</h1>
+            <p className="text-white/70 text-sm sm:text-base font-medium">
               {user?.role === 'vendor' ? 'Manage your mess workers and verification compliance' : 'View active mess staff members'}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {['mess_committee', 'college_admin'].includes(user?.role) && (
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-white/30">
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 border border-white/30">
                 <Building2 size={16} className="text-white/70" />
                 <select 
-                  className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"
+                  className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
                   value={messFilter}
                   onChange={(e) => setMessFilter(e.target.value)}
                 >
@@ -156,28 +156,28 @@ const StaffDirectory = () => {
               </div>
             )}
             {user?.role === 'vendor' && (
-              <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-5 py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-2xl text-white font-bold text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5">
+              <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5">
                 {showForm ? <><X size={16}/> Cancel</> : <><Plus size={16}/> Add Staff</>}
               </button>
             )}
           </div>
         </div>
 
-        <div className="relative z-10 mt-6 flex gap-6">
+        <div className="relative z-10 mt-5 sm:mt-6 flex flex-wrap gap-4 sm:gap-6">
           <div>
-            <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Total Staff</p>
-            <p className="text-3xl font-black">{staff.length}</p>
+            <p className="text-white/50 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Total Staff</p>
+            <p className="text-2xl sm:text-3xl font-black">{staff.length}</p>
           </div>
           <div>
-            <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Approved</p>
-            <p className="text-3xl font-black text-green-400">{staff.filter(s => s.isApprovedByAdmin).length}</p>
+            <p className="text-white/50 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Approved</p>
+            <p className="text-2xl sm:text-3xl font-black text-green-400">{staff.filter(s => s.isApprovedByAdmin).length}</p>
           </div>
         </div>
       </div>
 
       {/* Add Staff Form */}
       {showForm && user?.role === 'vendor' && (
-        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[2rem] p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-fade-in">
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-fade-in">
           <h3 className="text-xl font-black text-gray-900 mb-6">Register New Staff Member</h3>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -234,7 +234,7 @@ const StaffDirectory = () => {
               </div>
             </div>
 
-            <Button type="submit" variant="primary" disabled={formLoading}>
+            <Button type="submit" variant="primary" disabled={formLoading} className="w-full sm:w-auto">
               {formLoading ? 'Submitting...' : '+ Save & Submit Staff Member'}
             </Button>
           </form>
@@ -257,7 +257,7 @@ const StaffDirectory = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {staff.map(member => (
-            <div key={member._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.5rem] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 group">
+            <div key={member._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 group">
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center text-white font-black text-lg shadow-lg">
                   {member.name.charAt(0)}
