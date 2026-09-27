@@ -63,7 +63,7 @@ const NavItem = ({ link, role, onClick }) => {
       to={link.path}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200 group ${
+        `flex items-center gap-3 px-4 py-3 min-h-[44px] text-sm font-semibold rounded-2xl transition-all duration-200 group ${
           isActive
             ? `bg-gradient-to-r ${theme.active} text-white shadow-lg`
             : 'text-gray-500 hover:bg-white/80 hover:text-gray-900'
@@ -120,7 +120,7 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
         </div>
         <button
           onClick={() => { onLinkClick && onLinkClick(); logout(); }}
-          className="flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl border border-red-100 hover:border-red-200 transition-all duration-200"
+          className="flex w-full items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl border border-red-100 hover:border-red-200 transition-all duration-200"
         >
           <LogOut className="h-4 w-4" />
           <span>Sign out</span>
@@ -162,19 +162,19 @@ const Sidebar = () => {
 
       {/* ─── Mobile Slide-out Drawer ─── */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 flex flex-col bg-white/95 backdrop-blur-2xl border-r border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 flex flex-col bg-white/95 backdrop-blur-2xl border-r border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Close button on the right edge of the sidebar */}
         <button
           onClick={() => setMobileOpen(false)}
-          className={`absolute top-1/2 -translate-y-1/2 -right-4 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200 z-10 ${
+          className={`absolute top-1/2 -translate-y-1/2 -right-4 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200 z-10 ${
             mobileOpen ? 'opacity-100 scale-100' : 'opacity-0 pointer-events-none scale-75 invisible'
           }`}
           aria-label="Close menu"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={18} />
         </button>
         <div className="flex-1 overflow-y-auto">
           <SidebarContent user={user} role={role} links={links} onLinkClick={() => setMobileOpen(false)} />

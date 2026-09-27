@@ -75,7 +75,7 @@ const OtpInput = ({ value = '', onChange, length = 6, disabled = false, error = 
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 sm:gap-3 my-2" onPaste={handlePaste}>
+    <div className="flex items-center justify-center gap-1.5 sm:gap-2.5 md:gap-3 my-2 max-w-full overflow-x-hidden" onPaste={handlePaste}>
       {Array.from({ length }).map((_, index) => {
         const isFilled = Boolean(digits[index]);
         return (
@@ -92,7 +92,7 @@ const OtpInput = ({ value = '', onChange, length = 6, disabled = false, error = 
             onChange={(e) => handleChange(index, e)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onFocus={(e) => e.target.select()}
-            className={`w-11 h-14 sm:w-12 sm:h-16 text-center text-2xl font-black rounded-xl border-2 transition-all duration-200 outline-none
+            className={`w-9 h-12 sm:w-12 sm:h-16 text-center text-lg sm:text-2xl font-black rounded-lg sm:rounded-xl border-2 transition-all duration-200 outline-none flex-shrink-0
               ${
                 error
                   ? 'border-red-400 bg-red-50 text-red-700 focus:border-red-500 focus:ring-2 focus:ring-red-200'

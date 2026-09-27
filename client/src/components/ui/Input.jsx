@@ -17,7 +17,7 @@ const Input = ({ label, id, error, type, className = '', ...props }) => {
         <input
           id={id}
           type={inputType}
-          className={`w-full px-4 py-3 bg-white/50 backdrop-blur-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40 focus:border-gray-900/40 focus:bg-white shadow-sm hover:border-gray-400 transition-all duration-300 disabled:bg-gray-100 disabled:text-gray-500 ${isPassword ? 'pr-11' : ''} ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-200'} ${className}`}
+          className={`w-full min-h-[44px] px-3.5 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-white/50 backdrop-blur-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40 focus:border-gray-900/40 focus:bg-white shadow-sm hover:border-gray-400 transition-all duration-300 disabled:bg-gray-100 disabled:text-gray-500 ${isPassword ? 'pr-11' : ''} ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-200'} ${className}`}
           {...props}
         />
         {isPassword && (

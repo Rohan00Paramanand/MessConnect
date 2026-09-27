@@ -55,6 +55,13 @@ body {
   background: #94a3b8;
 }
 
+/* Responsive Table Wrapper */
+.responsive-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Animations */
 @keyframes slideUpFade {
   0% { opacity: 0; transform: translateY(20px); }

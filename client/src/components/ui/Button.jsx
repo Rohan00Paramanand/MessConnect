@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Button = ({ children, variant = 'primary', className = '', ...props }) => {
-  const baseStyle = "relative inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none overflow-hidden group";
+  const baseStyle = "relative inline-flex items-center justify-center min-h-[42px] sm:min-h-[44px] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none overflow-hidden group select-none";
   
   const variants = {
     primary: "bg-gray-900 text-white hover:bg-gray-800 shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.23)] hover:-translate-y-0.5 focus:ring-gray-900",
