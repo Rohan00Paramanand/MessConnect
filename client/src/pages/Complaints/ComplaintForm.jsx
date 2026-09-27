@@ -230,8 +230,8 @@ const ComplaintForm = ({ onComplaintAdded }) => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 mb-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Submit New Complaint</h3>
+    <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-200 mb-6">
+      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Submit New Complaint</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -279,7 +279,7 @@ const ComplaintForm = ({ onComplaintAdded }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Evidence Image</label>
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <input 
                   type="file" 
                   accept=".jpeg,.jpg,.png,.gif,.webp"
@@ -292,15 +292,15 @@ const ComplaintForm = ({ onComplaintAdded }) => {
                 />
                 <label 
                   htmlFor="file-upload"
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-gray-900/20 hover:bg-gray-100 transition-all text-sm font-bold text-gray-600"
+                  className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-gray-900/20 hover:bg-gray-100 transition-all text-sm font-bold text-gray-600"
                 >
                   Upload File
                 </label>
-                <div className="text-gray-300">or</div>
+                <div className="text-gray-300 text-center sm:text-left text-xs sm:text-sm font-medium">or</div>
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all text-sm font-bold shadow-lg shadow-gray-900/20"
+                  className="min-h-[44px] flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all text-sm font-bold shadow-lg shadow-gray-900/20"
                 >
                   <Camera size={18} />
                   Take Photo
@@ -373,7 +373,7 @@ const ComplaintForm = ({ onComplaintAdded }) => {
           </div>
         )}
 
-        <Button type="submit" disabled={loading} variant="student">
+        <Button type="submit" disabled={loading} variant="student" className="w-full sm:w-auto">
           {loading ? 'Submitting...' : 'Submit Complaint'}
         </Button>
       </form>

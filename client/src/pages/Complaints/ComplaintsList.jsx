@@ -136,27 +136,27 @@ const ComplaintsList = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* Premium Header */}
-      <div className={`relative overflow-hidden rounded-[2rem] p-8 bg-gradient-to-r ${gradient} text-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.2)]`}>
+      <div className={`relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-gradient-to-r ${gradient} text-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.2)]`}>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                <MessageSquare size={20} />
+            <div className="flex items-center gap-3 mb-2 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                <MessageSquare size={18} />
               </div>
-              <span className="text-white/70 text-sm font-bold uppercase tracking-widest">Module</span>
+              <span className="text-white/70 text-xs sm:text-sm font-bold uppercase tracking-widest">Module</span>
             </div>
-            <h1 className="text-3xl font-black mb-1">Complaints</h1>
-            <p className="text-white/70 font-medium">
+            <h1 className="text-2xl sm:text-3xl font-black mb-1">Complaints</h1>
+            <p className="text-white/70 text-sm sm:text-base font-medium">
               {(user?.role === 'user' || user?.role === 'student') ? 'Submit and track your mess complaints' : 'Review and manage all incoming complaints'}
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
             {['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30 truncate">
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2 border border-white/30 truncate">
                 <select 
-                  className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"
+                  className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
                   value={messFilter}
                   onChange={(e) => setMessFilter(e.target.value)}
                 >
@@ -168,8 +168,8 @@ const ComplaintsList = () => {
               </div>
             )}
             <div className="text-right">
-              <p className="text-white/60 text-xs font-bold uppercase tracking-wider">Total</p>
-              <p className="text-3xl font-black">{complaints.length}</p>
+              <p className="text-white/60 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Total</p>
+              <p className="text-2xl sm:text-3xl font-black">{complaints.length}</p>
             </div>
           </div>
         </div>
@@ -201,7 +201,7 @@ const ComplaintsList = () => {
       ) : (
         <div className="space-y-4">
           {complaints.map(complaint => (
-            <div key={complaint._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.5rem] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300">
+            <div key={complaint._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -299,7 +299,7 @@ const ComplaintsList = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 min-w-[180px]">
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[180px] flex-shrink-0">
                   {/* Committee Actions */}
                   {user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status) && (
                     <div className="flex flex-col gap-2">
@@ -397,7 +397,7 @@ const ComplaintsList = () => {
             <XCircle size={32} />
           </button>
           <div 
-            className="relative max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-white/10 shadow-2xl flex flex-col bg-gray-900"
+            className="relative w-full max-w-[95vw] sm:max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-white/10 shadow-2xl flex flex-col bg-gray-900"
             onClick={(e) => e.stopPropagation()}
           >
             <img 

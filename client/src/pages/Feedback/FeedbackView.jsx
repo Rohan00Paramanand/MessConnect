@@ -156,28 +156,28 @@ const FeedbackView = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* Premium Header */}
-      <div className="relative overflow-hidden rounded-[2rem] p-8 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-[0_20px_50px_-12px_rgba(245,158,11,0.3)]">
+      <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-[0_20px_50px_-12px_rgba(245,158,11,0.3)]">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                <Star size={20} fill="white" />
+            <div className="flex items-center gap-3 mb-2 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                <Star size={18} fill="white" />
               </div>
-              <span className="text-white/70 text-sm font-bold uppercase tracking-widest">Feedback</span>
+              <span className="text-white/70 text-xs sm:text-sm font-bold uppercase tracking-widest">Feedback</span>
             </div>
-            <h1 className="text-3xl font-black mb-1">Daily Mess Ratings</h1>
-            <p className="text-white/70 font-medium">
+            <h1 className="text-2xl sm:text-3xl font-black mb-1">Daily Mess Ratings</h1>
+            <p className="text-white/70 text-sm sm:text-base font-medium">
               {(user?.role === 'user' || user?.role === 'student') ? "Rate today's meals and share your thoughts" : 'View all feedback submitted by users'}
             </p>
           </div>
           {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && (
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
               {['mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
-                <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30 truncate">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2 border border-white/30 truncate">
                   <select 
-                    className="bg-transparent text-white font-bold outline-none cursor-pointer text-sm"
+                    className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
                     value={messFilter}
                     onChange={(e) => setMessFilter(e.target.value)}
                   >
@@ -187,12 +187,12 @@ const FeedbackView = () => {
                   </select>
                 </div>
               )}
-              <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/30 hidden sm:block">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp size={14} className="text-white/70" />
-                  <p className="text-white/70 text-xs font-bold uppercase">Average Rating</p>
+              <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2.5 sm:py-4 border border-white/30">
+                <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
+                  <TrendingUp size={12} className="text-white/70" />
+                  <p className="text-white/70 text-[10px] sm:text-xs font-bold uppercase">Avg Rating</p>
                 </div>
-                <p className="text-4xl font-black">{avgRating}<span className="text-lg text-white/70 font-normal">/5</span></p>
+                <p className="text-2xl sm:text-4xl font-black">{avgRating}<span className="text-sm sm:text-lg text-white/70 font-normal">/5</span></p>
               </div>
             </div>
           )}
@@ -201,11 +201,11 @@ const FeedbackView = () => {
 
       {/* Category Insight Grid (Vendors/Admins only) */}
       {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && Object.keys(categoryAverages).length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
            {Object.entries(categoryAverages).map(([cat, avg]) => (
-               <div key={cat} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.5rem] p-4 text-center hover:shadow-[0_8px_30px_rgba(245,158,11,0.06)] hover:-translate-y-1 transition-all duration-300">
-                  <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{cat}</p>
-                  <p className="text-2xl font-black text-amber-500">{avg}<span className="text-sm text-gray-300 font-normal">/5</span></p>
+               <div key={cat} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-3 sm:p-4 text-center hover:shadow-[0_8px_30px_rgba(245,158,11,0.06)] hover:-translate-y-1 transition-all duration-300">
+                  <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 truncate">{cat}</p>
+                  <p className="text-xl sm:text-2xl font-black text-amber-500">{avg}<span className="text-xs sm:text-sm text-gray-300 font-normal">/5</span></p>
                </div>
            ))}
         </div>
@@ -213,7 +213,7 @@ const FeedbackView = () => {
 
       {/* Submit Feedback (Student only) */}
       {(user?.role === 'user' || user?.role === 'student') && (
-        <div className="bg-white/70 backdrop-blur-xl border border-amber-100 rounded-[2rem] p-8 shadow-[0_8px_30px_rgba(245,158,11,0.08)]">
+        <div className="bg-white/70 backdrop-blur-xl border border-amber-100 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 shadow-[0_8px_30px_rgba(245,158,11,0.08)]">
           <h3 className="text-xl font-black text-gray-900 mb-6">Rate Today's Meals</h3>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -279,7 +279,7 @@ const FeedbackView = () => {
                 onChange={(e) => setComment(e.target.value)}
               />
             </div>
-            <Button type="submit" variant="user" disabled={submitting || hasRatedCategory}>
+            <Button type="submit" variant="user" disabled={submitting || hasRatedCategory} className="w-full sm:w-auto">
               {submitting ? 'Submitting...' : hasRatedCategory ? 'Already Submitted for this Category' : '★ Submit Feedback'}
             </Button>
           </form>
