@@ -7,7 +7,13 @@ const collegeSchema = new Schema(
       required: true,
       trim: true
     },
-
+    slug: {
+      type: String,
+      required: false,
+      sparse: true,
+      lowercase: true,
+      trim: true
+    },
     allowedDomains: {
       type: [String],
       required: true,

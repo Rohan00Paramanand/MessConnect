@@ -18,16 +18,11 @@ const authLimiter = rateLimit({
 
 const otpLimiter = rateLimit({
     windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 5, // Max 5 requests per email per 10 minutes
-    keyGenerator: (req) => {
-        // Rate-limit per email address so campus Wi-Fi (shared IP) does not lock all students out
-        return req.body && req.body.email ? req.body.email.toLowerCase().trim() : req.ip;
-    },
-    message: { status: 'error', message: 'Too many OTP requests for this email. Please wait 10 minutes before trying again.' },
+    max: 5, // Strict limit — OTP spam is a real attack vector
+    message: { status: 'error', message: 'Too many OTP requests. Please wait 10 minutes before trying again.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
-
 
 // Auth routes
 router.post('/signup', authLimiter, vendorDocUpload, signup);
