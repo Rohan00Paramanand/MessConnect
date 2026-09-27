@@ -135,7 +135,7 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <NavLink to="/colleges" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Active Colleges</p>
@@ -195,7 +195,7 @@ const SuperAdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left Column: Invite College Admin */}
-        <div className="lg:col-span-1 glass-panel p-6 border border-white/40 shadow-xl rounded-2xl h-fit">
+        <div className="lg:col-span-1 glass-panel p-4 sm:p-6 border border-white/40 shadow-xl rounded-2xl h-fit">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-2 bg-violet-100 text-violet-700 rounded-xl">
               <Mail size={20} />
@@ -249,7 +249,7 @@ const SuperAdminDashboard = () => {
 
         {/* Right Column: Sent Invitations Tracker */}
         <div className="lg:col-span-2 glass-panel overflow-hidden border border-white/40 shadow-xl rounded-2xl flex flex-col">
-          <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white/30">
+          <div className="p-4 sm:p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white/30">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Sent Invitations Tracker</h2>
               <p className="text-xs text-gray-500 font-medium">Verify delivery, copy token links, or resend invitations.</p>
@@ -259,8 +259,8 @@ const SuperAdminDashboard = () => {
             </NavLink>
           </div>
 
-          <div className="overflow-x-auto flex-grow">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto flex-grow responsive-table-wrapper">
+            <table className="w-full text-left border-collapse min-w-[550px]">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100">
                   <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider w-[40%]">Admin Email</th>

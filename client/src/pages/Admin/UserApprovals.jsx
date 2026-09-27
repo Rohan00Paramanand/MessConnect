@@ -127,16 +127,16 @@ const UserApprovals = () => {
               </div>
             )}
 
-            <div className="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200">
+            <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 w-full sm:w-auto">
               <button
                 onClick={() => setActiveTab('accounts')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'accounts' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'accounts' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
               >
                 <UserCheck size={16} /> Vendor & Committee ({users.length})
               </button>
               <button
                 onClick={() => setActiveTab('staff')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'staff' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'staff' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
               >
                 <Users size={16} /> Mess Staff Members ({filteredStaff.length})
               </button>
@@ -146,8 +146,8 @@ const UserApprovals = () => {
 
         {activeTab === 'accounts' ? (
           <div className="glass-panel overflow-hidden border border-white/40 shadow-xl shadow-gray-200/40 rounded-2xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto responsive-table-wrapper">
+              <table className="w-full text-left border-collapse min-w-[650px]">
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-100">
                     <th className="p-4 text-sm font-bold text-gray-600">Applicant Details</th>
@@ -234,8 +234,8 @@ const UserApprovals = () => {
           </div>
         ) : (
           <div className="glass-panel overflow-hidden border border-white/40 shadow-xl shadow-gray-200/40 rounded-2xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto responsive-table-wrapper">
+              <table className="w-full text-left border-collapse min-w-[650px]">
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-100">
                     <th className="p-4 text-sm font-bold text-gray-600">Staff Member</th>
@@ -305,7 +305,7 @@ const UserApprovals = () => {
 
       {denyingUser && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-white/40 relative">
+          <div className="bg-white rounded-2xl max-w-md w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Deny Registration Request</h3>
             <p className="text-sm text-gray-600 mb-4">
               Are you sure you want to deny the registration request for <strong className="text-gray-900">{denyingUser.name}</strong> ({denyingUser.email})?

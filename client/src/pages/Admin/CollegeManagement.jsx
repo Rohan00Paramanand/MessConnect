@@ -384,7 +384,7 @@ const handleDeleteAdmin = async (userId) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Register College Form */}
-          <div className="lg:col-span-1 glass-panel p-6 border border-white/60 shadow-xl shadow-gray-200/40 rounded-3xl space-y-4">
+          <div className="lg:col-span-1 glass-panel p-4 sm:p-6 border border-white/60 shadow-xl shadow-gray-200/40 rounded-2xl sm:rounded-3xl space-y-4">
             <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
               <Plus className="text-violet-600" size={20} />
               <h2 className="text-lg font-bold text-gray-900">Register New College</h2>
@@ -429,8 +429,8 @@ const handleDeleteAdmin = async (userId) => {
           </div>
 
           {/* Registered Colleges List */}
-          <div className="lg:col-span-2 glass-panel border border-white/60 shadow-xl shadow-gray-200/40 rounded-3xl overflow-hidden">
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+          <div className="lg:col-span-2 glass-panel border border-white/60 shadow-xl shadow-gray-200/40 rounded-2xl sm:rounded-3xl overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <School className="text-violet-600" size={20} />
                 <h2 className="text-lg font-bold text-gray-900">Registered Colleges</h2>
@@ -440,8 +440,8 @@ const handleDeleteAdmin = async (userId) => {
               </span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto responsive-table-wrapper">
+              <table className="w-full text-left border-collapse min-w-[650px]">
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-100">
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">College</th>
@@ -565,7 +565,7 @@ const handleDeleteAdmin = async (userId) => {
       {/* Edit College Modal */}
       {editingCollege && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <School className="text-violet-600" size={22} />
@@ -633,7 +633,7 @@ const handleDeleteAdmin = async (userId) => {
       {/* Assign / Change College Admin Modal */}
       {assigningCollege && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/40 relative">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <Shield className="text-violet-600" size={22} />
@@ -653,7 +653,7 @@ const handleDeleteAdmin = async (userId) => {
             </div>
 
             {assigningCollege.admin && (
-              <div className="mb-5 p-3.5 bg-violet-50/70 border border-violet-100 rounded-2xl flex items-center justify-between">
+              <div className="mb-5 p-3.5 bg-violet-50/70 border border-violet-100 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-bold text-violet-600 uppercase tracking-wider">Current Admin</p>
                   <p className="text-sm font-bold text-gray-900">{assigningCollege.admin.name || 'Admin'}</p>
@@ -728,7 +728,7 @@ const handleDeleteAdmin = async (userId) => {
       {/* Delete College Confirmation Modal */}
       {deletingCollege && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-rose-100 relative">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-[95%] sm:w-full p-4 sm:p-8 shadow-2xl border border-rose-100 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">

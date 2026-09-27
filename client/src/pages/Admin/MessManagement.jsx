@@ -93,13 +93,13 @@ const MessManagement = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-6 sm:p-10 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-[0_8px_30px_rgba(79,70,229,0.25)] group">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-5 sm:p-10 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-[0_8px_30px_rgba(79,70,229,0.25)] group">
         <div className="absolute -right-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
         <div className="relative z-10">
           <p className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-widest uppercase mb-3 border border-white/20">
             <School size={12} /> Mess Configurations
           </p>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
             Manage College Messes
           </h1>
           <p className="text-indigo-100 font-medium mt-3 max-w-md text-sm sm:text-base">Register college dining facilities, manage active statuses, and configure portals.</p>
@@ -108,7 +108,7 @@ const MessManagement = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Register Mess Form */}
-        <div className="lg:col-span-1 glass-panel p-6 border border-white/60 shadow-xl shadow-gray-200/40 rounded-3xl space-y-4">
+        <div className="lg:col-span-1 glass-panel p-4 sm:p-6 border border-white/60 shadow-xl shadow-gray-200/40 rounded-2xl sm:rounded-3xl space-y-4">
           <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
             <Plus className="text-indigo-600" size={20} />
             <h2 className="text-lg font-bold text-gray-900">Add New Mess</h2>
@@ -130,8 +130,8 @@ const MessManagement = () => {
         </div>
 
         {/* Registered Messes List */}
-        <div className="lg:col-span-2 glass-panel border border-white/60 shadow-xl shadow-gray-200/40 rounded-3xl overflow-hidden">
-          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+        <div className="lg:col-span-2 glass-panel border border-white/60 shadow-xl shadow-gray-200/40 rounded-2xl sm:rounded-3xl overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <School className="text-indigo-600" size={20} />
               <h2 className="text-lg font-bold text-gray-900">Registered Messes</h2>
@@ -139,8 +139,8 @@ const MessManagement = () => {
             <span className="text-xs text-gray-400 font-semibold">{messes.length} total</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto responsive-table-wrapper">
+            <table className="w-full text-left border-collapse min-w-[500px]">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100">
                   <th className="p-4 text-sm font-bold text-gray-600 w-2/3">Mess Name</th>
@@ -169,7 +169,7 @@ const MessManagement = () => {
                     <tr key={mess._id} className="hover:bg-white/60 transition-colors">
                       <td className="p-4">
                         {editingId === mess._id ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
                             <input
                               type="text"
                               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"

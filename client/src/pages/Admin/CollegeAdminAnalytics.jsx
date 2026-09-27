@@ -439,7 +439,7 @@ export default function CollegeAdminAnalytics() {
             </div>
 
             {/* Table with responsive horizontal scroll */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto responsive-table-wrapper">
               <table className="w-full text-left text-sm min-w-[700px]">
                 <thead className="bg-gray-50/70 border-b border-gray-100 text-[11px] uppercase tracking-wider text-gray-500 font-bold">
                   <tr>
