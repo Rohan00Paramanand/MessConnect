@@ -320,21 +320,39 @@ const sendOtp = async (req, res) => {
             }
         }
 
+        // Check for active OTP sent within the last 60 seconds to prevent rapid resend abuse
+        const normalizedEmail = email ? email.toLowerCase().trim() : null;
+
+        if (normalizedEmail) {
+            const recentOtp = await Otp.findOne({
+                email: normalizedEmail,
+                createdAt: { $gte: new Date(Date.now() - 60 * 1000) }
+            });
+            if (recentOtp) {
+                return res.status(200).json({
+                    status: "success",
+                    message: "An OTP was recently sent. Please check your inbox or wait 60 seconds before requesting again."
+                });
+            }
+        }
+
         // Generate 6 digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await Otp.create({
-            email: email ? email.toLowerCase() : undefined,
+            email: normalizedEmail || undefined,
             phoneNumber,
             otp
         });
 
-        // Send OTP via email
-        if (email) {
-            await sendEmail({
-                email,
+        // Send OTP via email asynchronously in the background (non-blocking)
+        if (normalizedEmail) {
+            sendEmail({
+                email: normalizedEmail,
                 subject: 'MessConnect Verification OTP',
                 message: `Your verification OTP is: ${otp}. It is valid for 5 minutes.`
+            }).catch((err) => {
+                console.error(`[ASYNC OTP SEND ERROR] Failed to send email to ${normalizedEmail}:`, err.message);
             });
         }
 
@@ -365,6 +383,19 @@ const sendResetOtp = async (req, res) => {
             });
         }
 
+        // Check for active reset OTP sent within the last 60 seconds
+        const recentResetOtp = await Otp.findOne({
+            email: normalizedEmail,
+            createdAt: { $gte: new Date(Date.now() - 60 * 1000) }
+        });
+
+        if (recentResetOtp) {
+            return res.status(200).json({
+                status: "success",
+                message: "A password reset OTP was recently sent. Please check your inbox or wait 60 seconds."
+            });
+        }
+
         // Generate 6 digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -374,11 +405,13 @@ const sendResetOtp = async (req, res) => {
             otp
         });
 
-        // Send reset OTP
-        await sendEmail({
+        // Send reset OTP asynchronously in the background (non-blocking)
+        sendEmail({
             email: normalizedEmail,
             subject: 'MessConnect Password Reset OTP',
             message: `Your password reset OTP is: ${otp}. It is valid for 5 minutes.`
+        }).catch((err) => {
+            console.error(`[ASYNC RESET OTP SEND ERROR] Failed to send email to ${normalizedEmail}:`, err.message);
         });
 
         res.status(200).json({
