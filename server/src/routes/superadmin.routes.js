@@ -19,13 +19,16 @@ import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 router.use(protect);
+
+// Routes accessible by both super_admin and college_admin
+router.post('/colleges', authorizeRoles('super_admin', 'college_admin'), createCollege);
+router.get('/colleges', authorizeRoles('super_admin', 'college_admin'), getColleges);
+router.put('/colleges/:id', authorizeRoles('super_admin', 'college_admin'), updateCollege);
+
+// Routes strictly restricted to super_admin
 router.use(authorizeRoles('super_admin'));
 
 router.get('/analytics', getSuperAdminAnalytics);
-
-router.post('/colleges', createCollege);
-router.get('/colleges', getColleges);
-router.put('/colleges/:id', updateCollege);
 router.patch('/colleges/:id/status', updateCollegeStatus);
 router.delete('/colleges/:id', deleteCollege);
 router.post('/colleges/:id/assign-admin', assignCollegeAdmin);

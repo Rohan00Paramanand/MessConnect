@@ -18,10 +18,11 @@ const createCollegeSchema = z.object({
         .array(
             z.string()
                 .trim()
+                .toLowerCase()
                 .min(1, 'Domain cannot be empty')
                 .regex(
                     /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                    'Invalid domain format'
+                    'Invalid domain format (e.g. pccoe.org or college.edu)'
                 )
         )
         .min(1, 'At least one allowed domain is required'),
@@ -29,12 +30,14 @@ const createCollegeSchema = z.object({
     contactEmail: z
         .string()
         .email('Invalid email')
-        .optional(),
+        .optional()
+        .or(z.literal('')),
 
     contactPhone: z
         .string()
         .trim()
         .optional()
+        .or(z.literal(''))
 });
 
 const updateCollegeStatusSchema = z.object({
@@ -59,8 +62,39 @@ export const createCollege = async (req, res) => {
             });
         }
 
-        // 3. Create
-        const college = await College.create(validatedData);
+        // 3. Normalize multiple domains and remove duplicates
+        const normalizedDomains = [
+            ...new Set(validatedData.allowedDomains.map(d => d.trim().toLowerCase()))
+        ];
+
+        // Check if any of these domains are already assigned to another college
+        const conflictingCollege = await College.findOne({
+            allowedDomains: { $in: normalizedDomains }
+        });
+
+        if (conflictingCollege) {
+            const conflictDomain = conflictingCollege.allowedDomains.find(d =>
+                normalizedDomains.includes(d.toLowerCase())
+            );
+            return res.status(400).json({
+                status: 'error',
+                message: `Domain '${conflictDomain}' is already assigned to '${conflictingCollege.name}'. Each domain must be unique.`
+            });
+        }
+
+        // 4. Create college
+        const college = await College.create({
+            name: validatedData.name,
+            allowedDomains: normalizedDomains,
+            contactEmail: validatedData.contactEmail || undefined,
+            contactPhone: validatedData.contactPhone || undefined
+        });
+
+        // 5. If registered by a college_admin who does not yet have a collegeId, bind them
+        if (req.user && req.user.role === 'college_admin' && !req.user.collegeId) {
+            req.user.collegeId = college._id;
+            await req.user.save();
+        }
 
         return res.status(201).json({
             status: 'success',
@@ -79,9 +113,16 @@ export const createCollege = async (req, res) => {
 
         // Duplicate key from MongoDB
         if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern || error.keyValue || {})[0];
+            const duplicateMsg = field === 'name'
+                ? 'A college with this name already exists'
+                : field === 'allowedDomains'
+                ? 'One or more of the specified domains is already registered to another college'
+                : `A college with this ${field || 'value'} already exists`;
+
             return res.status(400).json({
                 status: 'error',
-                message: 'A college with this name already exists'
+                message: duplicateMsg
             });
         }
 
@@ -176,6 +217,14 @@ export const updateCollege = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // If college_admin, verify authorization
+        if (req.user && req.user.role === 'college_admin' && req.user.collegeId && req.user.collegeId.toString() !== id) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'You are only authorized to edit your assigned college'
+            });
+        }
+
         // 1. Validate request
         const validatedData = createCollegeSchema.parse(req.body);
 
@@ -192,10 +241,36 @@ export const updateCollege = async (req, res) => {
             });
         }
 
-        // 3. Update
+        // 3. Normalize multiple domains and remove duplicates
+        const normalizedDomains = [
+            ...new Set(validatedData.allowedDomains.map(d => d.trim().toLowerCase()))
+        ];
+
+        // Check if any domain is already used by another college
+        const conflictingCollege = await College.findOne({
+            allowedDomains: { $in: normalizedDomains },
+            _id: { $ne: id }
+        });
+
+        if (conflictingCollege) {
+            const conflictDomain = conflictingCollege.allowedDomains.find(d =>
+                normalizedDomains.includes(d.toLowerCase())
+            );
+            return res.status(400).json({
+                status: 'error',
+                message: `Domain '${conflictDomain}' is already assigned to '${conflictingCollege.name}'. Each domain must be unique.`
+            });
+        }
+
+        // 4. Update
         const college = await College.findByIdAndUpdate(
             id,
-            validatedData,
+            {
+                name: validatedData.name,
+                allowedDomains: normalizedDomains,
+                contactEmail: validatedData.contactEmail || undefined,
+                contactPhone: validatedData.contactPhone || undefined
+            },
             { new: true, runValidators: true }
         );
 
@@ -222,9 +297,16 @@ export const updateCollege = async (req, res) => {
 
         // Duplicate key from MongoDB
         if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern || error.keyValue || {})[0];
+            const duplicateMsg = field === 'name'
+                ? 'A college with this name already exists'
+                : field === 'allowedDomains'
+                ? 'One or more of the specified domains is already registered to another college'
+                : `A college with this ${field || 'value'} already exists`;
+
             return res.status(400).json({
                 status: 'error',
-                message: 'A college with this name already exists'
+                message: duplicateMsg
             });
         }
 
