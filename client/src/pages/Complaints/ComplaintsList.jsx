@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ComplaintForm from './ComplaintForm';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
-import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp } from 'lucide-react';
 
 const statusConfig = {
   pending:          { label: 'Pending',          color: 'bg-gray-100 text-gray-700 border-gray-200',    icon: Clock },
@@ -23,6 +23,39 @@ const StatusBadge = ({ status }) => {
       <Icon size={12} />
       {cfg.label}
     </span>
+  );
+};
+
+const ExpandableDescription = ({ text }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isLong = text && (text.length > 180 || text.split('\n').length > 3);
+
+  if (!text) return null;
+
+  return (
+    <div className="mb-4">
+      <p
+        className={`text-gray-700 font-medium text-base leading-relaxed break-words [overflow-wrap:anywhere] transition-all duration-200 ${
+          !isExpanded && isLong ? 'line-clamp-3' : ''
+        }`}
+      >
+        {text}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer select-none"
+        >
+          <span>{isExpanded ? 'Read less' : 'Read more'}</span>
+          {isExpanded ? (
+            <ChevronUp size={14} className="stroke-[2.5]" />
+          ) : (
+            <ChevronDown size={14} className="stroke-[2.5]" />
+          )}
+        </button>
+      )}
+    </div>
   );
 };
 
@@ -233,7 +266,7 @@ const ComplaintsList = () => {
                       </button>
                     </div>
                   </div>
-                  <p className="text-gray-700 font-medium text-base leading-relaxed mb-4 break-words [overflow-wrap:anywhere]">{complaint.description}</p>
+                  <ExpandableDescription text={complaint.description} />
                   {complaint.image && complaint.image.trim() !== '' && (
                     <div 
                       onClick={() => setSelectedPhoto({
