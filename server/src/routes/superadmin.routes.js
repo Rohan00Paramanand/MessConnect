@@ -21,6 +21,8 @@ const router = express.Router();
 router.use(protect);
 router.use(authorizeRoles('super_admin'));
 
+router.get('/analytics', getSuperAdminAnalytics);
+
 router.post('/colleges', createCollege);
 router.get('/colleges', getColleges);
 router.put('/colleges/:id', updateCollege);
