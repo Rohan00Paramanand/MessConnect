@@ -19,6 +19,23 @@ export const createNotice = async (req, res) => {
             image = req.body.image;
         }
 
+        // Set expiration date to end-of-day (23:59:59.999) to avoid premature same-day expiration
+        let parsedExpiresAt = null;
+        if (expiresAt) {
+            const expDate = new Date(expiresAt);
+            expDate.setHours(23, 59, 59, 999);
+            if (expDate < new Date()) {
+                return res.status(400).json({ status: 'error', message: 'Expiration date cannot be in the past' });
+            }
+            parsedExpiresAt = expDate;
+        } else {
+            // Default notice duration: 14 days from publication
+            const defaultExp = new Date();
+            defaultExp.setDate(defaultExp.getDate() + 14);
+            defaultExp.setHours(23, 59, 59, 999);
+            parsedExpiresAt = defaultExp;
+        }
+
         const notice = await Notice.create({
             createdBy: req.user._id,
             collegeId: req.collegeId,
@@ -27,7 +44,7 @@ export const createNotice = async (req, res) => {
             image,
             targetRole: targetRole || 'all',
             isActive: isActive !== undefined ? isActive : true,
-            expiresAt: expiresAt ? new Date(expiresAt) : null
+            expiresAt: parsedExpiresAt
         });
 
         res.status(201).json({
@@ -47,18 +64,22 @@ export const getNotices = async (req, res) => {
         const userRole = req.user.role;
         const currentDate = new Date();
 
+        const { includeExpired } = req.query;
+
         // Build query:
         // 1. Notice must be active
-        // 2. Target role must be 'all' OR the user's specific role
-        // 3. Expiration date must either be null OR in the future
+        // 2. Expiration date must either be null OR in the future (unless explicitly requested by admin/committee)
         const query = {
-            isActive: true,
-            $or: [
+            isActive: true
+        };
+
+        if (includeExpired !== 'true' || !['mess_committee', 'college_admin', 'super_admin'].includes(userRole)) {
+            query.$or = [
                 { expiresAt: { $exists: false } },
                 { expiresAt: null },
                 { expiresAt: { $gt: currentDate } }
-            ]
-        };
+            ];
+        }
 
         // Enforce college isolation for all non-super-admin users
         if (userRole !== 'super_admin') {
@@ -116,7 +137,12 @@ export const updateNotice = async (req, res) => {
         const updatedData = { ...req.body, image };
 
         if (req.body.expiresAt) {
-            updatedData.expiresAt = new Date(req.body.expiresAt);
+            const expDate = new Date(req.body.expiresAt);
+            expDate.setHours(23, 59, 59, 999);
+            if (expDate < new Date()) {
+                return res.status(400).json({ status: 'error', message: 'Expiration date cannot be in the past' });
+            }
+            updatedData.expiresAt = expDate;
         }
 
         notice = await Notice.findByIdAndUpdate(req.params.id, updatedData, {
