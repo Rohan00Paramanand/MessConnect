@@ -4,7 +4,17 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { Bell, Plus, X, Trash2 } from 'lucide-react';
+import { Bell, Plus, X, Trash2, Calendar, Clock } from 'lucide-react';
+
+const getDefaultExpiryDate = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  return d.toISOString().split('T')[0];
+};
+
+const getMinExpiryDate = () => {
+  return new Date().toISOString().split('T')[0];
+};
 
 const NoticeBoard = () => {
   const { user } = useAuthStore();
@@ -13,55 +23,102 @@ const NoticeBoard = () => {
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [image, setImage] = useState(null);
-  const [formData, setFormData] = useState({ title: '', description: '', targetRole: 'all', isActive: true, expiresAt: '' });
+  const [viewFilter, setViewFilter] = useState('active'); // 'active' or 'all'
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    targetRole: 'all',
+    isActive: true,
+    expiresAt: getDefaultExpiryDate()
+  });
 
-  const fetchNotices = async () => {
+  const isPrivileged = ['mess_committee', 'college_admin', 'super_admin'].includes(user?.role);
+
+  const fetchNotices = async (filter = viewFilter) => {
     try {
-      const { data } = await api.get('/notices');
-      setNotices(data.data || data);
-    } catch { toast.error('Failed to load notices'); }
-    finally { setLoading(false); }
+      setLoading(true);
+      const params = filter === 'all' && isPrivileged ? { includeExpired: 'true' } : {};
+      const { data } = await api.get('/notices', { params });
+      setNotices(data.data || data || []);
+    } catch {
+      toast.error('Failed to load notices');
+    } finally {
+      setLoading(false);
+    }
   };
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchNotices();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchNotices(viewFilter);
+  }, [viewFilter]);
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      targetRole: 'all',
+      isActive: true,
+      expiresAt: getDefaultExpiryDate()
+    });
+    setImage(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
+
+    if (formData.expiresAt) {
+      const expDate = new Date(formData.expiresAt);
+      expDate.setHours(23, 59, 59, 999);
+      if (expDate < new Date()) {
+        toast.error('Expiration date cannot be in the past');
+        setFormLoading(false);
+        return;
+      }
+    }
+
     const payload = new FormData();
-    payload.append('title', formData.title);
-    if (formData.description) payload.append('description', formData.description);
+    payload.append('title', formData.title.trim());
+    if (formData.description) payload.append('description', formData.description.trim());
     payload.append('targetRole', formData.targetRole);
     payload.append('isActive', formData.isActive.toString());
     if (formData.expiresAt) payload.append('expiresAt', formData.expiresAt);
     if (image) payload.append('image', image);
+
     try {
-      const { data } = await api.post('/notices', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const { data } = await api.post('/notices', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       if (data.status === 'success') {
-        toast.success('Notice published!');
-        setNotices([data.data, ...notices]);
+        toast.success('Notice published successfully!');
+        setNotices(prev => [data.data, ...prev]);
         setShowForm(false);
-        setFormData({ title: '', description: '', targetRole: 'all', isActive: true, expiresAt: '' });
-        setImage(null);
+        resetForm();
       }
-    } catch { toast.error('Failed to create notice'); }
-    finally { setFormLoading(false); }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create notice');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this notice?')) return;
+    if (!window.confirm('Are you sure you want to delete this notice?')) return;
     try {
       await api.delete(`/notices/${id}`);
-      setNotices(notices.filter(n => n._id !== id));
+      setNotices(prev => prev.filter(n => n._id !== id));
       toast.success('Notice deleted');
-    } catch { toast.error('Failed to delete notice'); }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete notice');
+    }
   };
 
-  const targetRoleColor = { all: 'bg-gray-100 text-gray-700', user: 'bg-teal-100 text-teal-700', student: 'bg-teal-100 text-teal-700', vendor: 'bg-rose-100 text-rose-700', mess_committee: 'bg-amber-100 text-amber-700' };
+  const targetRoleColor = {
+    all: 'bg-gray-100 text-gray-700',
+    user: 'bg-teal-100 text-teal-700',
+    student: 'bg-teal-100 text-teal-700',
+    vendor: 'bg-rose-100 text-rose-700',
+    mess_committee: 'bg-amber-100 text-amber-700'
+  };
 
   return (
     <div className="space-y-6 pb-8">
@@ -80,10 +137,13 @@ const NoticeBoard = () => {
             <h1 className="text-2xl sm:text-3xl font-black mb-1">Notice Board</h1>
             <p className="text-white/70 text-sm sm:text-base font-medium">Stay updated with important institutional announcements</p>
           </div>
-          {['mess_committee', 'college_admin'].includes(user?.role) && (
+          {isPrivileged && (
             <button
-              onClick={() => setShowForm(!showForm)}
-              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 self-start sm:self-auto"
+              onClick={() => {
+                setShowForm(!showForm);
+                if (!showForm) resetForm();
+              }}
+              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 self-start sm:self-auto shadow-sm"
             >
               {showForm ? <><X size={16} /> Cancel</> : <><Plus size={16} /> New Notice</>}
             </button>
@@ -91,35 +151,105 @@ const NoticeBoard = () => {
         </div>
       </div>
 
+      {/* Privileged View Filter Toggle */}
+      {isPrivileged && (
+        <div className="flex items-center gap-2 px-1">
+          <button
+            onClick={() => setViewFilter('active')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              viewFilter === 'active'
+                ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
+                : 'bg-white/60 text-gray-600 hover:bg-white'
+            }`}
+          >
+            Active Notices Only
+          </button>
+          <button
+            onClick={() => setViewFilter('all')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              viewFilter === 'all'
+                ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
+                : 'bg-white/60 text-gray-600 hover:bg-white'
+            }`}
+          >
+            All Notices (Including Expired)
+          </button>
+        </div>
+      )}
+
       {/* Create Notice Form */}
-      {showForm && ['mess_committee', 'college_admin'].includes(user?.role) && (
+      {showForm && isPrivileged && (
         <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-fade-in">
           <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-6">New Announcement</h3>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <Input label="Title" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-              <Input label="Expiration Date" type="date" value={formData.expiresAt} onChange={e => setFormData({...formData, expiresAt: e.target.value})} />
+              <Input
+                label="Title"
+                required
+                placeholder="e.g., Festival Feast Menu & Timings"
+                value={formData.title}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
+              />
+              <div>
+                <Input
+                  label="Expiration Date"
+                  type="date"
+                  min={getMinExpiryDate()}
+                  value={formData.expiresAt}
+                  onChange={e => setFormData({ ...formData, expiresAt: e.target.value })}
+                />
+                <p className="text-[11px] text-gray-400 mt-1 font-medium flex items-center gap-1">
+                  <Clock size={12} /> Notice will remain active until 11:59 PM on this date.
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Target Audience</label>
-                <select className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40" value={formData.targetRole} onChange={e => setFormData({...formData, targetRole: e.target.value})}>
+                <select
+                  className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40"
+                  value={formData.targetRole}
+                  onChange={e => setFormData({ ...formData, targetRole: e.target.value })}
+                >
                   <option value="all">Everyone</option>
-                  <option value="user">Users (Students & Faculty)</option>
-                  <option value="vendor">Vendor</option>
-                  <option value="mess_committee">Committee</option>
+                  <option value="user">Students & Users</option>
+                  <option value="vendor">Vendors</option>
+                  <option value="mess_committee">Mess Committee</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Image Attachment</label>
-                <input type="file" accept="image/*" onChange={e => setImage(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all cursor-pointer" />
+                <label className="block text-sm font-bold text-gray-700 mb-2">Image Attachment (Optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => setImage(e.target.files[0])}
+                  className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all cursor-pointer"
+                />
               </div>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
-              <textarea className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40" rows="4" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+              <textarea
+                className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40"
+                rows="4"
+                placeholder="Write detailed announcements, schedule changes, or guidelines..."
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+              />
             </div>
-            <Button type="submit" variant="committee" disabled={formLoading} className="w-full sm:w-auto">
-              {formLoading ? 'Publishing...' : '→ Publish Notice'}
-            </Button>
+            <div className="flex gap-3">
+              <Button type="submit" variant="committee" disabled={formLoading} className="w-full sm:w-auto">
+                {formLoading ? 'Publishing...' : '→ Publish Notice'}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  resetForm();
+                }}
+                className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 text-sm transition-all"
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -134,47 +264,98 @@ const NoticeBoard = () => {
           <div className="w-16 h-16 bg-violet-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <Bell className="text-violet-400" size={28} />
           </div>
-          <h3 className="font-bold text-gray-700 mb-1">No notices yet</h3>
-          <p className="text-gray-400 text-sm">Important announcements will appear here.</p>
+          <h3 className="font-bold text-gray-700 mb-1">No active notices</h3>
+          <p className="text-gray-400 text-sm">Important announcements with future validity will appear here.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {notices.map(notice => (
-            <div key={notice._id} className={`bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] overflow-hidden hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 ${!notice.isActive ? 'opacity-60' : ''}`}>
-              <div className="flex flex-col sm:flex-row gap-0">
-                {notice.image && (
-                  <div className="sm:w-48 flex-shrink-0">
-                    <img src={`/uploads/${notice.image.split('\\').pop().split('/').pop()}`} alt="Notice" className="w-full h-48 sm:h-full object-cover" />
-                  </div>
-                )}
-                <div className="flex-1 p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-xl font-black text-gray-900">{notice.title}</h3>
-                      <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${targetRoleColor[notice.targetRole] || targetRoleColor.all}`}>
-                        {notice.targetRole.toUpperCase()}
-                      </span>
-                      {!notice.isActive && <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-gray-100 text-gray-500">INACTIVE</span>}
+          {notices.map(notice => {
+            const expDate = notice.expiresAt ? new Date(notice.expiresAt) : null;
+            const now = new Date();
+            const isExpired = expDate ? expDate < now : false;
+            const daysLeft = expDate ? Math.ceil((expDate - now) / (1000 * 60 * 60 * 24)) : null;
+
+            return (
+              <div
+                key={notice._id}
+                className={`bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] overflow-hidden hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 ${
+                  isExpired || !notice.isActive ? 'opacity-65' : ''
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row gap-0">
+                  {notice.image && (
+                    <div className="sm:w-48 flex-shrink-0">
+                      <img
+                        src={`/uploads/${notice.image.split('\\').pop().split('/').pop()}`}
+                        alt="Notice"
+                        className="w-full h-48 sm:h-full object-cover"
+                      />
                     </div>
-                    {['mess_committee', 'college_admin'].includes(user?.role) && (
-                      <button onClick={() => handleDelete(notice._id)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200">
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{notice.description}</p>
-                  <div className="mt-4 flex items-center gap-4 text-xs text-gray-400 font-medium">
-                    {notice.createdBy?.name && <span>By {notice.createdBy.name}</span>}
-                    {notice.expiresAt && <span>Expires {new Date(notice.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>}
+                  )}
+                  <div className="flex-1 p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-xl font-black text-gray-900">{notice.title}</h3>
+                        <span
+                          className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                            targetRoleColor[notice.targetRole] || targetRoleColor.all
+                          }`}
+                        >
+                          {notice.targetRole.toUpperCase()}
+                        </span>
+                        {!notice.isActive && (
+                          <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-gray-100 text-gray-500">
+                            INACTIVE
+                          </span>
+                        )}
+                        {isExpired && (
+                          <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-100 text-rose-700">
+                            EXPIRED
+                          </span>
+                        )}
+                      </div>
+                      {isPrivileged && (
+                        <button
+                          onClick={() => handleDelete(notice._id)}
+                          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200"
+                          title="Delete notice"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{notice.description}</p>
+                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-400 font-medium">
+                      {notice.createdBy?.name && (
+                        <span className="text-gray-500">By <strong className="text-gray-700">{notice.createdBy.name}</strong></span>
+                      )}
+                      {expDate && (
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                            isExpired
+                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                              : daysLeft <= 3
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          }`}
+                        >
+                          <Calendar size={13} className={isExpired ? 'text-rose-500' : 'text-emerald-500'} />
+                          {isExpired
+                            ? `Expired on ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                            : `Valid till ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} (${daysLeft}d left)`
+                          }
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 };
-export default NoticeBoard;
 
+export default NoticeBoard;
