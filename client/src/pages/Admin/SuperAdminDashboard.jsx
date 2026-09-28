@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw, Trash2, BarChart3 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
+import Select from '../../components/ui/Select';
 
 const SuperAdminDashboard = () => {
   const { user } = useAuthStore();
@@ -216,20 +217,17 @@ const SuperAdminDashboard = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5">Select College Portal</label>
-              <select
-                required
-                className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition-all font-medium"
-                value={inviteForm.collegeId}
-                onChange={(e) => setInviteForm({ ...inviteForm, collegeId: e.target.value })}
-              >
-                <option value="">Choose College...</option>
-                {colleges.map((c) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Select College Portal"
+              required
+              value={inviteForm.collegeId}
+              placeholder="Choose College..."
+              onChange={(e) => setInviteForm({ ...inviteForm, collegeId: e.target.value })}
+              options={[
+                { value: '', label: 'Choose College...' },
+                ...colleges.map((c) => ({ value: c._id, label: c.name }))
+              ]}
+            />
 
             <Button
               type="submit"

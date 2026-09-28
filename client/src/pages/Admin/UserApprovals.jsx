@@ -3,6 +3,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, FileText, UserCheck, Users, Building2 } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import Select from '../../components/ui/Select';
 
 const UserApprovals = () => {
   const [activeTab, setActiveTab] = useState('accounts');
@@ -112,19 +113,17 @@ const UserApprovals = () => {
 
           <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
             {activeTab === 'staff' && (
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-gray-200 shadow-sm">
-                <Building2 size={16} className="text-gray-500" />
-                <select
-                  value={staffMessFilter}
-                  onChange={(e) => setStaffMessFilter(e.target.value)}
-                  className="bg-transparent text-gray-900 font-bold outline-none cursor-pointer text-xs"
-                >
-                  <option value="">All Messes</option>
-                  {messes.map((m) => (
-                    <option key={m._id} value={m._id}>{m.name}</option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                variant="compact"
+                icon={Building2}
+                value={staffMessFilter}
+                onChange={(e) => setStaffMessFilter(e.target.value)}
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map((m) => ({ value: m._id, label: m.name })),
+                ]}
+                className="w-auto min-w-[160px]"
+              />
             )}
 
             <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 w-full sm:w-auto">

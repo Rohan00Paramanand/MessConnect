@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import { Bell, Plus, X, Trash2, Calendar, Clock } from 'lucide-react';
 
 const getDefaultExpiryDate = () => {
@@ -202,19 +203,17 @@ const NoticeBoard = () => {
                   <Clock size={12} /> Notice will remain active until 11:59 PM on this date.
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Target Audience</label>
-                <select
-                  className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40"
-                  value={formData.targetRole}
-                  onChange={e => setFormData({ ...formData, targetRole: e.target.value })}
-                >
-                  <option value="all">Everyone</option>
-                  <option value="user">Students & Users</option>
-                  <option value="vendor">Vendors</option>
-                  <option value="mess_committee">Mess Committee</option>
-                </select>
-              </div>
+              <Select
+                label="Target Audience"
+                value={formData.targetRole}
+                onChange={e => setFormData({ ...formData, targetRole: e.target.value })}
+                options={[
+                  { value: 'all', label: 'Everyone' },
+                  { value: 'user', label: 'Students & Users' },
+                  { value: 'vendor', label: 'Vendors' },
+                  { value: 'mess_committee', label: 'Mess Committee' }
+                ]}
+              />
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Image Attachment (Optional)</label>
                 <input
@@ -292,10 +291,10 @@ const NoticeBoard = () => {
                       />
                     </div>
                   )}
-                  <div className="flex-1 p-6">
+                  <div className="flex-1 min-w-0 p-6">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-xl font-black text-gray-900">{notice.title}</h3>
+                        <h3 className="text-xl font-black text-gray-900 break-words [overflow-wrap:anywhere]">{notice.title}</h3>
                         <span
                           className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
                             targetRoleColor[notice.targetRole] || targetRoleColor.all
@@ -324,7 +323,7 @@ const NoticeBoard = () => {
                         </button>
                       )}
                     </div>
-                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{notice.description}</p>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{notice.description}</p>
                     <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-400 font-medium">
                       {notice.createdBy?.name && (
                         <span className="text-gray-500">By <strong className="text-gray-700">{notice.createdBy.name}</strong></span>

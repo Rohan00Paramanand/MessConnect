@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import { Clock, UtensilsCrossed, Sunrise, Sun, Coffee, Moon, Plus, X, Trash2 } from 'lucide-react';
 
 const mealTypeConfig = {
@@ -131,17 +132,12 @@ const WeeklyTimetable = () => {
             </div>
           )}
           {['user', 'student', 'mess_committee'].includes(user?.role) && (
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2 border border-white/30 truncate self-start sm:self-auto">
-              <select 
-                className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
-                value={messFilter}
-                onChange={(e) => setMessFilter(e.target.value)}
-              >
-                {messes.map((m) => (
-                  <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              variant="header"
+              value={messFilter}
+              onChange={(e) => setMessFilter(e.target.value)}
+              options={messes.map((m) => ({ value: m._id, label: m.name }))}
+            />
           )}
         </div>
       </div>

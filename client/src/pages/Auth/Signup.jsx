@@ -5,6 +5,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import Select from '../../components/ui/Select';
 import OtpInput from '../../components/ui/OtpInput';
 
 const Signup = () => {
@@ -338,53 +339,53 @@ const Signup = () => {
 
                 {formData.role === 'vendor' && (
                   <div className="space-y-4 animate-fade-in">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Select College</label>
-                      <select
-                        name="collegeId"
-                        required
-                        value={formData.collegeId}
-                        onChange={(e) => {
-                          const colId = e.target.value;
-                          setFormData(prev => ({
-                            ...prev,
-                            collegeId: colId,
-                            messAssigned: ''
-                          }));
-                        }}
-                        className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500"
-                      >
-                        <option value="">Select College</option>
-                        {colleges.map(c => (
-                          <option key={c._id} value={c._id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <Select
+                      label="Select College"
+                      name="collegeId"
+                      required
+                      value={formData.collegeId}
+                      placeholder="Select College"
+                      onChange={(e) => {
+                        const colId = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          collegeId: colId,
+                          messAssigned: ''
+                        }));
+                      }}
+                      options={[
+                        { value: '', label: 'Select College' },
+                        ...colleges.map(c => ({ value: c._id, label: c.name }))
+                      ]}
+                    />
 
                     <Input label="Registered Company Name" name="companyName" required value={formData.companyName} onChange={handleChange} />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Mess</label>
-                      <select
-                        name="messAssigned"
-                        required
-                        value={formData.messAssigned}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 bg-white/80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500"
-                        disabled={!formData.collegeId}
-                      >
-                        <option value="">
-                          {!formData.collegeId
-                            ? 'Select a college first'
-                            : messes.length === 0
-                            ? 'No active messes found for this college'
-                            : 'Select Mess'}
-                        </option>
-                        {messes.map(m => (
-                          <option key={m._id} value={m._id}>{m.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <Select
+                      label="Assign to Mess"
+                      name="messAssigned"
+                      required
+                      value={formData.messAssigned}
+                      placeholder={
+                        !formData.collegeId
+                          ? 'Select a college first'
+                          : messes.length === 0
+                          ? 'No active messes found for this college'
+                          : 'Select Mess'
+                      }
+                      disabled={!formData.collegeId}
+                      onChange={handleChange}
+                      options={
+                        !formData.collegeId
+                          ? [{ value: '', label: 'Select a college first', disabled: true }]
+                          : messes.length === 0
+                          ? [{ value: '', label: 'No active messes found for this college', disabled: true }]
+                          : [
+                              { value: '', label: 'Select Mess' },
+                              ...messes.map(m => ({ value: m._id, label: m.name }))
+                            ]
+                      }
+                    />
 
                     <div className="pt-2 space-y-3">
                       <p className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">Required Verification Documents</p>

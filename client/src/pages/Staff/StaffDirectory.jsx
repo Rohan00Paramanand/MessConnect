@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import { Users, Plus, X, Trash2, Phone, CalendarDays, DollarSign, FileText, CheckCircle2, Clock, Building2 } from 'lucide-react';
 
 const roleColors = { Cook: 'bg-orange-100 text-orange-700', Cleaner: 'bg-blue-100 text-blue-700', Cashier: 'bg-green-100 text-green-700', Manager: 'bg-purple-100 text-purple-700' };
@@ -141,19 +142,16 @@ const StaffDirectory = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             {['mess_committee', 'college_admin'].includes(user?.role) && (
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 border border-white/30">
-                <Building2 size={16} className="text-white/70" />
-                <select 
-                  className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
-                  value={messFilter}
-                  onChange={(e) => setMessFilter(e.target.value)}
-                >
-                  <option value="" className="text-gray-900">All Messes</option>
-                  {messes.map((m) => (
-                    <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                variant="header"
+                icon={Building2}
+                value={messFilter}
+                onChange={(e) => setMessFilter(e.target.value)}
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map((m) => ({ value: m._id, label: m.name })),
+                ]}
+              />
             )}
             {user?.role === 'vendor' && (
               <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5">
@@ -183,15 +181,17 @@ const StaffDirectory = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <Input label="Full Name" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
               <Input label="Phone Number" required value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value.replace(/\D/g, '').slice(0, 10)})} />
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Role</label>
-                <select className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/40" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
-                  <option value="Cook">Cook</option>
-                  <option value="Cleaner">Cleaner</option>
-                  <option value="Cashier">Cashier</option>
-                  <option value="Manager">Manager</option>
-                </select>
-              </div>
+              <Select
+                label="Role"
+                value={formData.role}
+                onChange={e => setFormData({...formData, role: e.target.value})}
+                options={[
+                  { value: 'Cook', label: 'Cook' },
+                  { value: 'Cleaner', label: 'Cleaner' },
+                  { value: 'Cashier', label: 'Cashier' },
+                  { value: 'Manager', label: 'Manager' },
+                ]}
+              />
               <Input label="Joining Date" type="date" required value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})} />
               <Input label="Monthly Salary (₹)" type="number" required value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} />
             </div>

@@ -4,6 +4,7 @@ import api, { getImageUrl } from '../../api/axios';
 import toast from 'react-hot-toast';
 import ComplaintForm from './ComplaintForm';
 import Button from '../../components/ui/Button';
+import Select from '../../components/ui/Select';
 import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp } from 'lucide-react';
 
 const statusConfig = {
@@ -154,18 +155,15 @@ const ComplaintsList = () => {
           </div>
           <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
             {['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2 border border-white/30 truncate">
-                <select 
-                  className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
-                  value={messFilter}
-                  onChange={(e) => setMessFilter(e.target.value)}
-                >
-                  <option value="" className="text-gray-900">All Messes</option>
-                  {messes.map((m) => (
-                    <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                variant="header"
+                value={messFilter}
+                onChange={(e) => setMessFilter(e.target.value)}
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map((m) => ({ value: m._id, label: m.name })),
+                ]}
+              />
             )}
             <div className="text-right">
               <p className="text-white/60 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Total</p>
@@ -203,7 +201,7 @@ const ComplaintsList = () => {
           {complaints.map(complaint => (
             <div key={complaint._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <StatusBadge status={complaint.status} />
                     {complaint.status === 'rejected' && complaint.rejectionReason && (
@@ -235,7 +233,7 @@ const ComplaintsList = () => {
                       </button>
                     </div>
                   </div>
-                  <p className="text-gray-700 font-medium text-base leading-relaxed mb-4">{complaint.description}</p>
+                  <p className="text-gray-700 font-medium text-base leading-relaxed mb-4 break-words [overflow-wrap:anywhere]">{complaint.description}</p>
                   {complaint.image && complaint.image.trim() !== '' && (
                     <div 
                       onClick={() => setSelectedPhoto({
@@ -304,42 +302,39 @@ const ComplaintsList = () => {
                   {user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status) && (
                     <div className="flex flex-col gap-2">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Update Status</label>
-                      <select
-                        className="text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 font-medium cursor-pointer"
+                      <Select
+                        variant="compact"
                         value={complaint.status}
                         onChange={(e) => handleStatusUpdate(complaint._id, e.target.value)}
-                      >
-                        {complaint.status === 'pending' && (
-                          <>
-                            <option value="pending">⏳ Pending</option>
-                            <option value="assigned">🔁 Assign to Vendor</option>
-                            <option disabled className="text-gray-400 font-bold bg-gray-50">❌ Reject Reason:</option>
-                            <option value="rejected:duplicate">❌ Reject (Duplicate - 0)</option>
-                            <option value="rejected:wrong_category">❌ Reject (Wrong Category - -2)</option>
-                            <option value="rejected:spam">❌ Reject (Spam - -10)</option>
-                            <option value="rejected:false_information">❌ Reject (False Info - -15)</option>
-                            <option value="rejected:inappropriate">❌ Reject (Inappropriate - -10)</option>
-                          </>
-                        )}
-                        {complaint.status === 'assigned' && (
-                          <>
-                            <option value="assigned">🔁 Assigned to Vendor</option>
-                            <option disabled className="text-gray-400 font-bold bg-gray-50">❌ Reject Reason:</option>
-                            <option value="rejected:duplicate">❌ Reject (Duplicate - 0)</option>
-                            <option value="rejected:wrong_category">❌ Reject (Wrong Category - -2)</option>
-                            <option value="rejected:spam">❌ Reject (Spam - -10)</option>
-                            <option value="rejected:false_information">❌ Reject (False Info - -15)</option>
-                            <option value="rejected:inappropriate">❌ Reject (Inappropriate - -10)</option>
-                          </>
-                        )}
-                        {complaint.status === 'vendor_completed' && (
-                          <>
-                            <option value="vendor_completed" disabled>🔍 Select Action...</option>
-                            <option value="assigned">🔁 Re-assign to Vendor</option>
-                            <option value="resolved">✅ Resolve</option>
-                          </>
-                        )}
-                      </select>
+                        options={
+                          complaint.status === 'pending'
+                            ? [
+                                { value: 'pending', label: '⏳ Pending' },
+                                { value: 'assigned', label: '🔁 Assign to Vendor' },
+                                { isHeader: true, label: '❌ Reject Reason:' },
+                                { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
+                                { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
+                                { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
+                                { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
+                                { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
+                              ]
+                            : complaint.status === 'assigned'
+                            ? [
+                                { value: 'assigned', label: '🔁 Assigned to Vendor' },
+                                { isHeader: true, label: '❌ Reject Reason:' },
+                                { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
+                                { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
+                                { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
+                                { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
+                                { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
+                              ]
+                            : [
+                                { value: 'vendor_completed', label: '🔍 Select Action...', disabled: true },
+                                { value: 'assigned', label: '🔁 Re-assign to Vendor' },
+                                { value: 'resolved', label: '✅ Resolve' },
+                              ]
+                        }
+                      />
                       {complaint.status === 'vendor_completed' && (
                         <div className="space-y-2 mt-1">
                           <div className="text-[11px] text-center text-amber-700 bg-amber-50 rounded-xl px-2.5 py-1.5 font-bold border border-amber-200">
@@ -407,7 +402,7 @@ const ComplaintsList = () => {
             />
             <div className="p-5 bg-gray-900/90 border-t border-white/10 text-white">
               <h4 className="text-lg font-bold mb-1">{selectedPhoto.title}</h4>
-              <p className="text-sm text-gray-400 mb-2">{selectedPhoto.description}</p>
+              <p className="text-sm text-gray-400 mb-2 break-words [overflow-wrap:anywhere]">{selectedPhoto.description}</p>
               {selectedPhoto.address && (
                 <div className="flex items-center gap-1.5 text-xs text-teal-400 bg-teal-950/40 px-3 py-1.5 rounded-xl border border-teal-900/50 w-fit">
                   <MapPin size={12} className="text-teal-400" />

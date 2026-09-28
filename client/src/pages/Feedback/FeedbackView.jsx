@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import { Star, TrendingUp } from 'lucide-react';
 
 const StarRating = ({ rating, setRating, readOnly = false }) => (
@@ -175,17 +176,12 @@ const FeedbackView = () => {
           {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && (
             <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
               {['mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
-                <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2 border border-white/30 truncate">
-                  <select 
-                    className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs sm:text-sm"
-                    value={messFilter}
-                    onChange={(e) => setMessFilter(e.target.value)}
-                  >
-                    {messes.map((m) => (
-                      <option key={m._id} value={m._id} className="text-gray-900">{m.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <Select
+                  variant="header"
+                  value={messFilter}
+                  onChange={(e) => setMessFilter(e.target.value)}
+                  options={messes.map((m) => ({ value: m._id, label: m.name }))}
+                />
               )}
               <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2.5 sm:py-4 border border-white/30">
                 <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
@@ -224,42 +220,33 @@ const FeedbackView = () => {
                 disabled 
               />
               
-              <div className="flex flex-col">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Select Mess</label>
-                <select 
-                  className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-                  value={submissionMess}
-                  onChange={(e) => { setSubmissionMess(e.target.value); setCurrentRating(0); }}
-                  required
-                >
-                  {messes.length === 0 ? (
-                    <option value="">No active messes</option>
-                  ) : (
-                    messes.map((m) => (
-                      <option key={m._id} value={m._id}>{m.name}</option>
-                    ))
-                  )}
-                </select>
-              </div>
+              <Select
+                label="Select Mess"
+                required
+                value={submissionMess}
+                onChange={(e) => { setSubmissionMess(e.target.value); setCurrentRating(0); }}
+                placeholder={messes.length === 0 ? "No active messes" : "Select Mess"}
+                options={
+                  messes.length === 0
+                    ? [{ value: '', label: 'No active messes', disabled: true }]
+                    : messes.map((m) => ({ value: m._id, label: m.name }))
+                }
+              />
               
-              <div className="flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold text-gray-700">Category to Rate</label>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="block text-sm font-bold text-gray-700">Category to Rate</span>
                   {hasRatedCategory && (
                     <span className="text-[10px] bg-red-100 text-red-600 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                       Already Rated
                     </span>
                   )}
                 </div>
-                <select 
-                  className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 capitalize bg-white"
+                <Select
                   value={selectedCat}
                   onChange={(e) => { setSelectedCat(e.target.value); setCurrentRating(0); }}
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                  options={categories.map(cat => ({ value: cat, label: cat.charAt(0).toUpperCase() + cat.slice(1) }))}
+                />
               </div>
             </div>
             
@@ -326,7 +313,7 @@ const FeedbackView = () => {
                 </div>
               )}
               {fb.comment && (
-                <p className="text-gray-600 text-sm italic leading-relaxed border-l-2 border-amber-300 pl-3">
+                <p className="text-gray-600 text-sm italic leading-relaxed border-l-2 border-amber-300 pl-3 break-words [overflow-wrap:anywhere]">
                   "{fb.comment}"
                 </p>
               )}

@@ -138,7 +138,7 @@ const StudentDashboard = () => {
           <div className="space-y-3 sm:space-y-4">
             {trendingComplaints.map(complaint => (
               <div key={complaint._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 bg-white border border-gray-100 rounded-xl sm:rounded-2xl hover:shadow-md transition-all hover:border-gray-200">
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-wider rounded-lg">
                       {complaint.category}
@@ -148,9 +148,9 @@ const StudentDashboard = () => {
                         🏛️ {complaint.mess.name}
                       </span>
                     )}
-                    <h3 className="font-bold text-gray-900 text-lg">{complaint.title}</h3>
+                    <h3 className="font-bold text-gray-900 text-lg break-words [overflow-wrap:anywhere]">{complaint.title}</h3>
                   </div>
-                  <p className="text-gray-500 text-sm line-clamp-1">{complaint.description}</p>
+                  <p className="text-gray-500 text-sm line-clamp-1 break-words [overflow-wrap:anywhere]">{complaint.description}</p>
                 </div>
                 
                 <button

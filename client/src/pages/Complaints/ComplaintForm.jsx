@@ -3,6 +3,7 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import Select from '../../components/ui/Select';
 import { Camera, X, MapPin } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -245,36 +246,33 @@ const ComplaintForm = ({ onComplaintAdded }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Mess</label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 mb-4"
+          <div className="space-y-4">
+            <Select
+              label="Select Mess"
+              required
               value={formData.mess}
               onChange={(e) => setFormData({ ...formData, mess: e.target.value })}
-              required
-            >
-              {messes.length === 0 ? (
-                <option value="">No active messes</option>
-              ) : (
-                messes.map((m) => (
-                  <option key={m._id} value={m._id}>{m.name}</option>
-                ))
-              )}
-            </select>
+              placeholder={messes.length === 0 ? "No active messes" : "Select Mess"}
+              options={
+                messes.length === 0
+                  ? [{ value: '', label: 'No active messes', disabled: true }]
+                  : messes.map((m) => ({ value: m._id, label: m.name }))
+              }
+            />
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+            <Select
+              label="Category"
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            >
-              <option value="food">Food</option>
-              <option value="cleanliness">Cleanliness</option>
-              <option value="timeliness">Timeliness</option>
-              <option value="taste">Taste</option>
-              <option value="staff behaviour">Staff Behaviour</option>
-              <option value="other">Other</option>
-            </select>
+              options={[
+                { value: 'food', label: 'Food' },
+                { value: 'cleanliness', label: 'Cleanliness' },
+                { value: 'timeliness', label: 'Timeliness' },
+                { value: 'taste', label: 'Taste' },
+                { value: 'staff behaviour', label: 'Staff Behaviour' },
+                { value: 'other', label: 'Other' },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Evidence Image</label>
