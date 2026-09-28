@@ -1,16 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
-import { MessageSquare, Star, Bell, ArrowRight, TrendingUp, ThumbsUp } from 'lucide-react';
+import { MessageSquare, Star, Bell, ArrowRight, TrendingUp, ThumbsUp, Utensils, Camera, CreditCard, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import MealPurchaseModal from '../../components/meals/MealPurchaseModal';
+import FaceRegistrationModal from '../../components/meals/FaceRegistrationModal';
 
 const StudentDashboard = () => {
   const { user } = useAuthStore();
   const [trendingComplaints, setTrendingComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Meal Pass and Biometrics state
+  const [mealPass, setMealPass] = useState(null);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
+
+  const fetchMealPass = async () => {
+    try {
+      const { data } = await api.get('/meals/my-pass');
+      setMealPass(data.data?.pass || null);
+    } catch {
+      console.error('Failed to load meal pass');
+    }
+  };
+
   useEffect(() => {
+    fetchMealPass();
     const fetchComplaints = async () => {
       try {
         const { data } = await api.get('/complaints');
@@ -84,6 +101,98 @@ const StudentDashboard = () => {
                 {(user?.trustMeter ?? 100) === 100 ? 'Excellent! Thank you for filing genuine reports.' : 'Genuine resolved reports restore your score by +10.'}
               </p>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Biometric Meal Pass & Recharge Card */}
+      <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-md transition-all">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          {/* Left: Meal Balance */}
+          <div className="flex items-start sm:items-center gap-4">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner ${
+              (mealPass?.remainingMeals || 0) > 0
+                ? 'bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-teal-500/20'
+                : 'bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-rose-500/20'
+            }`}>
+              <Utensils size={28} />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Biometric Mess Pass
+                </span>
+                {(mealPass?.remainingMeals || 0) <= 0 ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700 flex items-center gap-1">
+                    <AlertCircle size={10} /> Meals Ended
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                    <CheckCircle2 size={10} /> Active Pass
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className={`text-3xl sm:text-4xl font-black ${
+                  (mealPass?.remainingMeals || 0) > 0 ? 'text-gray-900' : 'text-rose-600'
+                }`}>
+                  {mealPass?.remainingMeals ?? 0}
+                </span>
+                <span className="text-sm font-bold text-gray-500">Meals Remaining</span>
+              </div>
+
+              {(mealPass?.remainingMeals || 0) <= 0 && (
+                <p className="text-xs text-rose-600 font-semibold mt-1">
+                  ⚠️ Your meal credits are depleted! Please recharge below to allow mess facial check-in.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Face Biometric Enrollment Status & Quick CTAs */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0 border-gray-100">
+            {/* Biometric Status Pill */}
+            <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
+              {mealPass?.facePhoto ? (
+                <img
+                  src={mealPass.facePhoto}
+                  alt="Registered Face"
+                  className="w-8 h-8 rounded-full object-cover border-2 border-teal-500"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center">
+                  <Camera size={16} />
+                </div>
+              )}
+              <div>
+                <p className="font-bold text-gray-800">
+                  {mealPass?.isFaceRegistered ? 'Biometric Enrolled' : 'Face Not Enrolled'}
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  {mealPass?.isFaceRegistered ? 'Ready for touchless entry' : 'Required for attendance'}
+                </p>
+              </div>
+            </div>
+
+            {/* Face Register Button */}
+            <button
+              onClick={() => setIsFaceModalOpen(true)}
+              className="px-4 py-2.5 rounded-2xl border border-gray-200 hover:border-teal-500 hover:bg-teal-50 text-gray-700 hover:text-teal-700 text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <Camera size={15} />
+              <span>{mealPass?.isFaceRegistered ? 'Update Face' : 'Register Face'}</span>
+            </button>
+
+            {/* Recharge Meals Button */}
+            <button
+              onClick={() => setIsPurchaseModalOpen(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-bold rounded-2xl shadow-lg shadow-teal-600/20 hover:shadow-teal-600/30 transition-all flex items-center gap-2"
+            >
+              <CreditCard size={15} />
+              <span>Recharge Meals</span>
+            </button>
           </div>
         </div>
       </div>
@@ -174,6 +283,31 @@ const StudentDashboard = () => {
           View All Complaints <ArrowRight size={16} />
         </Link>
       </div>
+
+      {/* Meal Recharge & Face Registration Modals */}
+      <MealPurchaseModal
+        isOpen={isPurchaseModalOpen}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        onPurchaseSuccess={(data) => {
+          setMealPass((prev) => ({
+            ...(prev || {}),
+            remainingMeals: data.remainingMeals,
+            totalMealsPurchased: data.totalMealsPurchased
+          }));
+        }}
+      />
+
+      <FaceRegistrationModal
+        isOpen={isFaceModalOpen}
+        onClose={() => setIsFaceModalOpen(false)}
+        onRegistrationSuccess={(data) => {
+          setMealPass((prev) => ({
+            ...(prev || {}),
+            isFaceRegistered: true,
+            facePhoto: data.facePhoto
+          }));
+        }}
+      />
     </div>
   );
 };

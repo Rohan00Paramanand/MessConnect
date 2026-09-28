@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import useAuthStore from '../../store/useAuthStore';
-import { ChefHat, ClipboardList, Clock, Users, ArrowRight } from 'lucide-react';
+import { ChefHat, ClipboardList, Clock, Users, ArrowRight, Camera, Sparkles, CheckCircle2, History } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import FaceAttendanceScanner from '../../components/meals/FaceAttendanceScanner';
+import api from '../../api/axios';
 
 const VendorDashboard = () => {
   const { user } = useAuthStore();
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [recentLogs, setRecentLogs] = useState([]);
+  const [enrolledCount, setEnrolledCount] = useState(0);
+
+  const fetchQuickStats = async () => {
+    try {
+      const [logsRes, studentsRes] = await Promise.allSettled([
+        api.get('/meals/vendor/recent-attendance'),
+        api.get('/meals/vendor/enrolled-students')
+      ]);
+
+      if (logsRes.status === 'fulfilled') {
+        setRecentLogs(logsRes.value.data?.data || []);
+      }
+      if (studentsRes.status === 'fulfilled') {
+        setEnrolledCount(studentsRes.value.data?.count || 0);
+      }
+    } catch (err) {
+      console.error('Error loading vendor meal stats:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchQuickStats();
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -19,7 +46,47 @@ const VendorDashboard = () => {
             {user?.companyName || 'Your Mess'},<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-100 to-white">{user?.name}</span>
           </h1>
-          <p className="text-rose-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">Update the meal timetable, review feedback, and resolve assigned complaints.</p>
+          <p className="text-rose-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">
+            Take touchless attendance with AI face recognition, manage menu timetable, and review feedback.
+          </p>
+        </div>
+      </div>
+
+      {/* Prominent Biometric Attendance Scanner Action Card */}
+      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-xl relative overflow-hidden border border-gray-700/50">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/20 border border-rose-500/40 rounded-full text-rose-300 text-xs font-bold uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+              <span>Smart Biometric Gate</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+              Facial Recognition Attendance Scanner
+            </h2>
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Open the live webcam scanner at the mess entrance. When students show their face, the system automatically verifies their identity, checks their remaining meal balance, and deducts 1 meal atomically.
+            </p>
+            <div className="flex items-center gap-4 text-xs font-semibold text-gray-400 pt-1">
+              <span className="flex items-center gap-1.5 text-emerald-400">
+                <CheckCircle2 size={15} /> {enrolledCount} Enrolled Faces
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5 text-rose-300">
+                <History size={15} /> {recentLogs.length} Checked In Today
+              </span>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0">
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="w-full sm:w-auto px-7 py-4 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer"
+            >
+              <Camera size={22} className="animate-pulse" />
+              <span>Launch Live Camera Scanner</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -44,6 +111,15 @@ const VendorDashboard = () => {
           );
         })}
       </div>
+
+      {/* Face Attendance Scanner Modal */}
+      <FaceAttendanceScanner
+        isOpen={isScannerOpen}
+        onClose={() => {
+          setIsScannerOpen(false);
+          fetchQuickStats();
+        }}
+      />
     </div>
   );
 };
