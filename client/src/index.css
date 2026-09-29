@@ -115,3 +115,11 @@ select {
   -moz-appearance: none;
   appearance: none;
 }
+
+/* Mobile Navigation Bar & Safe Area Clearance */
+@media (max-width: 1023px) {
+  #main-content-scroll {
+    padding-bottom: max(8rem, calc(6rem + env(safe-area-inset-bottom, 0px))) !important;
+  }
+}
+

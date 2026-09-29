@@ -71,11 +71,13 @@ const Layout = () => {
         <main
           ref={mainScrollRef}
           id="main-content-scroll"
-          className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-6 lg:p-8 pt-[68px] sm:pt-[76px] lg:pt-8 flex flex-col justify-between backdrop-blur-sm overscroll-y-contain"
+          className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-6 lg:p-8 pt-[68px] sm:pt-[76px] lg:pt-8 pb-32 sm:pb-36 lg:pb-8 flex flex-col justify-between backdrop-blur-sm overscroll-y-contain"
         >
           <div className="max-w-7xl mx-auto w-full flex-1">
             <Outlet />
           </div>
+          {/* Mobile safe area and navigation button clearance spacer */}
+          <div className="h-10 sm:h-12 lg:hidden flex-shrink-0" aria-hidden="true" />
         </main>
       </div>
     </div>
