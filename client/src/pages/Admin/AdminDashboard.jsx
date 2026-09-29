@@ -1,18 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
-import { ShieldCheck, Activity, ArrowRight, Server, BarChart3 } from 'lucide-react';
+import { ShieldCheck, Activity, ArrowRight, Server, BarChart3, ClipboardList } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { user } = useAuthStore();
-  const [stats, setStats] = useState({ pendingCount: 0 });
+  const [stats, setStats] = useState({ pendingCount: 0, pendingVisitsCount: 0 });
 
   useEffect(() => {
     if (user) {
-      api.get('/admin/pending-users')
-        .then(({ data }) => setStats({ pendingCount: data.data ? data.data.length : 0 }))
-        .catch(() => { console.warn('Failed to fetch pending users count'); });
+      Promise.all([
+        api.get('/admin/pending-users'),
+        api.get('/visits').catch(() => ({ data: { data: [] } }))
+      ])
+        .then(([usersRes, visitsRes]) => {
+          const pendingUsers = usersRes.data.data ? usersRes.data.data.length : 0;
+          const visits = visitsRes.data?.data || [];
+          const pendingVisits = visits.filter(v => v.status === 'IN_REVIEW' || v.status === 'SCHEDULED').length;
+          setStats({ pendingCount: pendingUsers, pendingVisitsCount: pendingVisits });
+        })
+        .catch(() => { console.warn('Failed to fetch dashboard stats'); });
     }
   }, [user]);
 
@@ -29,12 +37,28 @@ const AdminDashboard = () => {
             College Admin,<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-100 to-white">{user?.name}</span>
           </h1>
-          <p className="text-indigo-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">Review pending vendor and committee applications, and manage your college's mess portal.</p>
+          <p className="text-indigo-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">Review pending vendor and committee applications, schedule and verify mess inspection visits, and manage your college's mess portal.</p>
         </div>
       </div>
 
       {/* Stats + Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <NavLink to="/visits" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Mess Inspections</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-4xl font-black text-gray-900 group-hover:text-indigo-600 transition-colors">{stats.pendingVisitsCount}</h3>
+              <span className="text-sm text-gray-500 font-medium">active</span>
+            </div>
+            <span className="text-[11px] text-indigo-600 font-bold flex items-center gap-1 mt-1">
+              Schedule / Review <ArrowRight size={12} />
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-50 flex items-center justify-center text-amber-600 shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
+            <ClipboardList size={22} strokeWidth={2.5} />
+          </div>
+        </NavLink>
+
         <NavLink to="/college-analytics" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Campus Analytics</p>
@@ -62,16 +86,6 @@ const AdminDashboard = () => {
             <ShieldCheck size={22} strokeWidth={2.5} />
           </div>
         </NavLink>
-
-        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">System Status</p>
-            <h3 className="text-2xl font-black text-green-600">Operational</h3>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-50 flex items-center justify-center text-green-500 shadow-inner flex-shrink-0">
-            <Activity size={22} strokeWidth={2.5} />
-          </div>
-        </div>
 
         <NavLink to="/complaints" className="bg-gray-900 rounded-2xl p-5 flex items-center justify-between group hover:bg-gray-800 hover:-translate-y-0.5 transition-all duration-200 text-white">
           <div>

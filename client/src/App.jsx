@@ -30,6 +30,7 @@ import FeedbackView from './pages/Feedback/FeedbackView'
 import NoticeBoard from './pages/Notices/NoticeBoard'
 import StaffDirectory from './pages/Staff/StaffDirectory'
 import WeeklyTimetable from './pages/Timetable/WeeklyTimetable'
+import MessVisits from './pages/Visits/MessVisits'
 
 function App() {
   const { user, checkAuth } = useAuthStore()
@@ -122,6 +123,7 @@ function App() {
             <Route path="/approvals" element={<ProtectedRoute allowedRoles={['college_admin']}><UserApprovals /></ProtectedRoute>} />
             <Route path="/messes" element={<ProtectedRoute allowedRoles={['college_admin']}><MessManagement /></ProtectedRoute>} />
             <Route path="/college-analytics" element={<ProtectedRoute allowedRoles={['college_admin']}><CollegeAdminAnalytics /></ProtectedRoute>} />
+            <Route path="/visits" element={<ProtectedRoute allowedRoles={['college_admin', 'mess_committee']}><MessVisits /></ProtectedRoute>} />
 
             <Route path="/" element={
               <Navigate to={

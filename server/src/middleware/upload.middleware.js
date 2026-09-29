@@ -56,4 +56,9 @@ export const staffDocUpload = upload.fields([
     { name: 'medicalReport', maxCount: 1 }
 ]);
 
+export const visitSubmissionUpload = upload.fields([
+    { name: 'report', maxCount: 1 },
+    { name: 'messPhoto', maxCount: 1 }
+]);
+
 export default upload;

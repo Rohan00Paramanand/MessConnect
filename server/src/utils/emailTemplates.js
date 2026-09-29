@@ -926,3 +926,128 @@ export const complaintStatusEmailTemplate = ({
     content,
   });
 };
+
+export const visitScheduledEmailTemplate = ({
+  memberName,
+  messName,
+  visitDate,
+  purpose,
+  instructions,
+  dashboardUrl
+}) => {
+  const safeMemberName = escapeHtml(memberName);
+  const safeMessName = escapeHtml(messName);
+  const safePurpose = escapeHtml(purpose);
+  const safeInstructions = escapeHtml(instructions || 'None provided');
+  const safeFormattedDate = escapeHtml(new Date(visitDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }));
+
+  const content = `
+    <h2 style="
+      margin: 0 0 16px;
+      color: #0f172a;
+      font-size: 20px;
+      line-height: 28px;
+      font-weight: 700;
+    ">
+      Mess Inspection Visit Scheduled
+    </h2>
+
+    <p style="
+      margin: 0 0 20px;
+      color: #475569;
+      font-size: 14px;
+      line-height: 22px;
+    ">
+      Hello <strong>${safeMemberName}</strong>, you have been designated by the College Administration to conduct an official inspection visit.
+    </p>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        margin: 0 0 24px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      "
+    >
+      <tr>
+        <td style="padding: 16px 20px;">
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Mess Facility</div>
+            <div style="font-size: 15px; font-weight: 700; color: #1e293b;">${safeMessName}</div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Scheduled Date</div>
+            <div style="font-size: 14px; font-weight: 600; color: #4338ca;">${safeFormattedDate}</div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Purpose of Inspection</div>
+            <div style="font-size: 14px; color: #334155;">${safePurpose}</div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Special Instructions</div>
+            <div style="font-size: 13px; color: #64748b;">${safeInstructions}</div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div style="
+      margin: 0 0 24px;
+      padding: 14px 18px;
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      border-radius: 8px;
+      color: #92400e;
+      font-size: 13px;
+      line-height: 20px;
+    ">
+      <strong>Important Submission Requirement:</strong> To complete the inspection, you will need to submit an inspection report (PDF or Image) along with an authentic selfie/photo of yourself present at the mess facility through your Committee Dashboard.
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a
+        href="${dashboardUrl || '#'}"
+        style="
+          background-color: #4f46e5;
+          color: #ffffff;
+          padding: 12px 28px;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 14px;
+          text-decoration: none;
+          display: inline-block;
+        "
+      >
+        Go to Committee Portal
+      </a>
+    </div>
+
+    <p style="
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      Thank you for ensuring quality and hygiene across our campus dining facilities.
+    </p>
+  `;
+
+  return emailLayout({
+    title: 'Mess Inspection Visit Scheduled',
+    preheader: `You have been scheduled for an inspection visit at ${safeMessName}`,
+    content,
+  });
+};
