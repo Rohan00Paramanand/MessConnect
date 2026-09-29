@@ -110,8 +110,8 @@ export const getFeedback = async (req, res) => {
             aggregateFilter.user = req.user._id;
         }
 
-        // mess_committee / college_admin / super_admin may filter further by a specific mess (already scoped to college above)
-        if (req.query.mess && ['mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
+        // All roles may filter further by a specific mess within their college
+        if (req.query.mess && ['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
             // Validate the requested mess belongs to this college before trusting the param
             const messDoc = await Mess.findOne({ _id: req.query.mess, collegeId: req.collegeId });
             if (!messDoc) {

@@ -137,25 +137,30 @@ const StudentDashboard = () => {
         ) : (
           <div className="space-y-3 sm:space-y-4">
             {trendingComplaints.map(complaint => (
-              <div key={complaint._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 bg-white border border-gray-100 rounded-xl sm:rounded-2xl hover:shadow-md transition-all hover:border-gray-200">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <div key={complaint._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 bg-white border border-gray-100 rounded-xl sm:rounded-2xl hover:shadow-md transition-all hover:border-gray-200 overflow-hidden">
+                <div className="flex-1 min-w-0 max-w-full">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-wider rounded-lg">
                       {complaint.category}
                     </span>
                     {complaint.mess?.name && (
-                      <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-black uppercase tracking-wider rounded-lg">
+                      <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-black uppercase tracking-wider rounded-lg truncate max-w-full">
                         🏛️ {complaint.mess.name}
                       </span>
                     )}
-                    <h3 className="font-bold text-gray-900 text-lg break-words [overflow-wrap:anywhere]">{complaint.title}</h3>
                   </div>
-                  <p className="text-gray-500 text-sm line-clamp-1 break-words [overflow-wrap:anywhere]">{complaint.description}</p>
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 break-all [overflow-wrap:anywhere]">
+                    {complaint.title}
+                  </h3>
+                  <p className="text-gray-500 text-xs sm:text-sm line-clamp-2 break-all [overflow-wrap:anywhere]">
+                    {complaint.description}
+                  </p>
                 </div>
                 
                 <button
+                  type="button"
                   onClick={() => handleUpvote(complaint._id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-bold text-sm transition-all flex-shrink-0 ${
+                  className={`w-fit self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border font-bold text-xs sm:text-sm transition-all flex-shrink-0 ${
                     complaint.upvotes?.includes(user._id)
                       ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-inner hover:bg-amber-100 hover:border-amber-400'
                       : 'bg-white border-gray-200 text-gray-600 hover:bg-amber-50 hover:border-amber-400 hover:text-amber-600'

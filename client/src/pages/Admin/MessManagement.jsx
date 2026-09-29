@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { School, Plus, ToggleLeft, ToggleRight, Edit2, Check, X, Loader } from 'lucide-react';
+import { School, Plus, ToggleLeft, ToggleRight, Edit2, Check, X, Loader, Calendar } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -95,14 +96,25 @@ const MessManagement = () => {
       {/* Header Banner */}
       <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-5 sm:p-10 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-[0_8px_30px_rgba(79,70,229,0.25)] group">
         <div className="absolute -right-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
-        <div className="relative z-10">
-          <p className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-widest uppercase mb-3 border border-white/20">
-            <School size={12} /> Mess Configurations
-          </p>
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            Manage College Messes
-          </h1>
-          <p className="text-indigo-100 font-medium mt-3 max-w-md text-sm sm:text-base">Register college dining facilities, manage active statuses, and configure portals.</p>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <p className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-widest uppercase mb-3 border border-white/20">
+              <School size={12} /> Mess Configurations
+            </p>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+              Manage College Messes
+            </h1>
+            <p className="text-indigo-100 font-medium mt-3 max-w-md text-sm sm:text-base">
+              Register college dining facilities, manage active statuses, and configure portals.
+            </p>
+          </div>
+
+          <NavLink
+            to="/visits"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-indigo-700 font-bold shadow-lg hover:bg-indigo-50 hover:shadow-xl hover:scale-105 active:scale-95 transition-all self-start md:self-auto flex-shrink-0"
+          >
+            <Plus size={18} /> Schedule New Visit
+          </NavLink>
         </div>
       </div>
 
@@ -215,6 +227,13 @@ const MessManagement = () => {
                         </button>
                       </td>
                       <td className="p-4 text-right">
+                        <NavLink
+                          to="/visits"
+                          title="Schedule inspection visit for this mess"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition-colors mr-2"
+                        >
+                          <Calendar size={13} /> Visit
+                        </NavLink>
                         {editingId !== mess._id && (
                           <button
                             onClick={() => handleStartEdit(mess)}

@@ -18,6 +18,7 @@ const Select = ({
   required = false,
   icon: LeadingIcon,
   ariaLabel,
+  truncateText = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({
@@ -63,14 +64,39 @@ const Select = ({
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
 
+    const viewportWidth = window.innerWidth;
+    const margin = 12;
+    const maxWidth = Math.max(160, viewportWidth - margin * 2);
+
+    let menuWidth = isHeader ? Math.max(200, rect.width) : rect.width;
+    menuWidth = Math.min(menuWidth, maxWidth);
+
+    // If menuWidth is narrower than 220px on desktop/tablet, expand it slightly for readability
+    if (menuWidth < 220 && maxWidth >= 220) {
+      menuWidth = Math.min(260, maxWidth);
+    }
+
+    let leftPos = rect.left;
+    if (isHeader) {
+      leftPos = rect.right - menuWidth;
+    }
+
+    // Clamp within viewport
+    if (leftPos + menuWidth > viewportWidth - margin) {
+      leftPos = viewportWidth - menuWidth - margin;
+    }
+    if (leftPos < margin) {
+      leftPos = margin;
+    }
+
     setCoords({
       top: openUpward ? rect.top - 6 : rect.bottom + 6,
-      left: rect.left,
-      right: Math.max(12, window.innerWidth - rect.right),
-      width: rect.width,
+      left: Math.round(leftPos),
+      right: Math.max(margin, viewportWidth - rect.right),
+      width: Math.round(menuWidth),
       openUpward,
     });
-  }, []);
+  }, [variant]);
 
   const toggleOpen = () => {
     if (disabled) return;
@@ -188,9 +214,9 @@ const Select = ({
         aria-expanded={isOpen}
         aria-label={ariaLabel || label || placeholder}
       >
-        <div className="flex items-center gap-2 truncate pr-2">
-          {LeadingIcon && <LeadingIcon size={16} className={isHeader ? 'text-white/80' : 'text-gray-400'} />}
-          <span className={`truncate ${!selectedOption && !isHeader ? 'text-gray-400 font-normal' : ''}`}>
+        <div className={`flex items-center gap-2 pr-2 ${truncateText ? 'truncate' : 'min-w-0 flex-1'}`}>
+          {LeadingIcon && <LeadingIcon size={16} className={isHeader ? 'text-white/80' : 'text-gray-400 flex-shrink-0'} />}
+          <span className={`${truncateText ? 'truncate' : 'break-words text-left leading-snug'} ${!selectedOption && !isHeader ? 'text-gray-400 font-normal' : ''}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
@@ -212,10 +238,8 @@ const Select = ({
               position: 'fixed',
               top: coords.openUpward ? 'auto' : `${coords.top}px`,
               bottom: coords.openUpward ? `${window.innerHeight - coords.top}px` : 'auto',
-              left: isHeader ? 'auto' : `${coords.left}px`,
-              right: isHeader ? `${coords.right}px` : 'auto',
-              width: isHeader ? 'auto' : `${coords.width}px`,
-              minWidth: isHeader ? `${Math.max(190, coords.width)}px` : undefined,
+              left: `${coords.left}px`,
+              width: `${coords.width}px`,
               maxWidth: 'calc(100vw - 24px)',
               zIndex: 99999,
             }}
@@ -258,9 +282,9 @@ const Select = ({
                         : 'text-gray-700 hover:bg-gray-100/80 font-medium active:scale-[0.99]'
                     }`}
                   >
-                    <div className="flex items-center gap-2 truncate">
+                    <div className={`flex items-center gap-2 min-w-0 flex-1 ${truncateText ? 'truncate' : ''}`}>
                       {opt.icon && <span className="flex-shrink-0">{opt.icon}</span>}
-                      <span className="truncate">{opt.label}</span>
+                      <span className={truncateText ? 'truncate' : 'break-words text-left leading-snug'}>{opt.label}</span>
                     </div>
                     {isSelected && (
                       <Check

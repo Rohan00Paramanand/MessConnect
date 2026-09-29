@@ -132,11 +132,14 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
   );
 };
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen: propMobileOpen, setMobileOpen: propSetMobileOpen }) => {
   const { user } = useAuthStore();
   const role = user?.role;
   const links = getLinks(role);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isMobileOpen = propMobileOpen !== undefined ? propMobileOpen : internalOpen;
+  const setIsMobileOpen = propSetMobileOpen || setInternalOpen;
 
   return (
     <>
@@ -145,41 +148,32 @@ const Sidebar = () => {
         <SidebarContent user={user} role={role} links={links} onLinkClick={null} />
       </aside>
 
-      {/* ─── Mobile Hamburger Button (renders inside Layout topbar) ─── */}
-      <button
-        className="lg:hidden fixed top-4 left-4 z-50 w-11 h-11 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl flex items-center justify-center shadow-lg"
-        onClick={() => setMobileOpen(true)}
-        aria-label="Open menu"
-      >
-        <Menu size={20} className="text-gray-700" />
-      </button>
-
       {/* ─── Mobile Overlay ─── */}
-      {mobileOpen && (
+      {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-          onClick={() => setMobileOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity"
+          onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* ─── Mobile Slide-out Drawer ─── */}
       <aside
         className={`lg:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 flex flex-col bg-white/95 backdrop-blur-2xl border-r border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Close button on the right edge of the sidebar */}
         <button
-          onClick={() => setMobileOpen(false)}
+          onClick={() => setIsMobileOpen(false)}
           className={`absolute top-1/2 -translate-y-1/2 -right-4 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200 z-10 ${
-            mobileOpen ? 'opacity-100 scale-100' : 'opacity-0 pointer-events-none scale-75 invisible'
+            isMobileOpen ? 'opacity-100 scale-100' : 'opacity-0 pointer-events-none scale-75 invisible'
           }`}
           aria-label="Close menu"
         >
           <ChevronLeft size={18} />
         </button>
         <div className="flex-1 overflow-y-auto">
-          <SidebarContent user={user} role={role} links={links} onLinkClick={() => setMobileOpen(false)} />
+          <SidebarContent user={user} role={role} links={links} onLinkClick={() => setIsMobileOpen(false)} />
         </div>
       </aside>
     </>

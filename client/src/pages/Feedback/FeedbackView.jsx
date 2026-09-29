@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
-import { Star, TrendingUp } from 'lucide-react';
+import { Star, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const StarRating = ({ rating, setRating, readOnly = false }) => (
   <div className="flex space-x-1">
@@ -32,8 +32,8 @@ const FeedbackView = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [categoryAverages, setCategoryAverages] = useState({});
   const [avgRating, setAvgRating] = useState('–');
   const [messFilter, setMessFilter] = useState('');
@@ -69,62 +69,34 @@ const FeedbackView = () => {
   );
   
   const fetchFeedback = useCallback(async (pageNum = 1, filterVal = messFilter) => {
-    if (pageNum === 1) setLoading(true);
-    else setLoadingMore(true);
+    setLoading(true);
     try { 
-      const params = { page: pageNum, limit: 12 };
+      const params = { page: pageNum, limit: 9 };
       if (filterVal) params.mess = filterVal;
       const { data } = await api.get(`/feedback`, { params }); 
 
-      if (pageNum === 1) {
-         setFeedbacks(data.data || []);
-         setCategoryAverages(data.categoryAverages || {});
-         setAvgRating(data.avgRating || '–');
-      } else {
-         setFeedbacks(prev => [...prev, ...(data.data || [])]);
-      }
-      setHasMore(pageNum < (data.totalPages || 1));
+      setFeedbacks(data.data || []);
+      setTotalPages(data.totalPages || 1);
+      if (data.categoryAverages) setCategoryAverages(data.categoryAverages);
+      if (data.avgRating !== undefined) setAvgRating(data.avgRating || '–');
     } catch { 
       toast.error('Failed to load feedback'); 
     } finally { 
       setLoading(false); 
-      setLoadingMore(false);
     }
   }, [messFilter]);
 
   useEffect(() => { 
-    const timer1 = setTimeout(() => {
-      setPage(1);
-    }, 0);
-    const timer2 = setTimeout(() => {
-      fetchFeedback(1, messFilter); 
-    }, 0);
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
+    setPage(1);
+    fetchFeedback(1, messFilter); 
   }, [messFilter, fetchFeedback]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop + 50 >= document.documentElement.scrollHeight) {
-        if (!loading && !loadingMore && hasMore) {
-          setPage(p => p + 1);
-        }
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, loadingMore, hasMore]);
-
-  useEffect(() => {
-    if (page > 1) {
-      const timer = setTimeout(() => {
-        fetchFeedback(page, messFilter);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [page, messFilter, fetchFeedback]);
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setPage(newPage);
+    fetchFeedback(newPage, messFilter);
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -154,6 +126,11 @@ const FeedbackView = () => {
 
 
 
+  const displayedFeedbacks = feedbacks.filter((fb) => {
+    if (categoryFilter === 'ALL') return true;
+    return fb.ratings?.some((r) => r.category === categoryFilter) || fb.category === categoryFilter;
+  });
+
   return (
     <div className="space-y-6 pb-8">
       {/* Premium Header */}
@@ -173,30 +150,26 @@ const FeedbackView = () => {
               {(user?.role === 'user' || user?.role === 'student') ? "Rate today's meals and share your thoughts" : 'View all feedback submitted by users'}
             </p>
           </div>
-          {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && (
-            <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
-              {['mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
-                <Select
-                  variant="header"
-                  value={messFilter}
-                  onChange={(e) => setMessFilter(e.target.value)}
-                  options={messes.map((m) => ({ value: m._id, label: m.name }))}
-                />
-              )}
-              <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2.5 sm:py-4 border border-white/30">
-                <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
-                  <TrendingUp size={12} className="text-white/70" />
-                  <p className="text-white/70 text-[10px] sm:text-xs font-bold uppercase">Avg Rating</p>
-                </div>
-                <p className="text-2xl sm:text-4xl font-black">{avgRating}<span className="text-sm sm:text-lg text-white/70 font-normal">/5</span></p>
+          <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+            <Select
+              variant="header"
+              value={messFilter}
+              onChange={(e) => setMessFilter(e.target.value)}
+              options={messes.map((m) => ({ value: m._id, label: m.name }))}
+            />
+            <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2.5 sm:py-4 border border-white/30">
+              <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
+                <TrendingUp size={12} className="text-white/70" />
+                <p className="text-white/70 text-[10px] sm:text-xs font-bold uppercase">Avg Rating</p>
               </div>
+              <p className="text-2xl sm:text-4xl font-black">{avgRating}<span className="text-sm sm:text-lg text-white/70 font-normal">/5</span></p>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Category Insight Grid (Vendors/Admins only) */}
-      {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && Object.keys(categoryAverages).length > 0 && (
+      {/* Category Insight Grid (Visible for every single role) */}
+      {Object.keys(categoryAverages).length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
            {Object.entries(categoryAverages).map(([cat, avg]) => (
                <div key={cat} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-3 sm:p-4 text-center hover:shadow-[0_8px_30px_rgba(245,158,11,0.06)] hover:-translate-y-1 transition-all duration-300">
@@ -273,22 +246,67 @@ const FeedbackView = () => {
         </div>
       )}
 
+      {/* Dropdown Filter for Reviews */}
+      {feedbacks.length > 0 && (
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="w-full sm:w-72">
+            <Select
+              label="Filter Reviews by Category"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              options={[
+                { value: 'ALL', label: `All Categories (${feedbacks.length})` },
+                ...categories.map((cat) => ({
+                  value: cat,
+                  label: `${cat.charAt(0).toUpperCase() + cat.slice(1)} (${
+                    feedbacks.filter(
+                      (fb) => fb.ratings?.some((r) => r.category === cat) || fb.category === cat
+                    ).length
+                  })`,
+                })),
+              ]}
+            />
+          </div>
+
+          {categoryFilter !== 'ALL' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 font-medium">
+                Showing <strong>{displayedFeedbacks.length}</strong> of <strong>{feedbacks.length}</strong> reviews
+              </span>
+              <button
+                type="button"
+                onClick={() => setCategoryFilter('ALL')}
+                className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
+              >
+                Clear filter
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Feedback Grid */}
       {loading ? (
         <div className="flex items-center justify-center p-16">
           <div className="w-10 h-10 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin"></div>
         </div>
-      ) : feedbacks.length === 0 ? (
+      ) : displayedFeedbacks.length === 0 ? (
         <div className="text-center p-16 bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/50">
           <div className="w-16 h-16 bg-amber-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <Star className="text-amber-400" size={28} />
           </div>
-          <h3 className="font-bold text-gray-700 mb-1">No feedback yet</h3>
-          <p className="text-gray-400 text-sm">Be the first to rate today's meal!</p>
+          <h3 className="font-bold text-gray-700 mb-1">No feedback found</h3>
+          <p className="text-gray-400 text-sm">
+            {categoryFilter !== 'ALL'
+              ? `No feedback reviews matching category "${categoryFilter}".`
+              : (user?.role === 'user' || user?.role === 'student')
+              ? "Be the first to rate today's meal!"
+              : "No feedback submitted yet."}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {feedbacks.map(fb => (
+          {displayedFeedbacks.map(fb => (
             <div key={fb._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.5rem] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -330,13 +348,43 @@ const FeedbackView = () => {
         </div>
       )}
 
-      {loadingMore && (
-        <div className="flex items-center justify-center py-6">
-          <div className="w-8 h-8 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin"></div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-200/60 flex-wrap">
+          <p className="text-xs text-gray-500 font-medium">
+            Page <strong className="text-gray-900">{page}</strong> of <strong className="text-gray-900">{totalPages}</strong>
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={page === 1 || loading}
+              onClick={() => handlePageChange(page - 1)}
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+            >
+              <ChevronLeft size={14} /> Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                type="button"
+                disabled={loading}
+                onClick={() => handlePageChange(pg)}
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                  page === pg ? 'bg-amber-500 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={page === totalPages || loading}
+              onClick={() => handlePageChange(page + 1)}
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
-      )}
-      {!hasMore && feedbacks.length > 0 && (
-        <p className="text-center text-gray-400 py-6 text-sm font-medium">You've reached the end of the feedbacks.</p>
       )}
     </div>
   );

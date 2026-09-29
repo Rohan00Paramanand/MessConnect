@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ComplaintForm from './ComplaintForm';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
-import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const statusConfig = {
   pending:          { label: 'Pending',          color: 'bg-gray-100 text-gray-700 border-gray-200',    icon: Clock },
@@ -64,6 +64,10 @@ const ComplaintsList = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [messFilter, setMessFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
   const [messes, setMesses] = useState([]);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
 
@@ -94,6 +98,7 @@ const ComplaintsList = () => {
       if (messFilter) params.mess = messFilter;
       const { data } = await api.get('/complaints', { params });
       setComplaints(sortComplaints(data.data || data));
+      setCurrentPage(1);
     } catch {
       toast.error('Failed to load complaints');
     } finally {
@@ -107,6 +112,31 @@ const ComplaintsList = () => {
     }, 0);
     return () => clearTimeout(timer);
   }, [fetchComplaints]);
+
+  const filteredComplaints = complaints.filter((c) => {
+    // Status filter
+    let statusMatch = true;
+    if (statusFilter !== 'ALL') {
+      if (statusFilter === 'pending') statusMatch = c.status === 'pending';
+      else if (statusFilter === 'assigned') statusMatch = c.status === 'assigned' || c.status === 'vendor_completed';
+      else if (statusFilter === 'resolved') statusMatch = c.status === 'resolved';
+      else if (statusFilter === 'rejected') statusMatch = c.status?.startsWith('rejected');
+      else statusMatch = c.status === statusFilter;
+    }
+    if (!statusMatch) return false;
+
+    // Category filter
+    if (categoryFilter !== 'ALL' && c.category !== categoryFilter) {
+      return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredComplaints.length / ITEMS_PER_PAGE) || 1;
+  const paginatedComplaints = filteredComplaints.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleStatusUpdate = async (id, value) => {
     let status = value;
@@ -186,22 +216,9 @@ const ComplaintsList = () => {
               {(user?.role === 'user' || user?.role === 'student') ? 'Submit and track your mess complaints' : 'Review and manage all incoming complaints'}
             </p>
           </div>
-          <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
-            {['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
-              <Select
-                variant="header"
-                value={messFilter}
-                onChange={(e) => setMessFilter(e.target.value)}
-                options={[
-                  { value: '', label: 'All Messes' },
-                  ...messes.map((m) => ({ value: m._id, label: m.name })),
-                ]}
-              />
-            )}
-            <div className="text-right">
-              <p className="text-white/60 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Total</p>
-              <p className="text-2xl sm:text-3xl font-black">{complaints.length}</p>
-            </div>
+          <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/30 self-start sm:self-auto">
+            <p className="text-white/70 text-[10px] sm:text-xs font-bold uppercase tracking-wider">Total Complaints</p>
+            <p className="text-2xl sm:text-3xl font-black">{complaints.length}</p>
           </div>
         </div>
       </div>
@@ -211,6 +228,71 @@ const ComplaintsList = () => {
         <ComplaintForm onComplaintAdded={(newCmp) => setComplaints(prev => sortComplaints([newCmp, ...prev]))} />
       )}
 
+      {/* Dropdown Filters Bar (Available for EVERY SINGLE ROLE) */}
+      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <Select
+            label="Filter by Status"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+            options={[
+              { value: 'ALL', label: `All Statuses (${complaints.length})` },
+              { value: 'pending', label: `Pending (${complaints.filter(c => c.status === 'pending').length})` },
+              { value: 'assigned', label: `Assigned / In Progress (${complaints.filter(c => c.status === 'assigned' || c.status === 'vendor_completed').length})` },
+              { value: 'resolved', label: `Resolved (${complaints.filter(c => c.status === 'resolved').length})` },
+              { value: 'rejected', label: `Rejected (${complaints.filter(c => c.status?.startsWith('rejected')).length})` },
+            ]}
+          />
+
+          <Select
+            label="Filter by Category"
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+            options={[
+              { value: 'ALL', label: `All Categories (${complaints.length})` },
+              { value: 'food', label: `Food (${complaints.filter(c => c.category === 'food').length})` },
+              { value: 'cleanliness', label: `Cleanliness (${complaints.filter(c => c.category === 'cleanliness').length})` },
+              { value: 'timeliness', label: `Timeliness (${complaints.filter(c => c.category === 'timeliness').length})` },
+              { value: 'taste', label: `Taste (${complaints.filter(c => c.category === 'taste').length})` },
+              { value: 'staff behaviour', label: `Staff Behaviour (${complaints.filter(c => c.category === 'staff behaviour').length})` },
+              { value: 'other', label: `Other (${complaints.filter(c => c.category === 'other').length})` },
+            ]}
+          />
+
+          {messes.length > 0 && (
+            <Select
+              label="Filter by Mess"
+              value={messFilter}
+              onChange={(e) => { setMessFilter(e.target.value); setCurrentPage(1); }}
+              options={[
+                { value: '', label: 'All Messes' },
+                ...messes.map((m) => ({ value: m._id, label: m.name })),
+              ]}
+            />
+          )}
+        </div>
+
+        {(statusFilter !== 'ALL' || categoryFilter !== 'ALL' || messFilter) && (
+          <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 flex-wrap gap-2">
+            <span className="text-xs text-gray-500 font-medium">
+              Filtered results: <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('ALL');
+                setCategoryFilter('ALL');
+                setMessFilter('');
+                setCurrentPage(1);
+              }}
+              className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Complaints List */}
       {loading ? (
         <div className="flex items-center justify-center p-16">
@@ -219,19 +301,23 @@ const ComplaintsList = () => {
             <p className="text-gray-500 font-medium">Loading complaints...</p>
           </div>
         </div>
-      ) : complaints.length === 0 ? (
+      ) : filteredComplaints.length === 0 ? (
         <div className="text-center p-16 bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/50">
           <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="text-gray-400" size={28} />
           </div>
-          <h3 className="font-bold text-gray-700 mb-1">No complaints yet</h3>
+          <h3 className="font-bold text-gray-700 mb-1">No complaints found</h3>
           <p className="text-gray-400 text-sm">
-            {(user?.role === 'user' || user?.role === 'student') ? 'Use the form above to submit a complaint' : 'No complaints have been submitted yet'}
+            {statusFilter !== 'ALL' || categoryFilter !== 'ALL'
+              ? 'No complaints found matching the selected filters.'
+              : (user?.role === 'user' || user?.role === 'student')
+              ? 'Use the form above to submit a complaint'
+              : 'No complaints have been submitted yet'}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {complaints.map(complaint => (
+          {paginatedComplaints.map(complaint => (
             <div key={complaint._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -275,13 +361,13 @@ const ComplaintsList = () => {
                         description: complaint.description,
                         address: complaint.location?.address || (complaint.location?.latitude ? `${complaint.location.latitude.toFixed(4)}, ${complaint.location.longitude.toFixed(4)}` : null)
                       })}
-                      className="relative w-36 h-36 mt-3 group cursor-pointer overflow-hidden rounded-2xl border border-gray-200/80 shadow-sm hover:border-teal-400 hover:shadow-lg transition-all duration-300 bg-gray-100"
+                      className="relative max-w-xs h-44 mt-3 group cursor-pointer overflow-hidden rounded-2xl border border-gray-200/80 shadow-sm hover:border-teal-400 hover:shadow-lg transition-all duration-300 bg-gray-900/5 flex items-center justify-center"
                       title="Click to view full image"
                     >
                       <img
                         src={getImageUrl(complaint.image)}
                         alt="Complaint Proof"
-                        className="h-full w-full object-cover group-hover:scale-105 transition-all duration-300"
+                        className="max-h-44 max-w-full object-contain group-hover:scale-105 transition-all duration-300"
                         onError={(e) => {
                           const container = e.target.closest('.group');
                           if (container) container.style.display = 'none';
@@ -330,13 +416,14 @@ const ComplaintsList = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[180px] flex-shrink-0">
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[280px] flex-shrink-0">
                   {/* Committee Actions */}
                   {user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status) && (
                     <div className="flex flex-col gap-2">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Update Status</label>
                       <Select
                         variant="compact"
+                        truncateText={false}
                         value={complaint.status}
                         onChange={(e) => handleStatusUpdate(complaint._id, e.target.value)}
                         options={
@@ -408,6 +495,50 @@ const ComplaintsList = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200/60 flex-wrap">
+          <p className="text-xs text-gray-500 font-medium">
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredComplaints.length)}</strong> of <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+            >
+              <ChevronLeft size={14} /> Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                type="button"
+                onClick={() => setCurrentPage(pg)}
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                  currentPage === pg
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
       )}
 

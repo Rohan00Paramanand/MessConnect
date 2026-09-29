@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
-import { Users, Plus, X, Trash2, Phone, CalendarDays, DollarSign, FileText, CheckCircle2, Clock, Building2 } from 'lucide-react';
+import { Users, Plus, X, Trash2, Phone, CalendarDays, DollarSign, FileText, CheckCircle2, Clock, Building2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const roleColors = { Cook: 'bg-orange-100 text-orange-700', Cleaner: 'bg-blue-100 text-blue-700', Cashier: 'bg-green-100 text-green-700', Manager: 'bg-purple-100 text-purple-700' };
 
@@ -19,6 +19,10 @@ const StaffDirectory = () => {
   const [staffDocs, setStaffDocs] = useState({ identityProof: null, policeVerification: null, medicalReport: null });
   const [messFilter, setMessFilter] = useState('');
   const [messes, setMesses] = useState([]);
+
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
     if (user?.collegeId && (user.role === 'mess_committee' || user.role === 'college_admin')) {
@@ -42,6 +46,7 @@ const StaffDirectory = () => {
       }
       const { data } = await api.get('/staff', { params });
       setStaff(data.data || data);
+      setCurrentPage(1);
     }
     catch { toast.error('Failed to load staff'); }
     finally { setLoading(false); }
@@ -53,6 +58,17 @@ const StaffDirectory = () => {
     }, 0);
     return () => clearTimeout(timer);
   }, [messFilter, fetchStaff]);
+
+  const filteredStaff = staff.filter((member) => {
+    if (roleFilter !== 'ALL' && member.role !== roleFilter) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredStaff.length / ITEMS_PER_PAGE) || 1;
+  const paginatedStaff = filteredStaff.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -241,22 +257,76 @@ const StaffDirectory = () => {
         </div>
       )}
 
+      {/* Dropdown Filters Bar */}
+      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+          <div className="w-full sm:w-64">
+            <Select
+              label="Filter by Staff Role"
+              value={roleFilter}
+              onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
+              options={[
+                { value: 'ALL', label: `All Roles (${staff.length})` },
+                { value: 'Cook', label: `Cook (${staff.filter((s) => s.role === 'Cook').length})` },
+                { value: 'Cleaner', label: `Cleaner (${staff.filter((s) => s.role === 'Cleaner').length})` },
+                { value: 'Cashier', label: `Cashier (${staff.filter((s) => s.role === 'Cashier').length})` },
+                { value: 'Manager', label: `Manager (${staff.filter((s) => s.role === 'Manager').length})` },
+              ]}
+            />
+          </div>
+
+          {['mess_committee', 'college_admin'].includes(user?.role) && messes.length > 0 && (
+            <div className="w-full sm:w-64">
+              <Select
+                label="Filter by Mess"
+                icon={Building2}
+                value={messFilter}
+                onChange={(e) => { setMessFilter(e.target.value); setCurrentPage(1); }}
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map((m) => ({ value: m._id, label: m.name })),
+                ]}
+              />
+            </div>
+          )}
+        </div>
+
+        {(roleFilter !== 'ALL' || messFilter) && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">
+              Showing <strong>{filteredStaff.length}</strong> of <strong>{staff.length}</strong> members
+            </span>
+            <button
+              type="button"
+              onClick={() => { setRoleFilter('ALL'); setMessFilter(''); setCurrentPage(1); }}
+              className="text-xs font-bold text-gray-500 hover:text-gray-900 hover:underline cursor-pointer"
+            >
+              Reset filters
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Staff Grid */}
       {loading ? (
         <div className="flex items-center justify-center p-16">
           <div className="w-10 h-10 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
         </div>
-      ) : staff.length === 0 ? (
+      ) : filteredStaff.length === 0 ? (
         <div className="text-center p-16 bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/50">
           <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <Users className="text-gray-400" size={28} />
           </div>
-          <h3 className="font-bold text-gray-700 mb-1">No staff listed</h3>
-          <p className="text-gray-400 text-sm">Add staff members to populate the directory.</p>
+          <h3 className="font-bold text-gray-700 mb-1">No staff found</h3>
+          <p className="text-gray-400 text-sm">
+            {roleFilter !== 'ALL'
+              ? `No staff members found matching the "${roleFilter}" role.`
+              : 'Add staff members to populate the directory.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {staff.map(member => (
+          {paginatedStaff.map(member => (
             <div key={member._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 group">
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center text-white font-black text-lg shadow-lg">
@@ -337,6 +407,50 @@ const StaffDirectory = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200/60 flex-wrap">
+          <p className="text-xs text-gray-500 font-medium">
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredStaff.length)}</strong> of <strong className="text-gray-900">{filteredStaff.length}</strong> staff
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+            >
+              <ChevronLeft size={14} /> Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                type="button"
+                onClick={() => setCurrentPage(pg)}
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                  currentPage === pg
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
       )}
     </div>

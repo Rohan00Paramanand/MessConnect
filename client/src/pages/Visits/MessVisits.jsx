@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import api, { getImageUrl } from '../../api/axios';
 import useAuthStore from '../../store/useAuthStore';
 import toast from 'react-hot-toast';
@@ -18,6 +19,7 @@ import {
   ShieldCheck,
   Check,
   X,
+  ChevronLeft,
   ChevronRight,
   ClipboardList
 } from 'lucide-react';
@@ -33,6 +35,9 @@ const MessVisits = () => {
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
+  const [messFilter, setMessFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
 
   // Modal states
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
@@ -61,6 +66,18 @@ const MessVisits = () => {
   const [adminRemarks, setAdminRemarks] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // Prevent background scroll chaining when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(isScheduleOpen || selectedVisitForSubmit || selectedVisitForReview);
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isScheduleOpen, selectedVisitForSubmit, selectedVisitForReview]);
+
   // Fetch visits
   const fetchVisits = useCallback(async () => {
     try {
@@ -78,6 +95,12 @@ const MessVisits = () => {
   useEffect(() => {
     fetchVisits();
   }, [fetchVisits]);
+
+  useEffect(() => {
+    api.get('/messes')
+      .then(({ data }) => setMesses(data.data || []))
+      .catch((err) => console.error('Failed to load messes', err));
+  }, []);
 
   // Load Messes & Committee members when opening schedule modal
   const openScheduleModal = async () => {
@@ -172,9 +195,19 @@ const MessVisits = () => {
 
   // Filtered visits
   const filteredVisits = visits.filter((v) => {
-    if (activeTab === 'ALL') return true;
-    return v.status === activeTab;
+    if (activeTab !== 'ALL' && v.status !== activeTab) return false;
+    if (messFilter) {
+      const vMessId = v.messId?._id || v.messId;
+      if (vMessId !== messFilter) return false;
+    }
+    return true;
   });
+
+  const totalPages = Math.ceil(filteredVisits.length / ITEMS_PER_PAGE) || 1;
+  const paginatedVisits = filteredVisits.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const scheduledCount = visits.filter((v) => v.status === 'SCHEDULED').length;
   const inReviewCount = visits.filter((v) => v.status === 'IN_REVIEW').length;
@@ -200,12 +233,14 @@ const MessVisits = () => {
           </div>
 
           {isCollegeAdmin && (
-            <Button
+            <button
+              type="button"
               onClick={openScheduleModal}
-              className="bg-white text-indigo-700 hover:bg-indigo-50 font-bold px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 self-start md:self-auto transition-transform hover:scale-105"
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white text-indigo-900 hover:text-indigo-950 hover:bg-indigo-50 font-black text-sm sm:text-base shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all self-start md:self-auto cursor-pointer"
             >
-              <Plus size={18} /> Schedule New Visit
-            </Button>
+              <Plus size={20} className="text-indigo-700 stroke-[3]" />
+              <span className="text-indigo-900 font-black">Schedule New Visit</span>
+            </button>
           )}
         </div>
       </div>
@@ -261,26 +296,52 @@ const MessVisits = () => {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-200/80 pb-2 overflow-x-auto">
-        {[
-          { key: 'ALL', label: `All Visits (${visits.length})` },
-          { key: 'SCHEDULED', label: `Pending (${scheduledCount})` },
-          { key: 'IN_REVIEW', label: `In Review (${inReviewCount})` },
-          { key: 'COMPLETED', label: `Completed (${completedCount})` }
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm font-bold rounded-xl whitespace-nowrap transition-colors ${
-              activeTab === tab.key
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Dropdown Filters Bar */}
+      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+          <div className="w-full sm:w-64">
+            <Select
+              label="Filter by Visit Status"
+              value={activeTab}
+              onChange={(e) => { setActiveTab(e.target.value); setCurrentPage(1); }}
+              options={[
+                { value: 'ALL', label: `All Visits (${visits.length})` },
+                { value: 'SCHEDULED', label: `Pending Visit (${scheduledCount})` },
+                { value: 'IN_REVIEW', label: `In Review (${inReviewCount})` },
+                { value: 'COMPLETED', label: `Completed & Verified (${completedCount})` },
+              ]}
+            />
+          </div>
+
+          {messes.length > 0 && (
+            <div className="w-full sm:w-64">
+              <Select
+                label="Filter by Mess"
+                value={messFilter}
+                onChange={(e) => { setMessFilter(e.target.value); setCurrentPage(1); }}
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map((m) => ({ value: m._id, label: m.name })),
+                ]}
+              />
+            </div>
+          )}
+        </div>
+
+        {(activeTab !== 'ALL' || messFilter) && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">
+              Showing <strong>{filteredVisits.length}</strong> of <strong>{visits.length}</strong> visits
+            </span>
+            <button
+              type="button"
+              onClick={() => { setActiveTab('ALL'); setMessFilter(''); setCurrentPage(1); }}
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+            >
+              Reset filters
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Visits List */}
@@ -293,14 +354,16 @@ const MessVisits = () => {
           <Calendar className="mx-auto h-12 w-12 text-gray-300 mb-3" />
           <h3 className="text-lg font-bold text-gray-900">No visits found</h3>
           <p className="text-sm text-gray-500 max-w-sm mx-auto mt-1">
-            {isCollegeAdmin
+            {messFilter
+              ? 'No visits found for the selected mess.'
+              : isCollegeAdmin
               ? 'Click "Schedule New Visit" above to assign an inspection visit to a mess committee member.'
               : 'You do not have any inspection visits assigned for this category.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredVisits.map((visit) => {
+          {paginatedVisits.map((visit) => {
             const isScheduled = visit.status === 'SCHEDULED';
             const isInReview = visit.status === 'IN_REVIEW';
             const isCompleted = visit.status === 'COMPLETED';
@@ -427,15 +490,56 @@ const MessVisits = () => {
         </div>
       )}
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200/60 flex-wrap">
+          <p className="text-xs text-gray-500 font-medium">
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredVisits.length)}</strong> of <strong className="text-gray-900">{filteredVisits.length}</strong> visits
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronLeft size={14} /> Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                type="button"
+                onClick={() => setCurrentPage(pg)}
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  currentPage === pg
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ================= MODAL: Schedule Visit (College Admin) ================= */}
-      {isScheduleOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto">
+      {isScheduleOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 border border-gray-100 max-h-[90vh] overflow-y-auto overscroll-contain my-auto sm:my-8">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div>
-                <h3 className="text-xl font-black text-gray-900">Schedule Mess Inspection</h3>
-                <p className="text-xs text-gray-500 font-medium">Assign a verified committee member and notify via email.</p>
-              </div>
+              <h3 className="text-lg sm:text-xl font-black text-gray-900">Schedule Mess Inspection</h3>
               <button
                 onClick={() => setIsScheduleOpen(false)}
                 className="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
@@ -444,18 +548,18 @@ const MessVisits = () => {
               </button>
             </div>
 
-            <form onSubmit={handleScheduleSubmit} className="space-y-4">
+            <form onSubmit={handleScheduleSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Select Mess Facility *
+                  Mess *
                 </label>
                 <select
                   required
                   value={scheduleData.messId}
                   onChange={(e) => setScheduleData({ ...scheduleData, messId: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
-                  <option value="">-- Choose Mess --</option>
+                  <option value="">Select Mess</option>
                   {messes.map((m) => (
                     <option key={m._id} value={m._id}>
                       {m.name}
@@ -466,29 +570,26 @@ const MessVisits = () => {
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Assign Mess Committee Member *
+                  Committee Member *
                 </label>
                 <select
                   required
                   value={scheduleData.assignedTo}
                   onChange={(e) => setScheduleData({ ...scheduleData, assignedTo: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
-                  <option value="">-- Choose Committee Member --</option>
+                  <option value="">Select Member</option>
                   {committeeMembers.map((cm) => (
                     <option key={cm._id} value={cm._id}>
                       {cm.name} ({cm.email}) {cm.messAssigned ? `• Mess: ${cm.messAssigned.name}` : ''}
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  An automated email with meeting details will be floated to this member immediately.
-                </p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Inspection Visit Date *
+                  Visit Date *
                 </label>
                 <input
                   type="date"
@@ -496,34 +597,34 @@ const MessVisits = () => {
                   min={new Date().toISOString().split('T')[0]}
                   value={scheduleData.visitDate}
                   onChange={(e) => setScheduleData({ ...scheduleData, visitDate: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Purpose of Visit *
+                  Purpose *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Monthly Food Quality & Hygiene Inspection"
+                  placeholder="e.g. Monthly hygiene & food quality check"
                   value={scheduleData.purpose}
                   onChange={(e) => setScheduleData({ ...scheduleData, purpose: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Special Instructions (Optional)
+                  Instructions (Optional)
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Check kitchen grease trap, ration storage expiry dates, staff uniforms."
+                  placeholder="Any specific focus areas or remarks..."
                   value={scheduleData.instructions}
                   onChange={(e) => setScheduleData({ ...scheduleData, instructions: e.target.value })}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
                 />
               </div>
 
@@ -540,18 +641,19 @@ const MessVisits = () => {
                   disabled={submittingSchedule}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
                 >
-                  {submittingSchedule ? 'Scheduling & Emailing...' : 'Schedule & Send Email'}
+                  {submittingSchedule ? 'Scheduling...' : 'Schedule Visit'}
                 </Button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ================= MODAL: Committee Member Submit Report & Photo ================= */}
-      {selectedVisitForSubmit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto">
+      {selectedVisitForSubmit && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto overscroll-contain my-auto sm:my-8">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
                 <h3 className="text-xl font-black text-gray-900">Submit Inspection Proof</h3>
@@ -650,13 +752,14 @@ const MessVisits = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ================= MODAL: Admin Review & Mark Done ================= */}
-      {selectedVisitForReview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto">
+      {selectedVisitForReview && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-2xl w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto overscroll-contain my-auto sm:my-8">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
                 <h3 className="text-xl font-black text-gray-900">
@@ -831,7 +934,8 @@ const MessVisits = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
-import { Bell, Plus, X, Trash2, Calendar, Clock } from 'lucide-react';
+import { Bell, Plus, X, Trash2, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const getDefaultExpiryDate = () => {
   const d = new Date();
@@ -25,6 +25,9 @@ const NoticeBoard = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [image, setImage] = useState(null);
   const [viewFilter, setViewFilter] = useState('active'); // 'active' or 'all'
+  const [audienceFilter, setAudienceFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -34,6 +37,17 @@ const NoticeBoard = () => {
   });
 
   const isPrivileged = ['mess_committee', 'college_admin', 'super_admin'].includes(user?.role);
+
+  const filteredNotices = notices.filter(n => {
+    if (audienceFilter === 'ALL') return true;
+    return n.targetRole === audienceFilter;
+  });
+
+  const totalPages = Math.ceil(filteredNotices.length / ITEMS_PER_PAGE) || 1;
+  const paginatedNotices = filteredNotices.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const fetchNotices = async (filter = viewFilter) => {
     try {
@@ -152,31 +166,7 @@ const NoticeBoard = () => {
         </div>
       </div>
 
-      {/* Privileged View Filter Toggle */}
-      {isPrivileged && (
-        <div className="flex items-center gap-2 px-1">
-          <button
-            onClick={() => setViewFilter('active')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              viewFilter === 'active'
-                ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
-                : 'bg-white/60 text-gray-600 hover:bg-white'
-            }`}
-          >
-            Active Notices Only
-          </button>
-          <button
-            onClick={() => setViewFilter('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              viewFilter === 'all'
-                ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
-                : 'bg-white/60 text-gray-600 hover:bg-white'
-            }`}
-          >
-            All Notices (Including Expired)
-          </button>
-        </div>
-      )}
+
 
       {/* Create Notice Form */}
       {showForm && isPrivileged && (
@@ -253,22 +243,75 @@ const NoticeBoard = () => {
         </div>
       )}
 
+      {/* Dropdown Filters Bar (Every Single Role) */}
+      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+          <div className="w-full sm:w-64">
+            <Select
+              label="Filter by Target Audience"
+              value={audienceFilter}
+              onChange={(e) => { setAudienceFilter(e.target.value); setCurrentPage(1); }}
+              options={[
+                { value: 'ALL', label: `All Audiences (${notices.length})` },
+                { value: 'all', label: `General / Everyone (${notices.filter((n) => n.targetRole === 'all').length})` },
+                { value: 'user', label: `Students (${notices.filter((n) => n.targetRole === 'user').length})` },
+                { value: 'vendor', label: `Vendors (${notices.filter((n) => n.targetRole === 'vendor').length})` },
+                { value: 'mess_committee', label: `Mess Committee (${notices.filter((n) => n.targetRole === 'mess_committee').length})` },
+              ]}
+            />
+          </div>
+
+          {isPrivileged && (
+            <div className="w-full sm:w-64">
+              <Select
+                label="Filter by Expiry Status"
+                value={viewFilter}
+                onChange={(e) => { setViewFilter(e.target.value); setCurrentPage(1); }}
+                options={[
+                  { value: 'active', label: 'Active Notices Only' },
+                  { value: 'all', label: 'All Notices (Including Expired)' },
+                ]}
+              />
+            </div>
+          )}
+        </div>
+
+        {(audienceFilter !== 'ALL' || (isPrivileged && viewFilter !== 'active')) && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">
+              Showing <strong>{filteredNotices.length}</strong> of <strong>{notices.length}</strong> announcements
+            </span>
+            <button
+              type="button"
+              onClick={() => { setAudienceFilter('ALL'); setViewFilter('active'); setCurrentPage(1); }}
+              className="text-xs font-bold text-violet-600 hover:text-violet-800 hover:underline cursor-pointer"
+            >
+              Reset filters
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Notices Grid */}
       {loading ? (
         <div className="flex items-center justify-center p-16">
           <div className="w-10 h-10 border-2 border-gray-300 border-t-violet-600 rounded-full animate-spin"></div>
         </div>
-      ) : notices.length === 0 ? (
+      ) : filteredNotices.length === 0 ? (
         <div className="text-center p-16 bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/50">
           <div className="w-16 h-16 bg-violet-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <Bell className="text-violet-400" size={28} />
           </div>
-          <h3 className="font-bold text-gray-700 mb-1">No active notices</h3>
-          <p className="text-gray-400 text-sm">Important announcements with future validity will appear here.</p>
+          <h3 className="font-bold text-gray-700 mb-1">No notices found</h3>
+          <p className="text-gray-400 text-sm">
+            {audienceFilter !== 'ALL'
+              ? `No announcements specifically targeted for "${audienceFilter}".`
+              : 'Important announcements with future validity will appear here.'}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {notices.map(notice => {
+          {paginatedNotices.map(notice => {
             const expDate = notice.expiresAt ? new Date(notice.expiresAt) : null;
             const now = new Date();
             const isExpired = expDate ? expDate < now : false;
@@ -351,6 +394,50 @@ const NoticeBoard = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200/60 flex-wrap">
+          <p className="text-xs text-gray-500 font-medium">
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredNotices.length)}</strong> of <strong className="text-gray-900">{filteredNotices.length}</strong> announcements
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronLeft size={14} /> Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                type="button"
+                onClick={() => setCurrentPage(pg)}
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  currentPage === pg
+                    ? 'bg-violet-600 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
       )}
     </div>
