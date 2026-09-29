@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api, { getImageUrl } from '../../api/axios';
 import toast from 'react-hot-toast';
 import ComplaintForm from './ComplaintForm';
+import VendorResolutionModal from './VendorResolutionModal';
+import PhotoViewerModal from '../../components/common/PhotoViewerModal';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
-import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Camera, Smile, Frown } from 'lucide-react';
 
 const statusConfig = {
   pending:          { label: 'Pending',          color: 'bg-gray-100 text-gray-700 border-gray-200',    icon: Clock },
@@ -70,6 +73,9 @@ const ComplaintsList = () => {
   const ITEMS_PER_PAGE = 6;
   const [messes, setMesses] = useState([]);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [vendorResolveModalComplaint, setVendorResolveModalComplaint] = useState(null);
+  const [ratingDrafts, setRatingDrafts] = useState({});
+  const [submittingFeedbackId, setSubmittingFeedbackId] = useState(null);
 
   useEffect(() => {
     if (user?.collegeId) {
@@ -119,7 +125,7 @@ const ComplaintsList = () => {
     if (statusFilter !== 'ALL') {
       if (statusFilter === 'pending') statusMatch = c.status === 'pending';
       else if (statusFilter === 'assigned') statusMatch = c.status === 'assigned' || c.status === 'vendor_completed';
-      else if (statusFilter === 'resolved') statusMatch = c.status === 'resolved';
+      else if (statusFilter === 'resolved') statusMatch = c.status === 'resolved' || c.status === 'vendor_completed';
       else if (statusFilter === 'rejected') statusMatch = c.status?.startsWith('rejected');
       else statusMatch = c.status === statusFilter;
     }
@@ -137,6 +143,16 @@ const ComplaintsList = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  // Complaints created by current student that are resolved/completed and awaiting satisfaction feedback
+  const studentResolvedAwaitingFeedback = (user?.role === 'user' || user?.role === 'student')
+    ? complaints.filter(
+        (c) =>
+          ['resolved', 'vendor_completed'].includes(c.status) &&
+          (c.user_id?._id === user?._id || c.user_id === user?._id) &&
+          !c.resolutionFeedback?.rating
+      )
+    : [];
 
   const handleStatusUpdate = async (id, value) => {
     let status = value;
@@ -183,6 +199,47 @@ const ComplaintsList = () => {
       fetchComplaints();
     } catch {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleSelectRating = (id, rating) => {
+    setRatingDrafts((prev) => ({
+      ...prev,
+      [id]: { ...(prev[id] || {}), rating }
+    }));
+  };
+
+  const handleRatingCommentChange = (id, comment) => {
+    setRatingDrafts((prev) => ({
+      ...prev,
+      [id]: { ...(prev[id] || {}), comment }
+    }));
+  };
+
+  const handleSubmitFeedback = async (id) => {
+    const draft = ratingDrafts[id];
+    if (!draft || !draft.rating) {
+      return toast.error('Please choose whether you were satisfied or unsatisfied.');
+    }
+
+    try {
+      setSubmittingFeedbackId(id);
+      const { data } = await api.post(`/complaints/${id}/feedback`, {
+        rating: draft.rating,
+        comment: draft.comment || ''
+      });
+
+      toast.success('Thank you! Your feedback has been sent to the Mess Committee.');
+      setComplaints((prev) => prev.map((c) => (c._id === id ? data.data : c)));
+      setRatingDrafts((prev) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit feedback.');
+    } finally {
+      setSubmittingFeedbackId(null);
     }
   };
 
@@ -239,7 +296,7 @@ const ComplaintsList = () => {
               { value: 'ALL', label: `All Statuses (${complaints.length})` },
               { value: 'pending', label: `Pending (${complaints.filter(c => c.status === 'pending').length})` },
               { value: 'assigned', label: `Assigned / In Progress (${complaints.filter(c => c.status === 'assigned' || c.status === 'vendor_completed').length})` },
-              { value: 'resolved', label: `Resolved (${complaints.filter(c => c.status === 'resolved').length})` },
+              { value: 'resolved', label: `Resolved (${complaints.filter(c => c.status === 'resolved' || c.status === 'vendor_completed').length})` },
               { value: 'rejected', label: `Rejected (${complaints.filter(c => c.status?.startsWith('rejected')).length})` },
             ]}
           />
@@ -293,6 +350,128 @@ const ComplaintsList = () => {
         )}
       </div>
 
+      {/* SEPARATE HIGHLIGHTED SECTION: Student's Resolved Complaints Awaiting Feedback */}
+      {studentResolvedAwaitingFeedback.length > 0 && (
+        <div className="bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-indigo-500/15 border-2 border-emerald-400 rounded-3xl p-5 sm:p-6 shadow-[0_10px_30px_rgba(16,185,129,0.12)] space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md animate-pulse flex-shrink-0">
+                <CheckCircle size={22} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+                    Your Resolved Complaints — Please Rate Resolution
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-black bg-emerald-600 text-white">
+                    {studentResolvedAwaitingFeedback.length}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                  Complaints have been completed with resolution proof. Please review and let us know if you were satisfied!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {studentResolvedAwaitingFeedback.map((c) => (
+              <div
+                key={`highlighted-${c._id}`}
+                className="bg-white rounded-2xl p-4 sm:p-5 border-2 border-emerald-300 shadow-md space-y-3 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="px-2.5 py-1 text-xs font-black rounded-lg bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                      {c.category}
+                    </span>
+                    <span className="text-[11px] font-bold text-gray-400">
+                      {c.status === 'vendor_completed' ? 'Proof Submitted' : 'Resolved'} {new Date(c.resolvedAt || c.vendorCompletedAt || c.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <h3 className="text-sm sm:text-base font-black text-gray-900 leading-snug">
+                    {c.title || c.description}
+                  </h3>
+                  {c.mess?.name && (
+                    <p className="text-xs text-gray-500 font-bold mt-1">
+                      Mess Facility: <span className="text-gray-800">{c.mess.name}</span>
+                    </p>
+                  )}
+
+                  {/* Vendor Proof Button */}
+                  {c.resolutionProof?.image && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPhoto({
+                        url: getImageUrl(c.resolutionProof.image),
+                        title: `Resolution Proof — ${c.category.toUpperCase()}`,
+                        description: c.resolutionProof.remarks || 'Complaint resolved with on-site geotagged proof.',
+                        address: c.resolutionProof.location?.address || (c.resolutionProof.location?.latitude ? `${c.resolutionProof.location.latitude.toFixed(4)}, ${c.resolutionProof.location.longitude.toFixed(4)}` : null)
+                      })}
+                      className="mt-2.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5 cursor-pointer w-fit"
+                    >
+                      <CheckCircle size={13} className="text-emerald-600" /> View Resolution Photo Proof →
+                    </button>
+                  )}
+                </div>
+
+                {/* Rating Buttons & Comment Form */}
+                <div className="pt-3 border-t border-gray-100 space-y-2.5">
+                  <p className="text-xs font-bold text-gray-800">
+                    Were you satisfied with this resolution?
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectRating(c._id, 'satisfied')}
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+                        ratingDrafts[c._id]?.rating === 'satisfied'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-300'
+                          : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50'
+                      }`}
+                    >
+                      <Smile size={15} /> Satisfied
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectRating(c._id, 'unsatisfied')}
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+                        ratingDrafts[c._id]?.rating === 'unsatisfied'
+                          ? 'bg-rose-600 text-white border-rose-600 shadow-md ring-2 ring-rose-300'
+                          : 'bg-white text-rose-800 border-rose-200 hover:bg-rose-50'
+                      }`}
+                    >
+                      <Frown size={15} /> Unsatisfied
+                    </button>
+                  </div>
+
+                  {ratingDrafts[c._id]?.rating && (
+                    <div className="space-y-2 pt-1 animate-in fade-in">
+                      <input
+                        type="text"
+                        placeholder="Optional remarks for the Mess Committee..."
+                        value={ratingDrafts[c._id]?.comment || ''}
+                        onChange={(e) => handleRatingCommentChange(c._id, e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      />
+                      <button
+                        type="button"
+                        disabled={submittingFeedbackId === c._id}
+                        onClick={() => handleSubmitFeedback(c._id)}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        {submittingFeedbackId === c._id ? 'Submitting Feedback...' : 'Send Feedback to Committee Member'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Complaints List */}
       {loading ? (
         <div className="flex items-center justify-center p-16">
@@ -317,8 +496,32 @@ const ComplaintsList = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {paginatedComplaints.map(complaint => (
-            <div key={complaint._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300">
+          {paginatedComplaints.map(complaint => {
+            const isMyResolvedNeedingFeedback =
+              (user?.role === 'user' || user?.role === 'student') &&
+              ['resolved', 'vendor_completed'].includes(complaint.status) &&
+              (complaint.user_id?._id === user?._id || complaint.user_id === user?._id) &&
+              !complaint.resolutionFeedback?.rating;
+
+            return (
+            <div
+              key={complaint._id}
+              className={`backdrop-blur-xl rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 transition-all duration-300 ${
+                isMyResolvedNeedingFeedback
+                  ? 'bg-gradient-to-br from-emerald-50/70 via-white to-white border-2 border-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-2 ring-emerald-300'
+                  : 'bg-white/70 border border-white/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'
+              }`}
+            >
+              {isMyResolvedNeedingFeedback && (
+                <div className="mb-3 px-3 py-1 bg-emerald-100 text-emerald-900 rounded-xl text-xs font-bold flex items-center gap-1.5 w-fit border border-emerald-300 shadow-2xs">
+                  <CheckCircle size={14} className="text-emerald-700" />
+                  <span>
+                    {complaint.status === 'vendor_completed'
+                      ? 'Vendor Completed with Proof — Please Share Your Feedback Below'
+                      : 'Your Complaint was Resolved — Please Share Your Feedback Below'}
+                  </span>
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -414,6 +617,173 @@ const ComplaintsList = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Vendor Resolution Proof */}
+                  {complaint.resolutionProof?.image && (
+                    <div className="mt-3.5 p-3 sm:p-3.5 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          onClick={() => setSelectedPhoto({
+                            url: getImageUrl(complaint.resolutionProof.image),
+                            title: `Resolution Proof — ${complaint.category.toUpperCase()}`,
+                            description: complaint.resolutionProof.remarks || 'Complaint resolved with on-site geotagged proof.',
+                            address: complaint.resolutionProof.location?.address || (complaint.resolutionProof.location?.latitude ? `${complaint.resolutionProof.location.latitude.toFixed(4)}, ${complaint.resolutionProof.location.longitude.toFixed(4)}` : null)
+                          })}
+                          className="w-14 h-14 rounded-xl overflow-hidden border border-emerald-300 flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity bg-black/10 shadow-sm"
+                          title="Click to enlarge resolution proof"
+                        >
+                          <img
+                            src={getImageUrl(complaint.resolutionProof.image)}
+                            alt="Resolution Proof"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+                            <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
+                            <span>Vendor Resolution Proof (Geotagged)</span>
+                          </div>
+                          {complaint.resolutionProof.remarks && (
+                            <p className="text-xs text-emerald-800 font-medium line-clamp-1">
+                              "{complaint.resolutionProof.remarks}"
+                            </p>
+                          )}
+                          {complaint.resolutionProof.location?.address && (
+                            <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                              <MapPin size={11} className="flex-shrink-0" />
+                              <span className="truncate max-w-[220px] sm:max-w-xs">{complaint.resolutionProof.location.address}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPhoto({
+                          url: getImageUrl(complaint.resolutionProof.image),
+                          title: `Resolution Proof — ${complaint.category.toUpperCase()}`,
+                          description: complaint.resolutionProof.remarks || 'Complaint resolved with on-site geotagged proof.',
+                          address: complaint.resolutionProof.location?.address || (complaint.resolutionProof.location?.latitude ? `${complaint.resolutionProof.location.latitude.toFixed(4)}, ${complaint.resolutionProof.location.longitude.toFixed(4)}` : null)
+                        })}
+                        className="text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-sm flex items-center gap-1 whitespace-nowrap self-end sm:self-auto cursor-pointer"
+                      >
+                        View Proof Photo →
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Student Resolution Satisfaction Feedback */}
+                  {['resolved', 'vendor_completed'].includes(complaint.status) && (
+                    <div className="mt-3">
+                      {(complaint.user_id?._id === user?._id || complaint.user_id === user?._id) ? (
+                        complaint.resolutionFeedback?.rating ? (
+                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs ${
+                            complaint.resolutionFeedback.rating === 'satisfied'
+                              ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                              : 'bg-rose-50/70 border-rose-200 text-rose-900'
+                          }`}>
+                            <div className="space-y-0.5">
+                              <p className="font-bold flex items-center gap-1.5">
+                                <span>{complaint.resolutionFeedback.rating === 'satisfied' ? '😊' : '🙁'}</span>
+                                <span>You rated this resolution: <strong className="uppercase">{complaint.resolutionFeedback.rating}</strong></span>
+                              </p>
+                              {complaint.resolutionFeedback.comment && (
+                                <p className="text-gray-700 font-medium">"{complaint.resolutionFeedback.comment}"</p>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                              {new Date(complaint.resolutionFeedback.submittedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="p-3.5 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <p className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                                <span>⭐</span> Were you satisfied with this complaint resolution?
+                              </p>
+                              <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                                Feedback Needed
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleSelectRating(complaint._id, 'satisfied')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  ratingDrafts[complaint._id]?.rating === 'satisfied'
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                    : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
+                                }`}
+                              >
+                                <Smile size={14} /> Satisfied
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectRating(complaint._id, 'unsatisfied')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  ratingDrafts[complaint._id]?.rating === 'unsatisfied'
+                                    ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                                    : 'bg-white text-rose-700 border-rose-200 hover:bg-rose-50'
+                                }`}
+                              >
+                                <Frown size={14} /> Unsatisfied
+                              </button>
+                            </div>
+                            {ratingDrafts[complaint._id]?.rating && (
+                              <div className="space-y-2 pt-1 animate-in fade-in">
+                                <input
+                                  type="text"
+                                  placeholder="Optional remarks for the Mess Committee member..."
+                                  value={ratingDrafts[complaint._id]?.comment || ''}
+                                  onChange={(e) => handleRatingCommentChange(complaint._id, e.target.value)}
+                                  className="w-full px-3 py-1.5 bg-white border border-indigo-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium"
+                                />
+                                <div className="flex justify-end">
+                                  <button
+                                    type="button"
+                                    disabled={submittingFeedbackId === complaint._id}
+                                    onClick={() => handleSubmitFeedback(complaint._id)}
+                                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                                  >
+                                    {submittingFeedbackId === complaint._id ? 'Submitting...' : 'Submit Feedback'}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ) : (
+                        complaint.resolutionFeedback?.rating ? (
+                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs ${
+                            complaint.resolutionFeedback.rating === 'satisfied'
+                              ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                              : 'bg-rose-50/80 border-rose-200 text-rose-950'
+                          }`}>
+                            <div className="space-y-0.5">
+                              <p className="font-bold flex items-center gap-1.5">
+                                <span>{complaint.resolutionFeedback.rating === 'satisfied' ? '😊' : '🙁'}</span>
+                                <span>Student Rating: <strong className="uppercase">{complaint.resolutionFeedback.rating}</strong></span>
+                              </p>
+                              {complaint.resolutionFeedback.comment && (
+                                <p className="text-gray-700 font-medium">"{complaint.resolutionFeedback.comment}"</p>
+                              )}
+                              {complaint.resolvedBy?.name && (
+                                <p className="text-[10px] text-gray-500 font-medium">
+                                  Resolved by {complaint.resolvedBy.name}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                              {new Date(complaint.resolutionFeedback.submittedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-gray-400 font-medium flex items-center gap-1 px-1">
+                            <span>Student resolution feedback: Awaiting student review</span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[280px] flex-shrink-0">
@@ -487,14 +857,19 @@ const ComplaintsList = () => {
 
                   {/* Vendor Actions */}
                   {user?.role === 'vendor' && complaint.status === 'assigned' && (
-                    <Button variant="vendor" onClick={() => handleVendorComplete(complaint._id)} className="text-xs">
-                      Mark Completed
+                    <Button
+                      variant="vendor"
+                      onClick={() => setVendorResolveModalComplaint(complaint)}
+                      className="text-xs flex items-center gap-1.5"
+                    >
+                      <Camera size={14} /> Resolve with Photo Proof
                     </Button>
                   )}
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -542,40 +917,19 @@ const ComplaintsList = () => {
         </div>
       )}
 
-      {/* Full-Screen Photo Viewer Modal */}
-      {selectedPhoto && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-all duration-300"
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <button 
-            onClick={() => setSelectedPhoto(null)}
-            className="absolute top-6 right-6 p-2 text-white/70 bg-white/10 hover:bg-white/20 hover:text-white rounded-full transition-all duration-200"
-            title="Close viewer"
-          >
-            <XCircle size={32} />
-          </button>
-          <div 
-            className="relative w-full max-w-[95vw] sm:max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-white/10 shadow-2xl flex flex-col bg-gray-900"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img 
-              src={selectedPhoto.url} 
-              alt={selectedPhoto.title || "Evidence"} 
-              className="w-full h-auto max-h-[70vh] object-contain"
-            />
-            <div className="p-5 bg-gray-900/90 border-t border-white/10 text-white">
-              <h4 className="text-lg font-bold mb-1">{selectedPhoto.title}</h4>
-              <p className="text-sm text-gray-400 mb-2 break-words [overflow-wrap:anywhere]">{selectedPhoto.description}</p>
-              {selectedPhoto.address && (
-                <div className="flex items-center gap-1.5 text-xs text-teal-400 bg-teal-950/40 px-3 py-1.5 rounded-xl border border-teal-900/50 w-fit">
-                  <MapPin size={12} className="text-teal-400" />
-                  <span>{selectedPhoto.address}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Full-Screen Photo Viewer Modal (Centered In-Viewport Popup) */}
+      <PhotoViewerModal
+        photo={selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+      />
+
+      {/* Vendor Resolution Modal */}
+      {vendorResolveModalComplaint && (
+        <VendorResolutionModal
+          complaint={vendorResolveModalComplaint}
+          onClose={() => setVendorResolveModalComplaint(null)}
+          onSuccess={fetchComplaints}
+        />
       )}
     </div>
   );

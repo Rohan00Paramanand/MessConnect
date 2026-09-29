@@ -44,6 +44,11 @@ const complaintSchema = new Schema(
       ref: 'User'
     },
 
+    resolvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+
     vendorCompletedAt: {
       type: Date
     },
@@ -56,6 +61,38 @@ const complaintSchema = new Schema(
       latitude: Number,
       longitude: Number,
       address: String
+    },
+
+    resolutionProof: {
+      image: {
+        type: String
+      },
+      location: {
+        latitude: Number,
+        longitude: Number,
+        address: String
+      },
+      submittedAt: {
+        type: Date
+      },
+      remarks: {
+        type: String,
+        default: ''
+      }
+    },
+
+    resolutionFeedback: {
+      rating: {
+        type: String,
+        enum: ['satisfied', 'unsatisfied']
+      },
+      comment: {
+        type: String,
+        default: ''
+      },
+      submittedAt: {
+        type: Date
+      }
     },
 
     mess: {
@@ -87,5 +124,6 @@ const complaintSchema = new Schema(
 // Indexes for faster filtering
 complaintSchema.index({ status: 1 });
 complaintSchema.index({ assignedTo: 1 });
+complaintSchema.index({ resolvedBy: 1 });
 
 export default mongoose.model('Complaint', complaintSchema);

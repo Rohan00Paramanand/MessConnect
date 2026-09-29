@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import api, { getImageUrl } from '../../api/axios';
 import useAuthStore from '../../store/useAuthStore';
 import toast from 'react-hot-toast';
+import PhotoViewerModal from '../../components/common/PhotoViewerModal';
 import {
   Calendar,
   Clock,
@@ -55,6 +56,7 @@ const MessVisits = () => {
     instructions: ''
   });
   const [submittingSchedule, setSubmittingSchedule] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   // Form states for Committee submission
   const [reportFile, setReportFile] = useState(null);
@@ -827,11 +829,19 @@ const MessVisits = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="rounded-xl overflow-hidden border border-gray-200 h-40 bg-gray-100">
+                      <div
+                        onClick={() => setSelectedPhoto({
+                          url: getImageUrl(selectedVisitForReview.submission?.reportUrl),
+                          title: 'Inspection Report',
+                          description: `Submitted by ${selectedVisitForReview.completedBy?.name || 'Committee Member'}`
+                        })}
+                        className="rounded-xl overflow-hidden border border-gray-200 h-40 bg-gray-100 cursor-pointer group"
+                        title="Click to view full image"
+                      >
                         <img
                           src={getImageUrl(selectedVisitForReview.submission?.reportUrl)}
                           alt="Inspection Report"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
                         />
                       </div>
                     )}
@@ -855,12 +865,22 @@ const MessVisits = () => {
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
                       Selfie / Photo Inside Mess
                     </span>
-                    <div className="rounded-xl overflow-hidden border border-gray-200 h-40 bg-gray-100">
+                    <div
+                      onClick={() => selectedVisitForReview.submission?.messPhotoUrl && setSelectedPhoto({
+                        url: getImageUrl(selectedVisitForReview.submission.messPhotoUrl),
+                        title: 'Inspection On-Site Photo',
+                        description: `Audit inspection on-site photo for ${selectedVisitForReview.messId?.name || 'Mess'}`
+                      })}
+                      className={`rounded-xl overflow-hidden border border-gray-200 h-40 bg-gray-100 ${
+                        selectedVisitForReview.submission?.messPhotoUrl ? 'cursor-pointer group' : ''
+                      }`}
+                      title={selectedVisitForReview.submission?.messPhotoUrl ? "Click to view full photo" : ""}
+                    >
                       {selectedVisitForReview.submission?.messPhotoUrl ? (
                         <img
                           src={getImageUrl(selectedVisitForReview.submission.messPhotoUrl)}
                           alt="Committee Member in Mess"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
                         />
                       ) : (
                         <div className="h-full flex items-center justify-center text-xs text-gray-400">
@@ -937,6 +957,12 @@ const MessVisits = () => {
         </div>,
         document.body
       )}
+
+      {/* Full-Screen Photo Viewer Modal (Centered In-Viewport Popup) */}
+      <PhotoViewerModal
+        photo={selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+      />
     </div>
   );
 };

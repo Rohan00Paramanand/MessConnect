@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -15,7 +16,10 @@ import {
   Check,
   X,
   Building2,
-  ClipboardList
+  ClipboardList,
+  Smile,
+  Frown,
+  CheckCircle2
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
@@ -24,6 +28,7 @@ const CommitteeDashboard = () => {
   const { user } = useAuthStore();
   const [visits, setVisits] = useState([]);
   const [loadingVisits, setLoadingVisits] = useState(true);
+  const [resolvedComplaints, setResolvedComplaints] = useState([]);
 
   // Submission modal state
   const [selectedVisit, setSelectedVisit] = useState(null);
@@ -44,8 +49,20 @@ const CommitteeDashboard = () => {
     }
   };
 
+  const fetchComplaintsWithFeedback = async () => {
+    try {
+      const { data } = await api.get('/complaints');
+      const list = data.data || data || [];
+      const resolved = list.filter((c) => c.status === 'resolved');
+      setResolvedComplaints(resolved);
+    } catch (err) {
+      console.warn('Failed to load resolved complaints for dashboard:', err.message);
+    }
+  };
+
   useEffect(() => {
     fetchMyVisits();
+    fetchComplaintsWithFeedback();
   }, []);
 
   const handleReportSubmit = async (e) => {
@@ -227,10 +244,90 @@ const CommitteeDashboard = () => {
         })}
       </div>
 
+      {/* Complaint Resolutions & Student Feedback Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-xl bg-indigo-50 text-indigo-600">
+              <CheckCircle2 size={18} />
+            </span>
+            <h2 className="text-lg font-black text-gray-900 tracking-tight">
+              Resolved Complaints & Student Feedback
+            </h2>
+          </div>
+          <NavLink
+            to="/complaints"
+            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+          >
+            All Complaints <ArrowRight size={13} />
+          </NavLink>
+        </div>
+
+        {resolvedComplaints.length === 0 ? (
+          <div className="p-6 bg-white/60 border border-gray-200/80 rounded-2xl text-center">
+            <p className="text-xs text-gray-400 font-medium">No resolved complaints to display yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {resolvedComplaints.slice(0, 4).map((c) => (
+              <div
+                key={c._id}
+                className="bg-white/80 backdrop-blur-xl border border-gray-200/80 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1.5 text-[11px] font-bold">
+                    <span className="uppercase text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md font-extrabold">
+                      {c.category}
+                    </span>
+                    <span className="text-gray-400 font-medium">
+                      {new Date(c.resolvedAt || c.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm font-black text-gray-900 line-clamp-1">{c.title || c.description}</h4>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">{c.mess?.name}</p>
+                </div>
+
+                {/* Feedback Display */}
+                {c.resolutionFeedback?.rating ? (
+                  <div
+                    className={`p-3 rounded-xl border text-xs space-y-1 ${
+                      c.resolutionFeedback.rating === 'satisfied'
+                        ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                        : 'bg-rose-50/80 border-rose-200 text-rose-950'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold flex items-center gap-1.5">
+                        {c.resolutionFeedback.rating === 'satisfied' ? <Smile size={14} className="text-emerald-600" /> : <Frown size={14} className="text-rose-600" />}
+                        Student Feedback: <strong className="uppercase">{c.resolutionFeedback.rating}</strong>
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {new Date(c.resolutionFeedback.submittedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {c.resolutionFeedback.comment && (
+                      <p className="text-gray-700 font-medium text-[11px]">"{c.resolutionFeedback.comment}"</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 text-[11px] text-gray-400 font-medium text-center">
+                    Pending student rating
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* ================= MODAL: Submit Inspection Proof ================= */}
-      {selectedVisit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto">
+      {selectedVisit && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+        >
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 border border-gray-100 max-h-[92dvh] overflow-y-auto overscroll-contain my-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
                 <h3 className="text-xl font-black text-gray-900">Upload Inspection Proof</h3>
@@ -330,7 +427,8 @@ const CommitteeDashboard = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

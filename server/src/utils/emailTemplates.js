@@ -726,6 +726,7 @@ export const complaintStatusEmailTemplate = ({
   category,
   status,
   rejectionReason = '',
+  dashboardUrl = '',
 }) => {
   const safeName = escapeHtml(name || 'there');
   const safeTitle = escapeHtml(title || 'Your complaint');
@@ -736,6 +737,7 @@ export const complaintStatusEmailTemplate = ({
   );
 
   const isRejected = status === 'rejected';
+  const isResolved = status === 'resolved';
 
   const statusColor = isRejected ? '#dc2626' : '#16a34a';
   const statusBackground = isRejected ? '#fef2f2' : '#f0fdf4';
@@ -772,12 +774,48 @@ export const complaintStatusEmailTemplate = ({
               color: #7f1d1d;
               font-size: 14px;
               line-height: 22px;
+              font-weight: 600;
             ">
               ${safeRejectionReason}
             </div>
           </td>
         </tr>
       </table>
+    `
+    : '';
+
+  const resolutionFeedbackBlock = isResolved
+    ? `
+      <div style="
+        margin: 0 0 25px;
+        padding: 20px;
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        text-align: center;
+      ">
+        <div style="font-size: 16px; font-weight: 700; color: #166534; margin-bottom: 6px;">
+          Were you satisfied with this resolution?
+        </div>
+        <p style="font-size: 13px; color: #15803d; line-height: 20px; margin: 0 0 16px;">
+          Your feedback is very important. Please visit your student dashboard and let the Mess Committee know if the issue was satisfactorily resolved.
+        </p>
+        <a
+          href="${dashboardUrl || '#'}"
+          style="
+            background-color: #16a34a;
+            color: #ffffff;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+          "
+        >
+          Rate Resolution on Dashboard
+        </a>
+      </div>
     `
     : '';
 
@@ -800,7 +838,7 @@ export const complaintStatusEmailTemplate = ({
       line-height: 32px;
       font-weight: 700;
     ">
-      Your complaint has been updated
+      Your complaint has been ${isRejected ? 'rejected' : isResolved ? 'resolved' : 'updated'}
     </h2>
 
     <p style="
@@ -818,7 +856,7 @@ export const complaintStatusEmailTemplate = ({
       font-size: 15px;
       line-height: 25px;
     ">
-      Your complaint has been reviewed by the Mess Committee.
+      ${isResolved ? 'Good news! Your complaint has been marked as resolved by the Mess Committee.' : isRejected ? 'Your complaint was reviewed by the Mess Committee and could not be processed.' : 'Your complaint has been reviewed by the Mess Committee.'}
     </p>
 
     <table
@@ -908,6 +946,7 @@ export const complaintStatusEmailTemplate = ({
     </table>
 
     ${rejectionBlock}
+    ${resolutionFeedbackBlock}
 
     <p style="
       margin: 0;
@@ -920,9 +959,127 @@ export const complaintStatusEmailTemplate = ({
   `;
 
   return emailLayout({
-    title: 'MessConnect Complaint Status Update',
+    title: `MessConnect Complaint ${isResolved ? 'Resolved' : isRejected ? 'Rejected' : 'Status Update'}`,
     preheader:
-      `Your complaint has been marked as ${status}.`,
+      isResolved
+        ? `Your complaint "${safeTitle}" has been resolved. Please rate your experience.`
+        : isRejected
+        ? `Your complaint "${safeTitle}" has been rejected: ${safeRejectionReason}`
+        : `Your complaint has been marked as ${status}.`,
+    content,
+  });
+};
+
+export const complaintFeedbackReceivedEmailTemplate = ({
+  committeeName,
+  studentName,
+  complaintTitle,
+  rating,
+  comment,
+  dashboardUrl = '',
+}) => {
+  const safeCommitteeName = escapeHtml(committeeName || 'Committee Member');
+  const safeStudentName = escapeHtml(studentName || 'A Student');
+  const safeTitle = escapeHtml(complaintTitle || 'Complaint');
+  const isSatisfied = rating === 'satisfied';
+  const ratingColor = isSatisfied ? '#16a34a' : '#e11d48';
+  const ratingBg = isSatisfied ? '#f0fdf4' : '#fff1f2';
+  const ratingBorder = isSatisfied ? '#bbf7d0' : '#fecdd3';
+  const ratingEmoji = isSatisfied ? '😊' : '🙁';
+  const safeComment = comment ? escapeHtml(comment) : '';
+
+  const content = `
+    <div style="
+      color: #d97706;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    ">
+      Student Resolution Feedback
+    </div>
+
+    <h2 style="
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: 24px;
+      line-height: 30px;
+      font-weight: 700;
+    ">
+      New Resolution Feedback Received
+    </h2>
+
+    <p style="
+      margin: 0 0 20px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Hello <strong>${safeCommitteeName}</strong>,
+    </p>
+
+    <p style="
+      margin: 0 0 25px;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 24px;
+    ">
+      <strong>${safeStudentName}</strong> has rated the resolution of complaint <strong>"${safeTitle}"</strong> which you resolved:
+    </p>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        margin: 0 0 20px;
+        background-color: ${ratingBg};
+        border: 1px solid ${ratingBorder};
+        border-radius: 12px;
+      "
+    >
+      <tr>
+        <td style="padding: 18px 20px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">
+            Student Rating
+          </div>
+          <div style="font-size: 20px; font-weight: 800; color: ${ratingColor};">
+            ${ratingEmoji} ${isSatisfied ? 'SATISFIED' : 'UNSATISFIED'}
+          </div>
+          ${safeComment ? `
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed ${ratingBorder}; font-size: 14px; color: #334155; line-height: 20px;">
+              <strong>Student Comment:</strong> "${safeComment}"
+            </div>
+          ` : ''}
+        </td>
+      </tr>
+    </table>
+
+    <div style="text-align: center; margin: 25px 0;">
+      <a
+        href="${dashboardUrl || '#'}"
+        style="
+          background-color: #d97706;
+          color: #ffffff;
+          padding: 12px 28px;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 14px;
+          text-decoration: none;
+          display: inline-block;
+        "
+      >
+        View Complaints Dashboard
+      </a>
+    </div>
+  `;
+
+  return emailLayout({
+    title: 'Resolution Feedback Received',
+    preheader: `${safeStudentName} rated the complaint resolution as ${rating.toUpperCase()}`,
     content,
   });
 };

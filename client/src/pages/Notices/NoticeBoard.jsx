@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
+import PhotoViewerModal from '../../components/common/PhotoViewerModal';
 import { Bell, Plus, X, Trash2, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const getDefaultExpiryDate = () => {
@@ -23,6 +24,7 @@ const NoticeBoard = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [image, setImage] = useState(null);
   const [viewFilter, setViewFilter] = useState('active'); // 'active' or 'all'
   const [audienceFilter, setAudienceFilter] = useState('ALL');
@@ -326,11 +328,19 @@ const NoticeBoard = () => {
               >
                 <div className="flex flex-col sm:flex-row gap-0">
                   {notice.image && (
-                    <div className="sm:w-48 flex-shrink-0">
+                    <div
+                      onClick={() => setSelectedPhoto({
+                        url: `/uploads/${notice.image.split('\\').pop().split('/').pop()}`,
+                        title: notice.title,
+                        description: notice.content
+                      })}
+                      className="sm:w-48 flex-shrink-0 cursor-pointer group overflow-hidden bg-gray-900/5 relative"
+                      title="Click to view full photo"
+                    >
                       <img
                         src={`/uploads/${notice.image.split('\\').pop().split('/').pop()}`}
                         alt="Notice"
-                        className="w-full h-48 sm:h-full object-cover"
+                        className="w-full h-48 sm:h-full object-cover group-hover:scale-105 transition-all duration-300"
                       />
                     </div>
                   )}
@@ -440,6 +450,12 @@ const NoticeBoard = () => {
           </div>
         </div>
       )}
+
+      {/* Full-Screen Photo Viewer Modal (Centered In-Viewport Popup) */}
+      <PhotoViewerModal
+        photo={selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+      />
     </div>
   );
 };

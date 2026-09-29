@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
-import { MessageSquare, Star, Bell, ArrowRight, TrendingUp, ThumbsUp } from 'lucide-react';
+import { MessageSquare, Star, Bell, ArrowRight, TrendingUp, ThumbsUp, CheckCircle, Smile, Frown } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const StudentDashboard = () => {
   const { user } = useAuthStore();
   const [trendingComplaints, setTrendingComplaints] = useState([]);
+  const [resolvedAwaitingFeedback, setResolvedAwaitingFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,14 +24,24 @@ const StudentDashboard = () => {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
         setTrendingComplaints(sorted.slice(0, 3)); // Top 3
+
+        // Find complaints created by this student that are resolved/completed but not yet rated
+        const myResolved = list.filter(
+          c => ['resolved', 'vendor_completed'].includes(c.status) &&
+               (c.user_id?._id === user?._id || c.user_id === user?._id) &&
+               !c.resolutionFeedback?.rating
+        );
+        setResolvedAwaitingFeedback(myResolved);
       } catch {
         console.error('Failed to load recent complaints');
       } finally {
         setLoading(false);
       }
     };
-    fetchComplaints();
-  }, []);
+    if (user) {
+      fetchComplaints();
+    }
+  }, [user]);
 
   const handleUpvote = async (id) => {
     try {
@@ -46,6 +57,16 @@ const StudentDashboard = () => {
       }));
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to record vote');
+    }
+  };
+
+  const handleQuickFeedback = async (id, rating) => {
+    try {
+      await api.post(`/complaints/${id}/feedback`, { rating });
+      toast.success('Feedback recorded! Thank you for helping improve the mess.');
+      setResolvedAwaitingFeedback(prev => prev.filter(c => c._id !== id));
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to submit feedback.');
     }
   };
 
@@ -87,6 +108,64 @@ const StudentDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Resolved Complaints Feedback Banner */}
+      {resolvedAwaitingFeedback.length > 0 && (
+        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border-2 border-emerald-200/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                <CheckCircle size={20} />
+              </span>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-gray-900">
+                  {resolvedAwaitingFeedback.length} Complaint{resolvedAwaitingFeedback.length > 1 ? 's' : ''} Resolved — Were you satisfied?
+                </h3>
+                <p className="text-xs text-gray-600 font-medium">
+                  Your feedback goes directly to the Mess Committee member who resolved your report.
+                </p>
+              </div>
+            </div>
+            <NavLink
+              to="/complaints"
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shadow-sm flex items-center gap-1.5 whitespace-nowrap"
+            >
+              All Complaints <ArrowRight size={13} />
+            </NavLink>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {resolvedAwaitingFeedback.slice(0, 2).map((c) => (
+              <div key={c._id} className="bg-white/95 rounded-2xl p-3.5 border border-emerald-100/90 shadow-sm flex flex-col justify-between gap-2.5">
+                <div>
+                  <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 mb-1">
+                    <span className="uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-extrabold">{c.category}</span>
+                    <span>{new Date(c.resolvedAt || c.updatedAt).toLocaleDateString()}</span>
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-black text-gray-900 line-clamp-1">{c.title || c.description}</h4>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFeedback(c._id, 'satisfied')}
+                    className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <Smile size={14} /> Satisfied
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFeedback(c._id, 'unsatisfied')}
+                    className="flex-1 py-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-xl text-xs font-bold border border-rose-200 flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <Frown size={14} /> Unsatisfied
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Action Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

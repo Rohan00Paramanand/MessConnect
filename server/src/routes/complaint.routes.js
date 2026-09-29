@@ -1,5 +1,12 @@
 import express from 'express';
-import { createComplaint, getComplaints, updateComplaintStatus, markVendorCompleted, upvoteComplaint } from '../controllers/complaint.controller.js';
+import { 
+    createComplaint, 
+    getComplaints, 
+    updateComplaintStatus, 
+    markVendorCompleted, 
+    submitComplaintFeedback,
+    upvoteComplaint 
+} from '../controllers/complaint.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 import upload from '../middleware/upload.middleware.js';
 
@@ -12,15 +19,14 @@ router.route('/')
     .get(getComplaints)
     .post(authorizeRoles('user'), upload.single('image'), createComplaint);
 
-
-
 router.route('/:id/status')
     .patch(authorizeRoles('mess_committee'), updateComplaintStatus);
 
 router.route('/:id/vendor-complete')
-    .patch(authorizeRoles('vendor'), markVendorCompleted);
+    .patch(authorizeRoles('vendor'), upload.single('resolutionProof'), markVendorCompleted);
 
-
+router.route('/:id/feedback')
+    .post(authorizeRoles('user'), submitComplaintFeedback);
 
 router.route('/:id/upvote')
     .post(authorizeRoles('user'), upvoteComplaint);

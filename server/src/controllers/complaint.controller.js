@@ -1,6 +1,15 @@
 import Complaint from '../models/complaint.model.js';
 import Mess from '../models/mess.model.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { complaintStatusEmailTemplate, complaintFeedbackReceivedEmailTemplate } from '../utils/emailTemplates.js';
+
+const rejectionLabels = {
+    duplicate: 'Duplicate Complaint (Already Reported)',
+    wrong_category: 'Wrong Category Submitted',
+    spam: 'Spam or Irrelevant Complaint',
+    false_information: 'False / Misleading Information',
+    inappropriate: 'Inappropriate or Abusive Content'
+};
 
 // @desc    Create new complaint
 // @route   POST /api/complaints
@@ -96,6 +105,7 @@ export const getComplaints = async (req, res) => {
             complaints = await Complaint.find(userFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
+                .populate('resolvedBy', 'name email role')
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
         } else if (['mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
@@ -103,6 +113,7 @@ export const getComplaints = async (req, res) => {
             complaints = await Complaint.find(queryFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
+                .populate('resolvedBy', 'name email role')
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
         } else if (req.user.role === 'vendor') {
@@ -112,6 +123,7 @@ export const getComplaints = async (req, res) => {
             complaints = await Complaint.find(queryFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
+                .populate('resolvedBy', 'name email role')
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
         }
@@ -229,6 +241,7 @@ export const updateComplaintStatus = async (req, res) => {
         complaint.status = status;
         if (status === 'resolved' || status === 'rejected') {
             complaint.resolvedAt = Date.now();
+            complaint.resolvedBy = req.user._id;
             if (status === 'rejected') {
                 complaint.rejectionReason = req.body.rejectionReason;
             } else {
@@ -272,11 +285,32 @@ export const updateComplaintStatus = async (req, res) => {
                     const User = (await import('../models/user.model.js')).default;
                     const authorUser = await User.findById(complaint.user_id);
                     if (authorUser && authorUser.email) {
-                        const rejectDetails = status === 'rejected' ? `\nReason for Rejection: ${complaint.rejectionReason.replace('_', ' ').toUpperCase()}` : '';
+                        const humanRejection = status === 'rejected'
+                            ? (rejectionLabels[complaint.rejectionReason] || (complaint.rejectionReason ? complaint.rejectionReason.replace('_', ' ').toUpperCase() : 'Not Specified'))
+                            : '';
+                        const clientUrl = process.env.CLIENT_URL || 'https://pcet.connectmess.in';
+                        const dashboardUrl = `${clientUrl}/dashboard/student`;
+
+                        const html = complaintStatusEmailTemplate({
+                            name: authorUser.name,
+                            title: complaint.title,
+                            category: complaint.category,
+                            status: complaint.status,
+                            rejectionReason: humanRejection,
+                            dashboardUrl
+                        });
+
+                        const plainMessage = status === 'resolved'
+                            ? `Hello ${authorUser.name},\n\nYour complaint "${complaint.title}" has been resolved by the Mess Committee.\n\nPlease visit your dashboard to rate whether you were satisfied or unsatisfied with this resolution:\n${dashboardUrl}\n\nThank you,\nMessConnect Team`
+                            : `Hello ${authorUser.name},\n\nYour complaint "${complaint.title}" was reviewed and could not be processed by the Mess Committee.\n\nReason for Rejection: ${humanRejection}\n\nDetails:\n- Title: ${complaint.title}\n- Category: ${complaint.category}\n- Status: REJECTED\n\nThank you,\nMessConnect Team`;
+
                         await sendEmail({
                             email: authorUser.email,
-                            subject: `Complaint Status Update - MessConnect`,
-                            message: `Hello ${authorUser.name},\n\nYour complaint titled "${complaint.title}" has been marked as ${status.toUpperCase()} by the Mess Committee.${rejectDetails}\n\nDetails:\n- Title: ${complaint.title}\n- Category: ${complaint.category}\n- Status: ${status.toUpperCase()}\n\nThank you for your feedback,\nMessConnect Team`
+                            subject: status === 'resolved'
+                                ? `Complaint Resolved - MessConnect`
+                                : `Complaint Rejected - MessConnect`,
+                            message: plainMessage,
+                            html
                         });
                     }
                 } catch (emailError) {
@@ -306,12 +340,143 @@ export const markVendorCompleted = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Only assigned complaints can be marked as completed' });
         }
 
+        // Validate mandatory resolution proof image
+        let image = '';
+        if (req.file) {
+            image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        } else if (req.body.image) {
+            image = req.body.image;
+        }
+
+        if (!image) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'A photo proof of resolution is mandatory.'
+            });
+        }
+
+        const { latitude, longitude, address, remarks } = req.body;
+
+        if (!latitude || !longitude) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Geotagged location coordinates (Latitude and Longitude) are mandatory for resolution proof.'
+            });
+        }
+
         complaint.status = 'vendor_completed';
         complaint.vendorCompletedAt = Date.now();
+        complaint.resolutionProof = {
+            image,
+            location: {
+                latitude: Number(latitude),
+                longitude: Number(longitude),
+                address: address ? address.trim() : 'Location verified'
+            },
+            submittedAt: Date.now(),
+            remarks: remarks ? remarks.trim() : ''
+        };
+
         const updatedComplaint = await complaint.save();
 
         res.json({
             status: 'success',
+            message: 'Resolution proof uploaded. Awaiting committee review.',
+            data: updatedComplaint
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+// @desc    Submit student feedback for a resolved complaint
+// @route   POST /api/complaints/:id/feedback
+// @access  Private (Student/User)
+export const submitComplaintFeedback = async (req, res) => {
+    try {
+        const { rating, comment } = req.body;
+
+        if (!rating || !['satisfied', 'unsatisfied'].includes(rating)) {
+            return res.status(400).json({
+                status: 'error',
+                message: "Rating must be either 'satisfied' or 'unsatisfied'."
+            });
+        }
+
+        const complaint = await Complaint.findById(req.params.id)
+            .populate('resolvedBy', 'name email role')
+            .populate('mess', 'name');
+
+        if (!complaint) {
+            return res.status(404).json({ status: 'error', message: 'Complaint not found.' });
+        }
+
+        // Verify ownership
+        if (complaint.user_id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'You can only rate resolutions for your own complaints.'
+            });
+        }
+
+        if (!['resolved', 'vendor_completed'].includes(complaint.status)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Feedback can only be submitted on completed or resolved complaints.'
+            });
+        }
+
+        complaint.resolutionFeedback = {
+            rating,
+            comment: comment ? comment.trim() : '',
+            submittedAt: Date.now()
+        };
+
+        const updatedComplaint = await complaint.save();
+
+        // Send email to the committee member who resolved this complaint, or active mess committee
+        let recipientUser = complaint.resolvedBy;
+        if (!recipientUser || !recipientUser.email) {
+            try {
+                const User = (await import('../models/user.model.js')).default;
+                const committeeQuery = { role: 'committee', isActive: true };
+                if (complaint.collegeId) committeeQuery.collegeId = complaint.collegeId;
+                recipientUser = await User.findOne(committeeQuery);
+            } catch (uErr) {
+                console.error('Failed to find committee recipient:', uErr.message);
+            }
+        }
+
+        if (recipientUser && recipientUser.email) {
+            (async () => {
+                try {
+                    const clientUrl = process.env.CLIENT_URL || 'https://pcet.connectmess.in';
+                    const dashboardUrl = `${clientUrl}/complaints`;
+
+                    const html = complaintFeedbackReceivedEmailTemplate({
+                        committeeName: recipientUser.name,
+                        studentName: req.user.name,
+                        complaintTitle: complaint.title,
+                        rating,
+                        comment: complaint.resolutionFeedback.comment,
+                        dashboardUrl
+                    });
+
+                    await sendEmail({
+                        email: recipientUser.email,
+                        subject: `Student Feedback: ${rating.toUpperCase()} on Complaint "${complaint.title}"`,
+                        message: `Hello ${recipientUser.name},\n\nStudent ${req.user.name} submitted resolution feedback on complaint "${complaint.title}":\nRating: ${rating.toUpperCase()}\nComment: ${complaint.resolutionFeedback.comment || 'None'}\n\nView on dashboard: ${dashboardUrl}`,
+                        html
+                    });
+                } catch (emailErr) {
+                    console.error('Failed to notify committee member of feedback:', emailErr.message);
+                }
+            })();
+        }
+
+        res.json({
+            status: 'success',
+            message: 'Feedback submitted successfully. Thank you!',
             data: updatedComplaint
         });
     } catch (error) {

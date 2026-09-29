@@ -6,6 +6,7 @@ import useAuthStore from './store/useAuthStore'
 // Layouts & Protected Routes
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import Layout from './components/layout/Layout'
+import ScrollToTop from './components/layout/ScrollToTop'
 
 // Pages
 import Login from './pages/Auth/Login'
@@ -56,6 +57,7 @@ function App() {
 
   return (
     <>
+      <ScrollToTop />
       <Toaster position="top-right" />
       <Routes>
         <Route path="/maintenance" element={<Maintenance />} />
