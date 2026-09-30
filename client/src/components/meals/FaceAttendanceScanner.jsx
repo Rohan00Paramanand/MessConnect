@@ -10,8 +10,8 @@ import {
   RefreshCw,
   Volume2,
   VolumeX,
-  History,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import * as faceapi from '@vladmandic/face-api';
 import { loadFaceModels, createStudentFaceMatcher } from '../../utils/faceMatcher';
@@ -68,8 +68,19 @@ const FaceAttendanceScanner = ({ isOpen, onClose }) => {
   const [faceMatcher, setFaceMatcher] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [latestScanResult, setLatestScanResult] = useState(null);
-  const [scanHistory, setScanHistory] = useState([]);
   const [statusMessage, setStatusMessage] = useState('Initializing scanner...');
+  const resultDismissTimerRef = useRef(null);
+
+  // Helper to show temporary scan status or alert, auto-clearing after 6.5s
+  const displayTemporaryResult = useCallback((result) => {
+    if (resultDismissTimerRef.current) {
+      clearTimeout(resultDismissTimerRef.current);
+    }
+    setLatestScanResult(result);
+    resultDismissTimerRef.current = setTimeout(() => {
+      setLatestScanResult(null);
+    }, 6500);
+  }, []);
 
   // Stop camera tracks cleanly
   const stopScanner = useCallback(() => {
@@ -77,6 +88,11 @@ const FaceAttendanceScanner = ({ isOpen, onClose }) => {
       clearInterval(scanIntervalRef.current);
       scanIntervalRef.current = null;
     }
+    if (resultDismissTimerRef.current) {
+      clearTimeout(resultDismissTimerRef.current);
+      resultDismissTimerRef.current = null;
+    }
+    setLatestScanResult(null);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -128,16 +144,6 @@ const FaceAttendanceScanner = ({ isOpen, onClose }) => {
       console.error('Error fetching enrolled biometrics:', err);
       toast.error('Failed to load registered student biometrics.');
       return [];
-    }
-  }, []);
-
-  // Fetch recent vendor attendance logs
-  const fetchAttendanceHistory = useCallback(async () => {
-    try {
-      const response = await api.get('/meals/vendor/recent-attendance');
-      setScanHistory(response.data.data || []);
-    } catch (err) {
-      console.error('Error fetching attendance logs:', err);
     }
   }, []);
 
@@ -268,44 +274,48 @@ const FaceAttendanceScanner = ({ isOpen, onClose }) => {
             if (soundEnabled) playFeedbackSound('success');
             toast.success(res.data.message);
 
-            const resultData = {
+            displayTemporaryResult({
+              type: 'SUCCESS',
               success: true,
               studentName: studentInfo.name,
               remainingMeals: res.data.data.remainingMeals,
               mealType: res.data.data.mealType,
               photo: studentInfo.facePhoto,
-              timestamp: new Date().toLocaleTimeString()
-            };
-
-            setLatestScanResult(resultData);
-            setScanHistory((prev) => [
-              {
-                _id: Date.now().toString(),
-                student: { name: studentInfo.name, email: studentInfo.email },
-                mealType: res.data.data.mealType,
-                remainingMealsAfter: res.data.data.remainingMeals,
-                createdAt: new Date().toISOString()
-              },
-              ...prev
-            ]);
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            });
           } catch (scanErr) {
             const errResponse = scanErr.response?.data;
             if (soundEnabled) playFeedbackSound('error');
 
             if (errResponse?.code === 'MEALS_DEPLETED') {
-              setLatestScanResult({
+              displayTemporaryResult({
+                type: 'NO_MEALS',
                 success: false,
                 depleted: true,
                 studentName: studentInfo.name,
                 remainingMeals: 0,
                 photo: studentInfo.facePhoto,
-                message: `${studentInfo.name} has 0 meals left! Recharge required.`,
-                timestamp: new Date().toLocaleTimeString()
+                message: `${studentInfo.name} has 0 meals remaining! Recharge required.`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
               });
               toast.error(`Zero meals left for ${studentInfo.name}! Prompt student to recharge.`);
             } else if (errResponse?.code === 'RECENTLY_CHECKED_IN') {
+              displayTemporaryResult({
+                type: 'ALREADY_CHECKED_IN',
+                success: false,
+                studentName: studentInfo.name,
+                message: errResponse.message || `${studentInfo.name} already checked in!`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              });
               toast(errResponse.message, { icon: '⚠️' });
             } else {
+              displayTemporaryResult({
+                type: 'ERROR',
+                success: false,
+                studentName: studentInfo.name,
+                message: errResponse?.message || 'Attendance verification failed',
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              });
               toast.error(errResponse?.message || 'Attendance verification failed');
             }
           } finally {
@@ -333,11 +343,10 @@ const FaceAttendanceScanner = ({ isOpen, onClose }) => {
         setLoading(true);
         setStatusMessage('Loading AI models and student biometrics...');
 
-        // 1. Parallel loading of neural models and data
+        // 1. Parallel loading of neural models and biometrics
         await Promise.all([
           loadFaceModels(),
-          fetchEnrolledStudents(),
-          fetchAttendanceHistory()
+          fetchEnrolledStudents()
         ]);
 
         if (isMounted) {
@@ -485,123 +494,145 @@ const FaceAttendanceScanner = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Right Column: Latest Match Verification & Realtime Log */}
-          <div className="lg:col-span-5 p-4 sm:p-6 flex flex-col justify-between overflow-y-auto bg-white border-l border-gray-100 space-y-4">
-            {/* Top Widget: Latest Recognized Student */}
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
-                Last Scanned Student
-              </p>
+          {/* Right Column: Temporary Scan Result & Live Balance Alert */}
+          <div className="lg:col-span-5 p-4 sm:p-6 flex flex-col justify-between overflow-y-auto bg-white border-l border-gray-100">
+            <div className="space-y-4">
+              {/* Top Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    Scan Verification
+                  </p>
+                  <p className="text-[11px] text-gray-500 font-semibold">Real-time meal balance & alerts</p>
+                </div>
+                {latestScanResult && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-100 text-teal-800 animate-pulse">
+                    Live
+                  </span>
+                )}
+              </div>
 
+              {/* Dynamic Status / Alert Card */}
               {latestScanResult ? (
-                latestScanResult.depleted ? (
-                  // Alert Box for 0 Meals
-                  <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 shadow-md animate-in shake">
-                    <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-500/30">
-                        <AlertOctagon size={24} />
+                latestScanResult.depleted || latestScanResult.type === 'NO_MEALS' ? (
+                  // Alert Box for 0 Meals (Red Banner)
+                  <div className="p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 shadow-lg space-y-4 animate-in zoom-in-95">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-14 h-14 rounded-2xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-rose-500/30">
+                        <AlertOctagon size={28} className="animate-bounce" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-extrabold text-base text-red-950">{latestScanResult.studentName}</h3>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-200 text-red-800">
-                            {latestScanResult.timestamp}
-                          </span>
-                        </div>
-                        <p className="text-xs font-bold text-red-700 mt-1">
-                          ⚠️ 0 MEALS REMAINING!
-                        </p>
-                        <p className="text-xs text-red-800/90 mt-1 leading-snug">
-                          This student's meal pass has ended. Please instruct them to recharge their meals from their student dashboard.
+                      <div className="flex-1 min-w-0">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-200 text-rose-800 mb-1">
+                          Alert: No Meals Left
+                        </span>
+                        <h3 className="font-black text-lg text-rose-950 truncate">
+                          {latestScanResult.studentName}
+                        </h3>
+                        <p className="text-[11px] text-rose-700 font-semibold">
+                          Scanned at {latestScanResult.timestamp}
                         </p>
                       </div>
                     </div>
+
+                    <div className="p-4 rounded-xl bg-white border border-rose-200 text-center shadow-inner">
+                      <p className="text-xs font-bold text-rose-700 uppercase tracking-widest mb-0.5">Meal Balance</p>
+                      <p className="text-4xl font-black text-rose-600">0 Meals</p>
+                      <p className="text-xs font-bold text-rose-800 mt-1">No meals remaining on this pass!</p>
+                    </div>
+
+                    <div className="p-3 bg-rose-100/70 rounded-xl border border-rose-200 text-xs text-rose-900 font-medium text-center leading-relaxed">
+                      ⚠️ Student must recharge meal package from their Student Portal.
+                    </div>
+                  </div>
+                ) : latestScanResult.type === 'ALREADY_CHECKED_IN' ? (
+                  // Warning Box for Recent Check-in (Amber)
+                  <div className="p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 shadow-md space-y-3 animate-in zoom-in-95">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-500/20">
+                        <Clock size={24} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">
+                          Already Checked In
+                        </span>
+                        <h4 className="text-base font-black text-gray-900 mt-0.5 truncate">{latestScanResult.studentName}</h4>
+                      </div>
+                    </div>
+                    <p className="text-xs text-amber-900 bg-white/80 p-3 rounded-xl border border-amber-200 font-medium leading-relaxed">
+                      {latestScanResult.message}
+                    </p>
                   </div>
                 ) : (
-                  // Success Verification Box
-                  <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 shadow-md animate-in slide-in-from-top-2">
-                    <div className="flex items-start gap-3">
+                  // Success Verification Box (Emerald)
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white border-2 border-emerald-400 text-emerald-950 shadow-lg space-y-4 animate-in zoom-in-95">
+                    <div className="flex items-center gap-3.5">
                       {latestScanResult.photo ? (
                         <img
                           src={latestScanResult.photo}
                           alt="Student"
-                          className="w-12 h-12 rounded-2xl object-cover border-2 border-emerald-400 flex-shrink-0"
+                          className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-400 shadow-md flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/30">
-                          <CheckCircle2 size={24} />
+                        <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/30">
+                          <CheckCircle2 size={28} />
                         </div>
                       )}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-extrabold text-base text-emerald-950">{latestScanResult.studentName}</h3>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800">
-                            {latestScanResult.timestamp}
-                          </span>
-                        </div>
-                        <p className="text-xs font-medium text-emerald-800 mt-0.5">
-                          Meal Session: <span className="font-bold">{latestScanResult.mealType}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-200 text-emerald-900 mb-1">
+                          ✓ Verified & Checked In
+                        </span>
+                        <h4 className="text-lg font-black text-gray-900 truncate">
+                          {latestScanResult.studentName}
+                        </h4>
+                        <p className="text-xs text-gray-500 font-semibold">
+                          Session: <strong className="text-gray-800 capitalize">{latestScanResult.mealType}</strong> • {latestScanResult.timestamp}
                         </p>
-                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-xl border border-emerald-200 text-xs font-bold text-emerald-700 shadow-sm">
-                          <span>Remaining Balance:</span>
-                          <span className="text-sm font-black text-emerald-900">{latestScanResult.remainingMeals} Meals</span>
-                        </div>
                       </div>
+                    </div>
+
+                    {/* Prominent Remaining Meals Display */}
+                    <div className="p-4 rounded-xl bg-white border border-emerald-200 text-center shadow-xs">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">Remaining Balance</p>
+                      <div className="flex items-baseline justify-center gap-1.5">
+                        <span className="text-4xl font-black text-emerald-600 tracking-tight">
+                          {latestScanResult.remainingMeals}
+                        </span>
+                        <span className="text-sm font-bold text-gray-600">Meals Left</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-emerald-700 bg-emerald-100/60 px-3 py-1.5 rounded-xl font-semibold">
+                      <span>1 meal deducted successfully</span>
+                      <span className="text-[10px] text-gray-400 font-normal">Auto-clearing in 6s</span>
                     </div>
                   </div>
                 )
               ) : (
-                <div className="p-6 rounded-2xl border-2 border-dashed border-gray-200 text-center text-gray-400">
-                  <Sparkles className="w-8 h-8 mx-auto text-gray-300 mb-1" />
-                  <p className="text-xs font-semibold">Waiting for student to face camera...</p>
+                // Standby Card
+                <div className="py-12 px-6 rounded-2xl border-2 border-dashed border-gray-200 text-center space-y-3 bg-gray-50/50">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 mx-auto">
+                    <Sparkles className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-gray-800">Ready for Next Student</h4>
+                    <p className="text-xs text-gray-400 max-w-xs mx-auto mt-1 leading-relaxed">
+                      Student should look into the camera. Their meal status or low-balance alert will appear here temporarily.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Bottom Widget: Recent Attendance Log */}
-            <div className="flex-1 flex flex-col min-h-[180px]">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Live Attendance Feed
-                </p>
-                <span className="text-[10px] text-gray-500 font-semibold">
-                  {scanHistory.length} Recorded
-                </span>
-              </div>
-
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-56">
-                {scanHistory.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-6">No check-ins yet today.</p>
-                ) : (
-                  scanHistory.map((item) => (
-                    <div
-                      key={item._id}
-                      className="p-3 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-100 flex items-center justify-between transition-colors text-xs"
-                    >
-                      <div>
-                        <p className="font-bold text-gray-900">{item.student?.name || 'Student'}</p>
-                        <p className="text-[10px] text-gray-500">
-                          {item.mealType} • {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md font-extrabold text-[10px]">
-                          {item.remainingMealsAfter} Left
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+            {/* Bottom: Close Button */}
+            <div className="pt-4 mt-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Minimize Scanner
+              </button>
             </div>
-
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              Minimize Scanner
-            </button>
           </div>
         </div>
       </div>

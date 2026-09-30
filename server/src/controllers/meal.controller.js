@@ -7,10 +7,10 @@ import User from '../models/user.model.js';
  */
 const getCurrentMealType = () => {
   const currentHour = new Date().getHours();
-  if (currentHour >= 7 && currentHour < 10) return 'Breakfast';
-  if (currentHour >= 12 && currentHour < 15) return 'Lunch';
-  if (currentHour >= 16 && currentHour < 18) return 'Snacks';
-  if (currentHour >= 19 && currentHour < 22) return 'Dinner';
+  if (currentHour >= 7 && currentHour < 11) return 'Breakfast';
+  if (currentHour >= 12 && currentHour < 16) return 'Lunch';
+  if (currentHour >= 16 && currentHour < 19) return 'Snacks';
+  if (currentHour >= 19 && currentHour < 23) return 'Dinner';
   return 'General';
 };
 
@@ -257,20 +257,37 @@ export const markMealAttendance = async (req, res) => {
       });
     }
 
-    // Step 2: Cooldown check — prevent multiple deductions within 5 minutes for the same student
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const recentCheckIn = await MealAttendance.findOne({
+    const mealType = customMealType || getCurrentMealType();
+
+    // Step 2: Prevent multiple check-ins within the same meal session today
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const sessionQuery = {
       student: studentId,
-      createdAt: { $gte: fiveMinutesAgo }
-    });
+      createdAt: { $gte: startOfToday, $lte: endOfToday }
+    };
+
+    if (mealType !== 'General') {
+      sessionQuery.mealType = mealType;
+    } else {
+      // If outside predefined meal slots (General), apply a 2-hour session cooldown
+      sessionQuery.createdAt = { $gte: new Date(Date.now() - 2 * 60 * 60 * 1000) };
+    }
+
+    const recentCheckIn = await MealAttendance.findOne(sessionQuery);
 
     if (recentCheckIn) {
+      const sessionName = mealType !== 'General' ? `today's ${mealType}` : 'this session';
       return res.status(409).json({
         status: 'warning',
         code: 'RECENTLY_CHECKED_IN',
         studentName: studentUser.name,
         remainingMeals: existingPass.remainingMeals,
-        message: `${studentUser.name} already marked attendance ${Math.round((Date.now() - recentCheckIn.createdAt) / 1000)}s ago!`
+        message: `${studentUser.name} has already checked in for ${sessionName}! Next check-in is allowed in the next meal session.`
       });
     }
 
@@ -290,8 +307,6 @@ export const markMealAttendance = async (req, res) => {
         message: 'No meals left to deduct.'
       });
     }
-
-    const mealType = customMealType || getCurrentMealType();
 
     // Step 4: Record attendance log
     const attendanceRecord = await MealAttendance.create({
