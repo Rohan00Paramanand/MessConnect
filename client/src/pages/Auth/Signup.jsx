@@ -235,10 +235,9 @@ const Signup = () => {
           }
         });
         submitData = payload;
-        headers = { 'Content-Type': 'multipart/form-data' };
       }
 
-      const { data } = await api.post('/auth/signup', submitData, { headers });
+      const { data } = await api.post('/auth/signup', submitData);
       if (data.user || data.data) { // Depending on the actual response envelope
         const payload = data.data || data;
         setAuth(payload.user || data.user, payload.token || data.token || null);
@@ -249,7 +248,11 @@ const Signup = () => {
         navigate('/login');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Something went wrong during signup');
+      if (error.response?.status === 413) {
+        toast.error("The uploaded files exceed the maximum allowed size (50MB total). Please upload smaller files or compress them.");
+      } else {
+        toast.error(error.response?.data?.message || error.response?.data?.error || 'Something went wrong during signup');
+      }
     } finally {
       setLoading(false);
     }
@@ -388,7 +391,7 @@ const Signup = () => {
                     />
 
                     <div className="pt-2 space-y-3">
-                      <p className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">Required Verification Documents</p>
+                      <p className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">Required Verification Documents (Max 50MB total)</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {[
                           { key: 'udyamCertificate', label: 'Udyam Certificate' },
@@ -404,7 +407,7 @@ const Signup = () => {
                               type="file"
                               required
                               accept="image/*,application/pdf"
-                              onChange={(e) => setVendorDocs({ ...vendorDocs, [doc.key]: e.target.files[0] })}
+                              onChange={(e) => setVendorDocs(prev => ({ ...prev, [doc.key]: e.target.files[0] }))}
                               className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
                             />
                           </div>

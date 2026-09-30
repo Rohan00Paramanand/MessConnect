@@ -63,9 +63,9 @@ if (process.env.NODE_ENV !== 'production') {
     app.use(cors(corsOptions));
 }
 
-// Body parser middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+// Body parser middleware (supports payloads up to 50MB)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser())
 
 // Serve static files from the uploads directory
@@ -118,6 +118,13 @@ app.use((req, res) => {
 // Global error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err.message);
+
+    if (err.code === 'LIMIT_FILE_SIZE' || err.type === 'entity.too.large' || err.status === 413) {
+        return res.status(413).json({
+            status: 'error',
+            message: 'The uploaded files exceed the maximum allowed size of 50MB. Please upload smaller files or compress them.'
+        });
+    }
 
     const statusCode = err.statusCode || 500;
     const message = err.message || 'Internal Server Error';
