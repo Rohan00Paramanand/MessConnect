@@ -1,8 +1,16 @@
 import { atom } from 'recoil';
 
+let initialUser = null;
+try {
+  const cached = localStorage.getItem('user');
+  if (cached) initialUser = JSON.parse(cached);
+} catch {
+  initialUser = null;
+}
+
 export const authUserAtom = atom({
   key: 'authUser',
-  default: null,
+  default: initialUser,
 });
 
 export const authTokenAtom = atom({

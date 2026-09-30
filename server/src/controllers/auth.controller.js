@@ -175,10 +175,13 @@ const signup = async (req, res) => {
             message: "User registered successfully",
             token,
             user: {
+                _id: newUser._id,
                 name: newUser.name,
                 email: newUser.email,
                 role: newUser.role,
-                collegeId: newUser.collegeId
+                collegeId: newUser.collegeId,
+                trustMeter: newUser.trustMeter,
+                isApprovedByAdmin: newUser.isApprovedByAdmin
             }
         });
 
@@ -238,9 +241,13 @@ const login = async (req, res) => {
             message: "Logged in successfully",
             token,
             user: {
+                _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                avatar: user.avatar,
+                trustMeter: user.trustMeter,
+                messAssigned: user.messAssigned,
                 isActive: user.isActive,
                 isApprovedByAdmin: user.isApprovedByAdmin,
                 collegeId: user.collegeId
@@ -620,10 +627,12 @@ const acceptInvitation = async (req, res) => {
             message: 'Invitation accepted and account registered successfully',
             token: jwtToken,
             user: {
+                _id: newUser._id,
                 name: newUser.name,
                 email: newUser.email,
                 role: newUser.role,
-                collegeId: newUser.collegeId
+                collegeId: newUser.collegeId,
+                isApprovedByAdmin: newUser.isApprovedByAdmin
             }
         });
 

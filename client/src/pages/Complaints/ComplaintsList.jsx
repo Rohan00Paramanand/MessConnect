@@ -518,7 +518,8 @@ const ComplaintsList = () => {
 
   const isMyComplaint = (c) => {
     const complaintUserId = c.user_id?._id || c.user_id;
-    return Boolean(complaintUserId && user?._id && complaintUserId.toString() === user._id.toString());
+    const currentUserId = user?._id || user?.id;
+    return Boolean(complaintUserId && currentUserId && complaintUserId.toString() === currentUserId.toString());
   };
 
   const sortComplaintsList = (list, sortType = sortBy) => {

@@ -26,9 +26,12 @@ const StudentDashboard = () => {
         setTrendingComplaints(sorted.slice(0, 3)); // Top 3
 
         // Find complaints created by this student that are resolved/completed but not yet rated
+        const currentUserId = user?._id || user?.id;
         const myResolved = list.filter(
           c => ['resolved', 'vendor_completed'].includes(c.status) &&
-               (c.user_id?._id === user?._id || c.user_id === user?._id) &&
+               currentUserId &&
+               (c.user_id?._id?.toString() === currentUserId.toString() ||
+                c.user_id?.toString() === currentUserId.toString()) &&
                !c.resolutionFeedback?.rating
         );
         setResolvedAwaitingFeedback(myResolved);

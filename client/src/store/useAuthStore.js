@@ -27,6 +27,9 @@ const useAuthStore = () => {
       localStorage.setItem('token', newToken);
       setToken(newToken);
     }
+    if (newUser) {
+      localStorage.setItem('user', JSON.stringify(newUser));
+    }
     setUser(newUser);
     setIsAuthenticated(true);
     setLoading(false);
@@ -39,6 +42,7 @@ const useAuthStore = () => {
       console.error(e);
     } finally {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
@@ -51,16 +55,19 @@ const useAuthStore = () => {
     try {
       const { data } = await api.get('/auth/me');
       if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
         setIsAuthenticated(true);
       } else {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setUser(null);
         setToken(null);
         setIsAuthenticated(false);
       }
     } catch {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
