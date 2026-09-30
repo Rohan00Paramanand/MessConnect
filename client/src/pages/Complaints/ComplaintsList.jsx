@@ -485,7 +485,6 @@ const ComplaintsList = () => {
   const [loading, setLoading] = useState(true);
   const [scopeFilter, setScopeFilter] = useState(isStudent ? 'my' : 'all');
   const [sortBy, setSortBy] = useState('latest');
-  const [showAllTopRated, setShowAllTopRated] = useState(false);
   const [messFilter, setMessFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -600,18 +599,6 @@ const ComplaintsList = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
-
-  // Top-Rated complaints across the mess with at least 1 upvote, sorted by upvotes descending
-  const topRatedComplaints = [...complaints]
-    .filter(c => (c.upvotes?.length || 0) > 0)
-    .sort((a, b) => {
-      const aVotes = a.upvotes?.length || 0;
-      const bVotes = b.upvotes?.length || 0;
-      if (bVotes !== aVotes) return bVotes - aVotes;
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-
-  const displayedTopRated = showAllTopRated ? topRatedComplaints : topRatedComplaints.slice(0, 3);
 
   // Complaints created by current student that are resolved/completed and awaiting satisfaction feedback
   const studentResolvedAwaitingFeedback = isStudent
@@ -761,10 +748,10 @@ const ComplaintsList = () => {
       )}
 
       {/* Scope Switcher & Filter Bar */}
-      <div className="space-y-3">
-        {/* Scope Switcher Tabs (My Complaints vs All Complaints) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white/70 backdrop-blur-xl border border-white/60 p-2 sm:p-2.5 rounded-2xl shadow-sm">
-          <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 rounded-xl">
+      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+        {/* Top Control Bar: Scope Switcher Tabs */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-1.5 p-1 bg-gray-100/90 rounded-xl">
             <button
               type="button"
               onClick={() => { setScopeFilter('my'); setCurrentPage(1); }}
@@ -802,85 +789,86 @@ const ComplaintsList = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 px-2 self-end sm:self-auto">
-            <ArrowUpDown size={14} className="text-gray-400" />
-            <span className="text-xs font-semibold text-gray-500">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
-              className="text-xs font-bold bg-white/90 border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs"
-            >
-              <option value="latest">Newest / Latest First</option>
-              <option value="top_rated">Top Rated (Most Likes)</option>
-              <option value="oldest">Oldest First</option>
-            </select>
+          <div className="text-xs text-gray-500 font-medium">
+            Showing <strong className="text-gray-900">{filteredComplaints.length}</strong> {scopeFilter === 'my' ? 'of your' : 'total'} complaints
           </div>
         </div>
 
-        {/* Dropdown Filters Bar (Available for EVERY SINGLE ROLE) */}
-        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        {/* Dropdown Filters Bar (Uniform Custom Select Components) */}
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${messes.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5`}>
+          <Select
+            label="Filter by Status"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+            options={[
+              { value: 'ALL', label: `All Statuses (${filteredComplaints.length})` },
+              { value: 'pending', label: `Pending (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.status === 'pending').length})` },
+              { value: 'assigned', label: `Assigned / In Progress (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && (c.status === 'assigned' || c.status === 'vendor_completed')).length})` },
+              { value: 'resolved', label: `Resolved (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && (c.status === 'resolved' || c.status === 'vendor_completed')).length})` },
+              { value: 'rejected', label: `Rejected (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.status?.startsWith('rejected')).length})` },
+            ]}
+          />
+
+          <Select
+            label="Filter by Category"
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+            options={[
+              { value: 'ALL', label: `All Categories (${filteredComplaints.length})` },
+              { value: 'food', label: `Food (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'food').length})` },
+              { value: 'cleanliness', label: `Cleanliness (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'cleanliness').length})` },
+              { value: 'timeliness', label: `Timeliness (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'timeliness').length})` },
+              { value: 'taste', label: `Taste (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'taste').length})` },
+              { value: 'staff behaviour', label: `Staff Behaviour (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'staff behaviour').length})` },
+              { value: 'other', label: `Other (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'other').length})` },
+            ]}
+          />
+
+          <Select
+            label="Sort Order"
+            icon={ArrowUpDown}
+            value={sortBy}
+            onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+            options={[
+              { value: 'latest', label: 'Newest / Latest First' },
+              { value: 'top_rated', label: 'Top Rated (Most Likes)' },
+              { value: 'oldest', label: 'Oldest First' },
+            ]}
+          />
+
+          {messes.length > 0 && (
             <Select
-              label="Filter by Status"
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              label="Filter by Mess"
+              value={messFilter}
+              onChange={(e) => { setMessFilter(e.target.value); setCurrentPage(1); }}
               options={[
-                { value: 'ALL', label: `All Statuses (${filteredComplaints.length})` },
-                { value: 'pending', label: `Pending (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.status === 'pending').length})` },
-                { value: 'assigned', label: `Assigned / In Progress (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && (c.status === 'assigned' || c.status === 'vendor_completed')).length})` },
-                { value: 'resolved', label: `Resolved (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && (c.status === 'resolved' || c.status === 'vendor_completed')).length})` },
-                { value: 'rejected', label: `Rejected (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.status?.startsWith('rejected')).length})` },
+                { value: '', label: 'All Messes' },
+                ...messes.map((m) => ({ value: m._id, label: m.name })),
               ]}
             />
-
-            <Select
-              label="Filter by Category"
-              value={categoryFilter}
-              onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
-              options={[
-                { value: 'ALL', label: `All Categories (${filteredComplaints.length})` },
-                { value: 'food', label: `Food (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'food').length})` },
-                { value: 'cleanliness', label: `Cleanliness (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'cleanliness').length})` },
-                { value: 'timeliness', label: `Timeliness (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'timeliness').length})` },
-                { value: 'taste', label: `Taste (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'taste').length})` },
-                { value: 'staff behaviour', label: `Staff Behaviour (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'staff behaviour').length})` },
-                { value: 'other', label: `Other (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'other').length})` },
-              ]}
-            />
-
-            {messes.length > 0 && (
-              <Select
-                label="Filter by Mess"
-                value={messFilter}
-                onChange={(e) => { setMessFilter(e.target.value); setCurrentPage(1); }}
-                options={[
-                  { value: '', label: 'All Messes' },
-                  ...messes.map((m) => ({ value: m._id, label: m.name })),
-                ]}
-              />
-            )}
-          </div>
-
-          {(statusFilter !== 'ALL' || categoryFilter !== 'ALL' || messFilter) && (
-            <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 flex-wrap gap-2">
-              <span className="text-xs text-gray-500 font-medium">
-                Filtered results: <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter('ALL');
-                  setCategoryFilter('ALL');
-                  setMessFilter('');
-                  setCurrentPage(1);
-                }}
-                className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer"
-              >
-                Clear all filters
-              </button>
-            </div>
           )}
         </div>
+
+        {(statusFilter !== 'ALL' || categoryFilter !== 'ALL' || messFilter || sortBy !== 'latest') && (
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 flex-wrap gap-2">
+            <span className="text-xs text-gray-500 font-medium">
+              Filtered results: <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('ALL');
+                setCategoryFilter('ALL');
+                setMessFilter('');
+                setSortBy('latest');
+                setCurrentPage(1);
+              }}
+              className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
       </div>
 
       {/* SEPARATE HIGHLIGHTED SECTION: Student's Resolved Complaints Awaiting Feedback */}
@@ -1043,24 +1031,36 @@ const ComplaintsList = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {paginatedComplaints.map(complaint => (
-            <ComplaintCard
-              key={complaint._id}
-              complaint={complaint}
-              user={user}
-              messes={messes}
-              ratingDrafts={ratingDrafts}
-              submittingFeedbackId={submittingFeedbackId}
-              handleUpvote={handleUpvote}
-              handleSelectRating={handleSelectRating}
-              handleRatingCommentChange={handleRatingCommentChange}
-              handleSubmitFeedback={handleSubmitFeedback}
-              setSelectedPhoto={setSelectedPhoto}
-              setVendorResolveModalComplaint={setVendorResolveModalComplaint}
-              handleStatusUpdate={handleStatusUpdate}
-              isLatest={complaint._id === myLatestComplaint?._id}
-            />
-          ))}
+          {paginatedComplaints.map((complaint, index) => {
+            let rankBadge = null;
+            if (sortBy === 'top_rated' && (complaint.upvotes?.length || 0) > 0) {
+              const rank = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
+              if (rank === 1) rankBadge = '🏆 #1 Most Upvoted';
+              else if (rank === 2) rankBadge = '🥈 #2 Most Upvoted';
+              else if (rank === 3) rankBadge = '🥉 #3 Most Upvoted';
+              else rankBadge = `🔥 #${rank} Most Upvoted`;
+            }
+
+            return (
+              <ComplaintCard
+                key={complaint._id}
+                complaint={complaint}
+                user={user}
+                messes={messes}
+                ratingDrafts={ratingDrafts}
+                submittingFeedbackId={submittingFeedbackId}
+                handleUpvote={handleUpvote}
+                handleSelectRating={handleSelectRating}
+                handleRatingCommentChange={handleRatingCommentChange}
+                handleSubmitFeedback={handleSubmitFeedback}
+                setSelectedPhoto={setSelectedPhoto}
+                setVendorResolveModalComplaint={setVendorResolveModalComplaint}
+                handleStatusUpdate={handleStatusUpdate}
+                isLatest={complaint._id === myLatestComplaint?._id}
+                rankBadge={rankBadge}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -1105,72 +1105,6 @@ const ComplaintsList = () => {
           <p className="text-xs text-gray-500 font-medium text-center">
             Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredComplaints.length)}</strong> of <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints
           </p>
-        </div>
-      )}
-
-      {/* Top-Rated Complaints Section (Ranked by Likes / Upvotes) */}
-      {topRatedComplaints.length > 0 && (
-        <div className="space-y-4 pt-6 border-t border-gray-200/60">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent p-4 sm:p-5 rounded-2xl border border-amber-200/60">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0">
-                <Flame size={20} className="fill-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
-                    Top-Rated Complaints
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
-                    {topRatedComplaints.length} with Upvotes
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 font-medium mt-0.5">
-                  Complaints with the most "Me Too!" student upvotes across the mess
-                </p>
-              </div>
-            </div>
-
-            {topRatedComplaints.length > 3 && (
-              <button
-                type="button"
-                onClick={() => setShowAllTopRated(!showAllTopRated)}
-                className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs transition-all cursor-pointer self-start sm:self-auto"
-              >
-                {showAllTopRated ? 'Show Top 3 Only' : `View All Top Rated (${topRatedComplaints.length})`}
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {displayedTopRated.map((complaint, index) => {
-              let rankBadge = null;
-              if (index === 0) rankBadge = '🏆 #1 Most Upvoted';
-              else if (index === 1) rankBadge = '🥈 #2 Most Upvoted';
-              else if (index === 2) rankBadge = '🥉 #3 Most Upvoted';
-              else rankBadge = `🔥 #${index + 1} Most Upvoted`;
-
-              return (
-                <ComplaintCard
-                  key={`top-rated-${complaint._id}`}
-                  complaint={complaint}
-                  user={user}
-                  messes={messes}
-                  ratingDrafts={ratingDrafts}
-                  submittingFeedbackId={submittingFeedbackId}
-                  handleUpvote={handleUpvote}
-                  handleSelectRating={handleSelectRating}
-                  handleRatingCommentChange={handleRatingCommentChange}
-                  handleSubmitFeedback={handleSubmitFeedback}
-                  setSelectedPhoto={setSelectedPhoto}
-                  setVendorResolveModalComplaint={setVendorResolveModalComplaint}
-                  handleStatusUpdate={handleStatusUpdate}
-                  isLatest={complaint._id === myLatestComplaint?._id}
-                  rankBadge={rankBadge}
-                />
-              );
-            })}
-          </div>
         </div>
       )}
 
