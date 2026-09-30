@@ -137,24 +137,24 @@ const AcceptInvitation = () => {
   }
 
   return (
-    <div className="min-h-screen auth-gradient flex flex-col justify-between py-8 sm:py-12 px-3 sm:px-6 lg:px-8 relative overflow-x-hidden select-none">
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow"></div>
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
+    <div className="min-h-screen auth-gradient flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 relative overflow-x-hidden select-none">
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow pointer-events-none"></div>
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse-slow pointer-events-none" style={{ animationDelay: '1.5s' }}></div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
-        <div className="flex justify-center mb-4 sm:mb-6">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-indigo-600/20">
-            <span className="text-white font-black text-2xl sm:text-3xl">M</span>
+      <div className="w-full max-w-xl relative z-10 my-auto">
+        <div className="text-center animate-fade-in mb-6 sm:mb-8">
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-indigo-600/20">
+              <span className="text-white font-black text-2xl sm:text-3xl">M</span>
+            </div>
           </div>
+          <h2 className="mt-2 text-center text-3xl sm:text-4xl font-black tracking-tight text-gray-900">Complete Admin Setup</h2>
+          <p className="mt-2 sm:mt-3 text-center text-xs sm:text-sm font-medium text-gray-500">
+            Setup your profile for <span className="font-bold text-violet-600">{invitationData.collegeName}</span>
+          </p>
         </div>
-        <h2 className="mt-2 text-center text-3xl sm:text-4xl font-black tracking-tight text-gray-900">Complete Admin Setup</h2>
-        <p className="mt-2 sm:mt-3 text-center text-xs sm:text-sm font-medium text-gray-500">
-          Setup your profile for <span className="font-bold text-violet-600">{invitationData.collegeName}</span>
-        </p>
-      </div>
 
-      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-xl relative z-10 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <div className="glass-panel py-6 px-4 sm:py-10 sm:px-12 shadow-2xl shadow-gray-400/20 rounded-2xl sm:rounded-3xl border border-white/60">
+        <div className="glass-panel py-6 px-4 sm:py-10 sm:px-12 shadow-2xl shadow-gray-400/20 rounded-2xl sm:rounded-3xl border border-white/60 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="w-full">
