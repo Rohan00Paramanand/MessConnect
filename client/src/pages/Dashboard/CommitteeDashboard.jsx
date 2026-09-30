@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
+import LiveCameraCapture from '../../components/common/LiveCameraCapture';
 
 const CommitteeDashboard = () => {
   const { user } = useAuthStore();
@@ -350,7 +351,7 @@ const CommitteeDashboard = () => {
                 </p>
                 <ul className="list-disc list-inside space-y-0.5 text-amber-800">
                   <li>Upload your inspection report in <strong>PDF or Image format</strong>.</li>
-                  <li>Upload a <strong>selfie / photograph of yourself inside the mess</strong>.</li>
+                  <li>Capture a <strong>live selfie / photograph of yourself inside the mess</strong> via camera.</li>
                   <li>College Admin will review these submissions to finalize the audit.</li>
                 </ul>
               </div>
@@ -375,25 +376,15 @@ const CommitteeDashboard = () => {
                 )}
               </div>
 
-              {/* Mess Selfie / Photo File Input */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <Camera size={14} className="text-orange-600" />
-                  2. Photo of Yourself in the Mess *
-                </label>
-                <input
-                  type="file"
-                  required
-                  accept="image/*"
-                  onChange={(e) => setMessPhotoFile(e.target.files[0] || null)}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 border border-gray-200 rounded-xl cursor-pointer"
-                />
-                {messPhotoFile && (
-                  <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                    <Check size={12} /> Selected: {messPhotoFile.name}
-                  </p>
-                )}
-              </div>
+              {/* Mess Selfie / Photo Live Camera Capture */}
+              <LiveCameraCapture
+                label="2. Photo of Yourself in the Mess *"
+                photoFile={messPhotoFile}
+                onPhotoCaptured={(file) => setMessPhotoFile(file)}
+                onPhotoRemoved={() => setMessPhotoFile(null)}
+                watermarkTitle="MESS AUDIT VERIFICATION"
+                messName={selectedVisit?.messId?.name || ''}
+              />
 
               {/* Remarks */}
               <div>
