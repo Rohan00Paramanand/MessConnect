@@ -378,9 +378,9 @@ const ComplaintsList = () => {
             {studentResolvedAwaitingFeedback.map((c) => (
               <div
                 key={`highlighted-${c._id}`}
-                className="bg-white rounded-2xl p-4 sm:p-5 border-2 border-emerald-300 shadow-md space-y-3 flex flex-col justify-between"
+                className="bg-white rounded-2xl p-4 sm:p-5 border-2 border-emerald-300 shadow-md space-y-3 flex flex-col justify-between max-w-full overflow-hidden"
               >
-                <div>
+                <div className="w-full min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="px-2.5 py-1 text-xs font-black rounded-lg bg-emerald-100 text-emerald-800 uppercase tracking-wider">
                       {c.category}
@@ -390,11 +390,11 @@ const ComplaintsList = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-sm sm:text-base font-black text-gray-900 leading-snug">
+                  <h3 className="text-sm sm:text-base font-black text-gray-900 leading-snug break-words">
                     {c.title || c.description}
                   </h3>
                   {c.mess?.name && (
-                    <p className="text-xs text-gray-500 font-bold mt-1">
+                    <p className="text-xs text-gray-500 font-bold mt-1 truncate">
                       Mess Facility: <span className="text-gray-800">{c.mess.name}</span>
                     </p>
                   )}
@@ -409,9 +409,10 @@ const ComplaintsList = () => {
                         description: c.resolutionProof.remarks || 'Complaint resolved with on-site geotagged proof.',
                         address: c.resolutionProof.location?.address || (c.resolutionProof.location?.latitude ? `${c.resolutionProof.location.latitude.toFixed(4)}, ${c.resolutionProof.location.longitude.toFixed(4)}` : null)
                       })}
-                      className="mt-2.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5 cursor-pointer w-fit"
+                      className="mt-2.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5 cursor-pointer w-fit max-w-full"
                     >
-                      <CheckCircle size={13} className="text-emerald-600" /> View Resolution Photo Proof →
+                      <CheckCircle size={13} className="text-emerald-600 flex-shrink-0" />
+                      <span className="truncate">View Resolution Photo Proof →</span>
                     </button>
                   )}
                 </div>
@@ -510,23 +511,23 @@ const ComplaintsList = () => {
             return (
             <div
               key={complaint._id}
-              className={`backdrop-blur-xl rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 transition-all duration-300 ${
+              className={`backdrop-blur-xl rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-6 transition-all duration-300 max-w-full overflow-hidden ${
                 isMyResolvedNeedingFeedback
                   ? 'bg-gradient-to-br from-emerald-50/70 via-white to-white border-2 border-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-2 ring-emerald-300'
                   : 'bg-white/70 border border-white/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'
               }`}
             >
               {isMyResolvedNeedingFeedback && (
-                <div className="mb-3 px-3 py-1 bg-emerald-100 text-emerald-900 rounded-xl text-xs font-bold flex items-center gap-1.5 w-fit border border-emerald-300 shadow-2xs">
-                  <CheckCircle size={14} className="text-emerald-700" />
-                  <span>
+                <div className="mb-3 px-3 py-1.5 bg-emerald-100 text-emerald-900 rounded-xl text-xs font-bold flex items-start sm:items-center gap-1.5 w-fit max-w-full border border-emerald-300 shadow-2xs leading-snug">
+                  <CheckCircle size={14} className="text-emerald-700 flex-shrink-0 mt-0.5 sm:mt-0" />
+                  <span className="break-words">
                     {complaint.status === 'vendor_completed'
                       ? 'Vendor Completed with Proof — Please Share Your Feedback Below'
                       : 'Your Complaint was Resolved — Please Share Your Feedback Below'}
                   </span>
                 </div>
               )}
-              <div className={`flex flex-col ${hasActions ? 'sm:flex-row sm:items-start justify-between gap-4' : ''} w-full`}>
+              <div className={`flex flex-col ${hasActions ? 'sm:flex-row sm:items-start justify-between gap-4' : ''} w-full min-w-0`}>
                 <div className="flex-1 min-w-0 w-full">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <StatusBadge status={complaint.status} />
@@ -538,8 +539,9 @@ const ComplaintsList = () => {
                     <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold text-gray-500 bg-gray-100 rounded-full border border-gray-200 capitalize">
                       {complaint.category}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 rounded-full border border-indigo-200">
-                      🏛️ {complaint.mess?.name || messes.find(m => m._id === complaint.mess)?.name || 'Mess'}
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 rounded-full border border-indigo-200 max-w-full min-w-0">
+                      <span className="flex-shrink-0">🏛️</span>
+                      <span className="truncate">{complaint.mess?.name || messes.find(m => m._id === complaint.mess)?.name || 'Mess'}</span>
                     </span>
                     <div className="ml-auto">
                       <button
@@ -568,7 +570,7 @@ const ComplaintsList = () => {
                         description: complaint.description,
                         address: complaint.location?.address || (complaint.location?.latitude ? `${complaint.location.latitude.toFixed(4)}, ${complaint.location.longitude.toFixed(4)}` : null)
                       })}
-                      className="relative max-w-xs h-44 mt-3 group cursor-pointer overflow-hidden rounded-2xl border border-gray-200/80 shadow-sm hover:border-teal-400 hover:shadow-lg transition-all duration-300 bg-gray-900/5 flex items-center justify-center"
+                      className="relative w-full max-w-xs h-44 mt-3 group cursor-pointer overflow-hidden rounded-2xl border border-gray-200/80 shadow-sm hover:border-teal-400 hover:shadow-lg transition-all duration-300 bg-gray-900/5 flex items-center justify-center"
                       title="Click to view full image"
                     >
                       <img
@@ -594,11 +596,11 @@ const ComplaintsList = () => {
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-gray-100/50">
+                  <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-gray-100/50 w-full min-w-0">
                     <p className="text-xs text-gray-400 font-medium flex items-center gap-2 flex-wrap">
                       <span>Submitted {new Date(complaint.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       {complaint.user_id?.name && (
-                        <span className="flex items-center gap-1.5">
+                        <span className="flex items-center gap-1.5 flex-wrap">
                           <span>· by {complaint.user_id.name}</span>
                           {['user', 'student'].includes(complaint.user_id.role) && typeof complaint.user_id.trustMeter === 'number' && (
                             <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
@@ -613,9 +615,9 @@ const ComplaintsList = () => {
                       )}
                     </p>
                     {complaint.location?.latitude && (
-                      <div className="flex items-center gap-1 text-teal-600 bg-teal-50/60 px-2.5 py-1 rounded-xl border border-teal-100/70 w-fit max-w-full">
+                      <div className="flex items-center gap-1 text-teal-600 bg-teal-50/60 px-2.5 py-1 rounded-xl border border-teal-100/70 w-fit max-w-full min-w-0">
                         <MapPin size={12} className="flex-shrink-0 text-teal-500" />
-                        <span className="text-xs truncate font-medium" title={complaint.location.address}>
+                        <span className="text-xs truncate font-medium flex-1 min-w-0" title={complaint.location.address}>
                           {complaint.location.address || `${complaint.location.latitude.toFixed(4)}, ${complaint.location.longitude.toFixed(4)}`}
                         </span>
                       </div>
@@ -624,8 +626,8 @@ const ComplaintsList = () => {
 
                   {/* Vendor Resolution Proof */}
                   {complaint.resolutionProof?.image && (
-                    <div className="mt-3.5 p-3 sm:p-3.5 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="mt-3.5 p-3 sm:p-3.5 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full max-w-full overflow-hidden box-border">
+                      <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0 w-full overflow-hidden">
                         <div
                           onClick={() => setSelectedPhoto({
                             url: getImageUrl(complaint.resolutionProof.image),
@@ -642,20 +644,25 @@ const ComplaintsList = () => {
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div className="space-y-0.5 flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
-                            <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
-                            <span>Vendor Resolution Proof (Geotagged)</span>
+                        <div className="space-y-1 flex-1 min-w-0 w-full overflow-hidden">
+                          <div className="flex items-start sm:items-center gap-1.5 text-xs font-bold text-emerald-900 leading-snug">
+                            <CheckCircle size={14} className="text-emerald-600 flex-shrink-0 mt-0.5 sm:mt-0" />
+                            <span className="break-words">Vendor Resolution Proof (Geotagged)</span>
                           </div>
                           {complaint.resolutionProof.remarks && (
-                            <p className="text-xs text-emerald-800 font-medium line-clamp-1">
+                            <p className="text-xs text-emerald-800 font-medium line-clamp-2 break-words">
                               "{complaint.resolutionProof.remarks}"
                             </p>
                           )}
-                          {complaint.resolutionProof.location?.address && (
-                            <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
-                              <MapPin size={11} className="flex-shrink-0" />
-                              <span className="truncate">{complaint.resolutionProof.location.address}</span>
+                          {(complaint.resolutionProof.location?.address || complaint.resolutionProof.location?.latitude) && (
+                            <p 
+                              className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 min-w-0 w-full"
+                              title={complaint.resolutionProof.location.address || `${complaint.resolutionProof.location.latitude?.toFixed(4)}, ${complaint.resolutionProof.location.longitude?.toFixed(4)}`}
+                            >
+                              <MapPin size={11} className="flex-shrink-0 text-emerald-600" />
+                              <span className="truncate block flex-1 min-w-0">
+                                {complaint.resolutionProof.location.address || `${complaint.resolutionProof.location.latitude?.toFixed(4)}, ${complaint.resolutionProof.location.longitude?.toFixed(4)}`}
+                              </span>
                             </p>
                           )}
                         </div>
@@ -668,7 +675,7 @@ const ComplaintsList = () => {
                           description: complaint.resolutionProof.remarks || 'Complaint resolved with on-site geotagged proof.',
                           address: complaint.resolutionProof.location?.address || (complaint.resolutionProof.location?.latitude ? `${complaint.resolutionProof.location.latitude.toFixed(4)}, ${complaint.resolutionProof.location.longitude.toFixed(4)}` : null)
                         })}
-                        className="text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-sm flex items-center gap-1 whitespace-nowrap self-end sm:self-auto cursor-pointer flex-shrink-0"
+                        className="text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-sm flex items-center justify-center gap-1 whitespace-nowrap w-full sm:w-auto self-stretch sm:self-auto cursor-pointer flex-shrink-0"
                       >
                         View Proof Photo →
                       </button>
@@ -677,29 +684,29 @@ const ComplaintsList = () => {
 
                   {/* Student Resolution Satisfaction Feedback */}
                   {['resolved', 'vendor_completed'].includes(complaint.status) && (
-                    <div className="mt-3 w-full">
+                    <div className="mt-3 w-full max-w-full overflow-hidden">
                       {(complaint.user_id?._id === user?._id || complaint.user_id === user?._id) ? (
                         complaint.resolutionFeedback?.rating ? (
-                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs w-full ${
+                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs w-full max-w-full overflow-hidden ${
                             complaint.resolutionFeedback.rating === 'satisfied'
                               ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
                               : 'bg-rose-50/70 border-rose-200 text-rose-900'
                           }`}>
                             <div className="space-y-0.5 flex-1 min-w-0">
-                              <p className="font-bold flex items-center gap-1.5">
+                              <p className="font-bold flex items-center gap-1.5 flex-wrap">
                                 <span>{complaint.resolutionFeedback.rating === 'satisfied' ? '😊' : '🙁'}</span>
                                 <span>You rated this resolution: <strong className="uppercase">{complaint.resolutionFeedback.rating}</strong></span>
                               </p>
                               {complaint.resolutionFeedback.comment && (
-                                <p className="text-gray-700 font-medium">"{complaint.resolutionFeedback.comment}"</p>
+                                <p className="text-gray-700 font-medium break-words [overflow-wrap:anywhere]">"{complaint.resolutionFeedback.comment}"</p>
                               )}
                             </div>
-                            <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                            <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap flex-shrink-0">
                               {new Date(complaint.resolutionFeedback.submittedAt).toLocaleDateString()}
                             </span>
                           </div>
                         ) : (
-                          <div className="p-3.5 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5 w-full">
+                          <div className="p-3.5 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5 w-full max-w-full overflow-hidden">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                               <p className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
                                 <span>⭐</span> Were you satisfied with this complaint resolution?
@@ -757,26 +764,26 @@ const ComplaintsList = () => {
                         )
                       ) : (
                         complaint.resolutionFeedback?.rating ? (
-                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs w-full ${
+                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs w-full max-w-full overflow-hidden ${
                             complaint.resolutionFeedback.rating === 'satisfied'
                               ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
                               : 'bg-rose-50/80 border-rose-200 text-rose-950'
                           }`}>
                             <div className="space-y-0.5 flex-1 min-w-0">
-                              <p className="font-bold flex items-center gap-1.5">
+                              <p className="font-bold flex items-center gap-1.5 flex-wrap">
                                 <span>{complaint.resolutionFeedback.rating === 'satisfied' ? '😊' : '🙁'}</span>
                                 <span>Student Rating: <strong className="uppercase">{complaint.resolutionFeedback.rating}</strong></span>
                               </p>
                               {complaint.resolutionFeedback.comment && (
-                                <p className="text-gray-700 font-medium">"{complaint.resolutionFeedback.comment}"</p>
+                                <p className="text-gray-700 font-medium break-words [overflow-wrap:anywhere]">"{complaint.resolutionFeedback.comment}"</p>
                               )}
                               {complaint.resolvedBy?.name && (
-                                <p className="text-[10px] text-gray-500 font-medium">
+                                <p className="text-[10px] text-gray-500 font-medium truncate">
                                   Resolved by {complaint.resolvedBy.name}
                                 </p>
                               )}
                             </div>
-                            <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                            <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap flex-shrink-0">
                               {new Date(complaint.resolutionFeedback.submittedAt).toLocaleDateString()}
                             </span>
                           </div>

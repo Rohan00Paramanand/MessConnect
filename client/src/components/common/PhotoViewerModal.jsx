@@ -102,9 +102,9 @@ const PhotoViewerModal = ({ photo, onClose }) => {
               </p>
             )}
             {photo.address && (
-              <div className="flex items-center gap-1.5 text-xs text-teal-400 bg-teal-950/60 px-2.5 py-1 rounded-xl border border-teal-800/60 w-fit max-w-full">
+              <div className="flex items-center gap-1.5 text-xs text-teal-400 bg-teal-950/60 px-2.5 py-1 rounded-xl border border-teal-800/60 w-fit max-w-full min-w-0">
                 <MapPin size={13} className="text-teal-400 flex-shrink-0" />
-                <span className="truncate">{photo.address}</span>
+                <span className="truncate flex-1 min-w-0" title={photo.address}>{photo.address}</span>
               </div>
             )}
           </div>
