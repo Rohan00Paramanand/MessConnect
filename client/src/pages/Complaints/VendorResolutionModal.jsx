@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
-import { Camera, UploadCloud, MapPin, X, Check, AlertCircle } from 'lucide-react';
+import { Camera, UploadCloud, MapPin, X, Check } from 'lucide-react';
 
 const VendorResolutionModal = ({ complaint, onClose, onSuccess }) => {
   const [image, setImage] = useState(null);
@@ -225,14 +225,6 @@ const VendorResolutionModal = ({ complaint, onClose, onSuccess }) => {
           >
             <X size={20} />
           </button>
-        </div>
-
-        {/* Notice */}
-        <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-xs text-amber-900 flex items-start gap-2">
-          <AlertCircle size={15} className="text-amber-600 flex-shrink-0 mt-0.5" />
-          <p>
-            <strong>Mandatory Requirement:</strong> You must submit an authentic, on-site geotagged photo showing the complaint has been rectified.
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

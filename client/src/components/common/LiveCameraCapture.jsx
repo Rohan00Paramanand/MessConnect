@@ -10,7 +10,7 @@ const LiveCameraCapture = ({
   onPhotoRemoved,
   watermarkTitle = 'MESS AUDIT VERIFICATION',
   messName = '',
-  description = 'Live camera snapshot required. File selection from storage/gallery is disabled.',
+  description = null,
 }) => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState(null);
@@ -202,12 +202,6 @@ const LiveCameraCapture = ({
         )}
       </div>
 
-      {description && !previewUrl && (
-        <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-          {description}
-        </p>
-      )}
-
       {/* Captured Photo Preview Card */}
       {previewUrl ? (
         <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400/80 bg-gray-900/5 shadow-md">
@@ -254,19 +248,12 @@ const LiveCameraCapture = ({
         <button
           type="button"
           onClick={() => startCamera('user')}
-          className="w-full p-5 sm:p-6 rounded-2xl border-2 border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/40 hover:bg-amber-50/80 transition-all text-center flex flex-col items-center justify-center gap-2.5 group cursor-pointer shadow-2xs hover:shadow-md"
+          className="w-full py-3.5 px-4 rounded-2xl border-2 border-dashed border-amber-300 hover:border-amber-400 bg-amber-50/40 hover:bg-amber-50/80 transition-all flex items-center justify-center gap-2.5 text-sm font-bold text-amber-900 cursor-pointer active:scale-[0.99] group shadow-2xs"
         >
-          <div className="w-14 h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform">
-            <Camera size={26} />
+          <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+            <Camera size={16} />
           </div>
-          <div>
-            <p className="text-sm font-black text-gray-900 group-hover:text-amber-900 transition-colors">
-              Click to Open Camera & Take Live Selfie / Photo
-            </p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
-              Live in-mess camera snapshot is mandatory for audit verification
-            </p>
-          </div>
+          <span>Open Camera & Take Live Photo</span>
         </button>
       )}
 

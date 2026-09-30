@@ -9,7 +9,6 @@ import {
   Calendar,
   Clock,
   CheckCircle2,
-  AlertTriangle,
   FileText,
   Camera,
   UploadCloud,
@@ -673,16 +672,6 @@ const MessVisits = () => {
             </div>
 
             <form onSubmit={handleReportSubmit} className="space-y-4">
-              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200 text-xs text-amber-900 space-y-1">
-                <p className="font-bold flex items-center gap-1.5 text-amber-800">
-                  <AlertTriangle size={14} /> Submission Requirements:
-                </p>
-                <ul className="list-disc list-inside space-y-0.5 text-amber-800">
-                  <li><strong>Inspection Report:</strong> Uploaded as a PDF document or high-res Image.</li>
-                  <li><strong>Live Photograph:</strong> Capture a live selfie/photo of yourself inside the mess facility via device camera.</li>
-                </ul>
-              </div>
-
               {/* Inspection Report File Input */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">

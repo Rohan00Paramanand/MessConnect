@@ -4,7 +4,6 @@ import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import {
-  AlertTriangle,
   TrendingUp,
   Calendar,
   ShieldCheck,
@@ -345,17 +344,6 @@ const CommitteeDashboard = () => {
             </div>
 
             <form onSubmit={handleReportSubmit} className="space-y-4">
-              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200 text-xs text-amber-900 space-y-1">
-                <p className="font-bold flex items-center gap-1.5 text-amber-800">
-                  <AlertTriangle size={14} /> To mark this visit done:
-                </p>
-                <ul className="list-disc list-inside space-y-0.5 text-amber-800">
-                  <li>Upload your inspection report in <strong>PDF or Image format</strong>.</li>
-                  <li>Capture a <strong>live selfie / photograph of yourself inside the mess</strong> via camera.</li>
-                  <li>College Admin will review these submissions to finalize the audit.</li>
-                </ul>
-              </div>
-
               {/* Inspection Report File Input */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
