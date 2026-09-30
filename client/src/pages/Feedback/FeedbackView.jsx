@@ -47,7 +47,13 @@ const FeedbackView = () => {
         .then(({ data }) => {
           const list = data.data || [];
           setMesses(list);
-          if (list.length > 0) {
+          if (user?.role === 'vendor') {
+            const vendorMessId = user?.messAssigned?._id || user?.messAssigned;
+            if (vendorMessId) {
+              setMessFilter(vendorMessId);
+              setSubmissionMess(vendorMessId);
+            }
+          } else if (list.length > 0) {
             setMessFilter(list[0]._id);
             setSubmissionMess(list[0]._id);
           }
@@ -72,7 +78,12 @@ const FeedbackView = () => {
     setLoading(true);
     try { 
       const params = { page: pageNum, limit: 9 };
-      if (filterVal) params.mess = filterVal;
+      if (user?.role === 'vendor') {
+        const vendorMessId = user?.messAssigned?._id || user?.messAssigned;
+        if (vendorMessId) params.mess = vendorMessId;
+      } else if (filterVal) {
+        params.mess = filterVal;
+      }
       const { data } = await api.get(`/feedback`, { params }); 
 
       setFeedbacks(data.data || []);
@@ -84,7 +95,7 @@ const FeedbackView = () => {
     } finally { 
       setLoading(false); 
     }
-  }, [messFilter]);
+  }, [messFilter, user]);
 
   useEffect(() => { 
     setPage(1);
@@ -151,12 +162,14 @@ const FeedbackView = () => {
             </p>
           </div>
           <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
-            <Select
-              variant="header"
-              value={messFilter}
-              onChange={(e) => setMessFilter(e.target.value)}
-              options={messes.map((m) => ({ value: m._id, label: m.name }))}
-            />
+            {user?.role !== 'vendor' && (
+              <Select
+                variant="header"
+                value={messFilter}
+                onChange={(e) => setMessFilter(e.target.value)}
+                options={messes.map((m) => ({ value: m._id, label: m.name }))}
+              />
+            )}
             <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2.5 sm:py-4 border border-white/30">
               <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
                 <TrendingUp size={12} className="text-white/70" />

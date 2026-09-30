@@ -110,7 +110,7 @@ export const getFeedback = async (req, res) => {
             aggregateFilter.user = req.user._id;
         }
 
-        // All roles may filter further by a specific mess within their college
+        // All roles except vendors may filter further by a specific mess within their college
         if (req.query.mess && ['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
             // Validate the requested mess belongs to this college before trusting the param
             const messDoc = await Mess.findOne({ _id: req.query.mess, collegeId: req.collegeId });
@@ -120,10 +120,21 @@ export const getFeedback = async (req, res) => {
             aggregateFilter.mess = req.query.mess;
         }
 
+        // Vendors are strictly locked to their assigned mess
         if (req.user.role === 'vendor') {
-            if (req.user.messAssigned && req.user.messAssigned !== 'None') {
-                aggregateFilter.mess = req.user.messAssigned;
+            if (!req.user.messAssigned || req.user.messAssigned === 'None') {
+                return res.status(200).json({
+                    status: 'success',
+                    count: 0,
+                    total: 0,
+                    page: 1,
+                    totalPages: 1,
+                    categoryAverages: {},
+                    avgRating: '–',
+                    data: []
+                });
             }
+            aggregateFilter.mess = req.user.messAssigned;
         }
         
         // Calculate aggregations correctly mapped to entirety

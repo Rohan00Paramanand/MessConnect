@@ -558,7 +558,7 @@ const ComplaintsList = () => {
   const fetchComplaints = useCallback(async () => {
     try {
       const params = {};
-      if (messFilter) params.mess = messFilter;
+      if (user?.role !== 'vendor' && messFilter) params.mess = messFilter;
       const { data } = await api.get('/complaints', { params });
       const rawList = data.data || data;
       setComplaints([...rawList].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
@@ -568,7 +568,7 @@ const ComplaintsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [messFilter]);
+  }, [messFilter, user?.role]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -848,7 +848,7 @@ const ComplaintsList = () => {
         )}
 
         {/* Dropdown Filters Bar (Uniform Custom Select Components) */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 ${messes.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${messes.length > 0 && user?.role !== 'vendor' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5`}>
           <Select
             label="Filter by Status"
             value={statusFilter}
@@ -889,7 +889,7 @@ const ComplaintsList = () => {
             ]}
           />
 
-          {messes.length > 0 && (
+          {user?.role !== 'vendor' && messes.length > 0 && (
             <Select
               label="Filter by Mess"
               value={messFilter}
@@ -902,7 +902,7 @@ const ComplaintsList = () => {
           )}
         </div>
 
-        {(statusFilter !== 'ALL' || categoryFilter !== 'ALL' || messFilter || sortBy !== 'latest') && (
+        {(statusFilter !== 'ALL' || categoryFilter !== 'ALL' || (user?.role !== 'vendor' && messFilter) || sortBy !== 'latest') && (
           <div className="flex items-center justify-between pt-3 border-t border-gray-100 flex-wrap gap-2">
             <span className="text-xs text-gray-500 font-medium">
               Filtered results: <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints

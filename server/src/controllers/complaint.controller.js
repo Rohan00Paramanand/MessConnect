@@ -90,11 +90,16 @@ export const getComplaints = async (req, res) => {
             queryFilter.mess = req.query.mess;
         }
 
-        // Vendors are locked to their assigned mess
+        // Vendors are strictly locked to their assigned mess
         if (req.user.role === 'vendor') {
-            if (req.user.messAssigned && req.user.messAssigned !== 'None') {
-                queryFilter.mess = req.user.messAssigned;
+            if (!req.user.messAssigned || req.user.messAssigned === 'None') {
+                return res.json({
+                    status: 'success',
+                    count: 0,
+                    data: []
+                });
             }
+            queryFilter.mess = req.user.messAssigned;
         }
 
         let complaints;
@@ -117,9 +122,8 @@ export const getComplaints = async (req, res) => {
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
         } else if (req.user.role === 'vendor') {
-            // Vendors see assigned or completed complaints assigned specifically to them
-            queryFilter.status = { $in: ['assigned', 'vendor_completed'] };
-            queryFilter.assignedTo = req.user._id;
+            // Vendors strictly see complaints for their assigned mess only
+            queryFilter.mess = req.user.messAssigned;
             complaints = await Complaint.find(queryFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
