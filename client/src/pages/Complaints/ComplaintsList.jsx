@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api, { getImageUrl } from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -484,6 +483,7 @@ const ComplaintsList = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scopeFilter, setScopeFilter] = useState(isStudent ? 'my' : 'all');
+  const effectiveScope = isStudent ? scopeFilter : 'all';
   const [sortBy, setSortBy] = useState('latest');
   const [messFilter, setMessFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -497,12 +497,12 @@ const ComplaintsList = () => {
   const [submittingFeedbackId, setSubmittingFeedbackId] = useState(null);
 
   useEffect(() => {
-    if (user?.role === 'user' || user?.role === 'student') {
+    if (isStudent) {
       setScopeFilter('my');
-    } else if (user) {
+    } else {
       setScopeFilter('all');
     }
-  }, [user?.role]);
+  }, [isStudent]);
 
   useEffect(() => {
     if (user?.collegeId) {
@@ -569,8 +569,8 @@ const ComplaintsList = () => {
 
   // Filter complaints based on Scope (My Complaints vs All), Status, and Category
   const filteredComplaints = complaints.filter((c) => {
-    // Scope filter
-    if (scopeFilter === 'my' && !isMyComplaint(c)) {
+    // Scope filter (only active if student chose 'my')
+    if (effectiveScope === 'my' && !isMyComplaint(c)) {
       return false;
     }
 
@@ -749,50 +749,52 @@ const ComplaintsList = () => {
 
       {/* Scope Switcher & Filter Bar */}
       <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
-        {/* Top Control Bar: Scope Switcher Tabs */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-          <div className="flex items-center gap-1.5 p-1 bg-gray-100/90 rounded-xl">
-            <button
-              type="button"
-              onClick={() => { setScopeFilter('my'); setCurrentPage(1); }}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                scopeFilter === 'my'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              <User size={14} className={scopeFilter === 'my' ? 'text-indigo-600' : 'text-gray-400'} />
-              <span>My Complaints</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                scopeFilter === 'my' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {myComplaints.length}
-              </span>
-            </button>
+        {/* Top Control Bar: Scope Switcher Tabs (Only for Students) */}
+        {isStudent && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-1.5 p-1 bg-gray-100/90 rounded-xl">
+              <button
+                type="button"
+                onClick={() => { setScopeFilter('my'); setCurrentPage(1); }}
+                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  effectiveScope === 'my'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <User size={14} className={effectiveScope === 'my' ? 'text-indigo-600' : 'text-gray-400'} />
+                <span>My Complaints</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  effectiveScope === 'my' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {myComplaints.length}
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => { setScopeFilter('all'); setCurrentPage(1); }}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                scopeFilter === 'all'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              <Globe size={14} className={scopeFilter === 'all' ? 'text-indigo-600' : 'text-gray-400'} />
-              <span>All Complaints</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                scopeFilter === 'all' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {complaints.length}
-              </span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => { setScopeFilter('all'); setCurrentPage(1); }}
+                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  effectiveScope === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <Globe size={14} className={effectiveScope === 'all' ? 'text-indigo-600' : 'text-gray-400'} />
+                <span>All Complaints</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  effectiveScope === 'all' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {complaints.length}
+                </span>
+              </button>
+            </div>
 
-          <div className="text-xs text-gray-500 font-medium">
-            Showing <strong className="text-gray-900">{filteredComplaints.length}</strong> {scopeFilter === 'my' ? 'of your' : 'total'} complaints
+            <div className="text-xs text-gray-500 font-medium">
+              Showing <strong className="text-gray-900">{filteredComplaints.length}</strong> {effectiveScope === 'my' ? 'of your' : 'total'} complaints
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Dropdown Filters Bar (Uniform Custom Select Components) */}
         <div className={`grid grid-cols-1 sm:grid-cols-2 ${messes.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3.5`}>
@@ -802,10 +804,10 @@ const ComplaintsList = () => {
             onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
             options={[
               { value: 'ALL', label: `All Statuses (${filteredComplaints.length})` },
-              { value: 'pending', label: `Pending (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.status === 'pending').length})` },
-              { value: 'assigned', label: `Assigned / In Progress (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && (c.status === 'assigned' || c.status === 'vendor_completed')).length})` },
-              { value: 'resolved', label: `Resolved (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && (c.status === 'resolved' || c.status === 'vendor_completed')).length})` },
-              { value: 'rejected', label: `Rejected (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.status?.startsWith('rejected')).length})` },
+              { value: 'pending', label: `Pending (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.status === 'pending').length})` },
+              { value: 'assigned', label: `Assigned / In Progress (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && (c.status === 'assigned' || c.status === 'vendor_completed')).length})` },
+              { value: 'resolved', label: `Resolved (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && (c.status === 'resolved' || c.status === 'vendor_completed')).length})` },
+              { value: 'rejected', label: `Rejected (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.status?.startsWith('rejected')).length})` },
             ]}
           />
 
@@ -815,12 +817,12 @@ const ComplaintsList = () => {
             onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
             options={[
               { value: 'ALL', label: `All Categories (${filteredComplaints.length})` },
-              { value: 'food', label: `Food (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'food').length})` },
-              { value: 'cleanliness', label: `Cleanliness (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'cleanliness').length})` },
-              { value: 'timeliness', label: `Timeliness (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'timeliness').length})` },
-              { value: 'taste', label: `Taste (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'taste').length})` },
-              { value: 'staff behaviour', label: `Staff Behaviour (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'staff behaviour').length})` },
-              { value: 'other', label: `Other (${complaints.filter(c => (scopeFilter === 'all' || isMyComplaint(c)) && c.category === 'other').length})` },
+              { value: 'food', label: `Food (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.category === 'food').length})` },
+              { value: 'cleanliness', label: `Cleanliness (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.category === 'cleanliness').length})` },
+              { value: 'timeliness', label: `Timeliness (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.category === 'timeliness').length})` },
+              { value: 'taste', label: `Taste (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.category === 'taste').length})` },
+              { value: 'staff behaviour', label: `Staff Behaviour (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.category === 'staff behaviour').length})` },
+              { value: 'other', label: `Other (${complaints.filter(c => (effectiveScope === 'all' || isMyComplaint(c)) && c.category === 'other').length})` },
             ]}
           />
 
@@ -1008,10 +1010,10 @@ const ComplaintsList = () => {
             <AlertCircle className="text-gray-400" size={28} />
           </div>
           <h3 className="font-bold text-gray-800 text-base sm:text-lg">
-            {scopeFilter === 'my' ? 'No complaints submitted by you' : 'No complaints found'}
+            {effectiveScope === 'my' ? 'No complaints submitted by you' : 'No complaints found'}
           </h3>
           <p className="text-gray-400 text-sm max-w-md mx-auto">
-            {scopeFilter === 'my'
+            {effectiveScope === 'my'
               ? 'You have not submitted any complaints matching this filter. Switch to "All Complaints" to see issues raised by other students.'
               : statusFilter !== 'ALL' || categoryFilter !== 'ALL' || messFilter
               ? 'No complaints found matching the selected filters.'
@@ -1019,7 +1021,7 @@ const ComplaintsList = () => {
               ? 'Use the form above to submit your first complaint.'
               : 'No complaints have been submitted yet.'}
           </p>
-          {scopeFilter === 'my' && complaints.length > 0 && (
+          {effectiveScope === 'my' && complaints.length > 0 && (
             <button
               type="button"
               onClick={() => { setScopeFilter('all'); setCurrentPage(1); }}
