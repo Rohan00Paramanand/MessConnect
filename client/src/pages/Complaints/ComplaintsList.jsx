@@ -7,7 +7,7 @@ import VendorResolutionModal from './VendorResolutionModal';
 import PhotoViewerModal from '../../components/common/PhotoViewerModal';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
-import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Camera, Smile, Frown, Sparkles, Flame, User, Globe, ArrowUpDown } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Camera, Smile, Frown, Sparkles, Flame, User, Globe, ArrowUpDown, Trash2 } from 'lucide-react';
 
 const statusConfig = {
   pending:          { label: 'Pending',          color: 'bg-gray-100 text-gray-700 border-gray-200',    icon: Clock },
@@ -74,6 +74,8 @@ const ComplaintCard = ({
   setSelectedPhoto,
   setVendorResolveModalComplaint,
   handleStatusUpdate,
+  handleDeleteComplaint,
+  deletingId,
   isLatest = false,
   rankBadge = null,
 }) => {
@@ -143,7 +145,7 @@ const ComplaintCard = ({
               <span className="flex-shrink-0">🏛️</span>
               <span className="truncate">{complaint.mess?.name || messes.find(m => m._id === (complaint.mess?._id || complaint.mess))?.name || 'Mess'}</span>
             </span>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleUpvote(complaint._id)}
@@ -160,6 +162,21 @@ const ComplaintCard = ({
                 <ThumbsUp size={14} className={complaint.upvotes?.includes(user?._id) ? "fill-amber-500 text-amber-500" : ""} />
                 <span>{complaint.upvotes?.length || 0}</span>
               </button>
+
+              {/* Student Delete Button for their own complaint */}
+              {['user', 'student'].includes(user?.role) &&
+                (complaint.user_id?._id === user?._id || complaint.user_id === user?._id) && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteComplaint(complaint._id)}
+                    disabled={deletingId === complaint._id}
+                    className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-300 transition-all cursor-pointer shadow-2xs flex items-center gap-1 text-xs font-bold disabled:opacity-50"
+                    title="Delete your complaint"
+                  >
+                    <Trash2 size={14} className="text-rose-600 flex-shrink-0" />
+                    <span className="hidden sm:inline">{deletingId === complaint._id ? 'Deleting...' : 'Delete'}</span>
+                  </button>
+              )}
             </div>
           </div>
 
@@ -630,15 +647,30 @@ const ComplaintsList = () => {
 
   const handleUpvote = async (id) => {
     if (user?.role !== 'user' && user?.role !== 'student') return;
+
+    const complaint = complaints.find(c => c._id === id);
+    const userId = user?._id || user?.id;
+    const isAlreadyVoted = Boolean(
+      complaint?.upvotes?.some(v => (v?._id || v)?.toString() === userId?.toString())
+    );
+
     try {
       await api.post(`/complaints/${id}/upvote`);
-      toast.success('Me Too! Vote recorded.');
+      // Only show toast when liking, do not show any toast message when unliking
+      if (!isAlreadyVoted) {
+        toast.success('Me Too! Vote recorded.');
+      }
       setComplaints(prev => {
         return prev.map(c => {
           if (c._id === id) {
             const votes = c.upvotes || [];
-            const hasVoted = votes.includes(user._id);
-            return { ...c, upvotes: hasVoted ? votes.filter(v => v !== user._id) : [...votes, user._id] };
+            const hasVoted = votes.some(v => (v?._id || v)?.toString() === userId?.toString());
+            return {
+              ...c,
+              upvotes: hasVoted
+                ? votes.filter(v => (v?._id || v)?.toString() !== userId?.toString())
+                : [...votes, userId]
+            };
           }
           return c;
         });
@@ -655,6 +687,24 @@ const ComplaintsList = () => {
       fetchComplaints();
     } catch {
       toast.error('Failed to update status');
+    }
+  };
+
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleDeleteComplaint = async (complaintId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this complaint? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(complaintId);
+      await api.delete(`/complaints/${complaintId}`);
+      toast.success('Complaint deleted successfully.');
+      setComplaints(prev => prev.filter(c => c._id !== complaintId));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete complaint.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -1059,6 +1109,8 @@ const ComplaintsList = () => {
                 setSelectedPhoto={setSelectedPhoto}
                 setVendorResolveModalComplaint={setVendorResolveModalComplaint}
                 handleStatusUpdate={handleStatusUpdate}
+                handleDeleteComplaint={handleDeleteComplaint}
+                deletingId={deletingId}
                 isLatest={complaint._id === myLatestComplaint?._id}
                 rankBadge={rankBadge}
               />

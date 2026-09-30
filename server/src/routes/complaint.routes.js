@@ -5,7 +5,8 @@ import {
     updateComplaintStatus, 
     markVendorCompleted, 
     submitComplaintFeedback,
-    upvoteComplaint 
+    upvoteComplaint,
+    deleteComplaint
 } from '../controllers/complaint.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 import upload from '../middleware/upload.middleware.js';
@@ -18,6 +19,9 @@ router.use(protect);
 router.route('/')
     .get(getComplaints)
     .post(authorizeRoles('user'), upload.single('image'), createComplaint);
+
+router.route('/:id')
+    .delete(authorizeRoles('user'), deleteComplaint);
 
 router.route('/:id/status')
     .patch(authorizeRoles('mess_committee'), updateComplaintStatus);

@@ -120,6 +120,25 @@ export const scheduleVisit = async (req, res) => {
 export const getCollegeVisits = async (req, res) => {
   try {
     const collegeId = req.collegeId || req.user.collegeId;
+
+    // Automatically transition past SCHEDULED visits to DID_NOT_VISIT
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const localTodayStart = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+
+    await MessVisit.updateMany(
+      {
+        collegeId,
+        status: 'SCHEDULED',
+        visitDate: { $lt: localTodayStart }
+      },
+      {
+        $set: { status: 'DID_NOT_VISIT' }
+      }
+    );
+
     const visits = await MessVisit.find({ collegeId })
       .populate('messId', 'name')
       .populate('assignedTo', 'name email phoneNumber')
@@ -138,6 +157,24 @@ export const getCollegeVisits = async (req, res) => {
  */
 export const getMyVisits = async (req, res) => {
   try {
+    // Automatically transition past SCHEDULED visits to DID_NOT_VISIT
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const localTodayStart = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+
+    await MessVisit.updateMany(
+      {
+        assignedTo: req.user._id,
+        status: 'SCHEDULED',
+        visitDate: { $lt: localTodayStart }
+      },
+      {
+        $set: { status: 'DID_NOT_VISIT' }
+      }
+    );
+
     const visits = await MessVisit.find({ assignedTo: req.user._id })
       .populate('messId', 'name location')
       .populate('scheduledBy', 'name email')
@@ -162,6 +199,13 @@ export const submitVisitReport = async (req, res) => {
       return res.status(404).json({
         status: 'error',
         message: 'Visit not found or you are not authorized to submit for this inspection.'
+      });
+    }
+
+    if (visit.status === 'DID_NOT_VISIT') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'The scheduled date for this visit has passed. It has been marked as Did Not Visit.'
       });
     }
 
@@ -261,6 +305,31 @@ export const markVisitDone = async (req, res) => {
       status: 'success',
       data: visit,
       message: 'Visit verified and marked as completed.'
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+/**
+ * 7. College Admin: Delete a Visit
+ */
+export const deleteVisit = async (req, res) => {
+  try {
+    const collegeId = req.collegeId || req.user.collegeId;
+    const { id } = req.params;
+
+    const visit = await MessVisit.findOneAndDelete({ _id: id, collegeId });
+    if (!visit) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Visit record not found or does not belong to your college.'
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Mess inspection visit deleted successfully.'
     });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });

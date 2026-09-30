@@ -39,7 +39,7 @@ const messVisitSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['SCHEDULED', 'IN_REVIEW', 'COMPLETED', 'CANCELLED'],
+      enum: ['SCHEDULED', 'IN_REVIEW', 'COMPLETED', 'CANCELLED', 'DID_NOT_VISIT'],
       default: 'SCHEDULED',
       index: true
     },

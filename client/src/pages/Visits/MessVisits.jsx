@@ -22,7 +22,9 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Trash2,
+  XCircle
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -67,6 +69,23 @@ const MessVisits = () => {
   // Form states for Admin review
   const [adminRemarks, setAdminRemarks] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [deletingVisitId, setDeletingVisitId] = useState(null);
+
+  const handleDeleteVisit = async (visitId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this mess inspection visit? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      setDeletingVisitId(visitId);
+      await api.delete(`/visits/${visitId}`);
+      toast.success('Inspection visit deleted successfully.');
+      setVisits(prev => prev.filter(v => v._id !== visitId));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete visit.');
+    } finally {
+      setDeletingVisitId(null);
+    }
+  };
 
   // Prevent background scroll chaining when any modal is open
   useEffect(() => {
@@ -214,6 +233,7 @@ const MessVisits = () => {
   const scheduledCount = visits.filter((v) => v.status === 'SCHEDULED').length;
   const inReviewCount = visits.filter((v) => v.status === 'IN_REVIEW').length;
   const completedCount = visits.filter((v) => v.status === 'COMPLETED').length;
+  const didNotVisitCount = visits.filter((v) => v.status === 'DID_NOT_VISIT').length;
 
   return (
     <div className="space-y-6 pb-12">
@@ -248,7 +268,7 @@ const MessVisits = () => {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
           onClick={() => setActiveTab('SCHEDULED')}
           className={`cursor-pointer bg-white/70 backdrop-blur-xl border rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 ${
@@ -296,6 +316,22 @@ const MessVisits = () => {
           <p className="text-3xl font-black text-gray-900 mt-2">{completedCount}</p>
           <p className="text-xs text-emerald-600 font-semibold mt-1">Audit marked done by admin</p>
         </div>
+
+        <div
+          onClick={() => setActiveTab('DID_NOT_VISIT')}
+          className={`cursor-pointer bg-white/70 backdrop-blur-xl border rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 ${
+            activeTab === 'DID_NOT_VISIT' ? 'ring-2 ring-rose-500 border-rose-300 shadow-md' : 'border-white/60 hover:shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Didn't Visit</span>
+            <span className="p-2 rounded-xl bg-rose-50 text-rose-600">
+              <XCircle size={20} />
+            </span>
+          </div>
+          <p className="text-3xl font-black text-gray-900 mt-2">{didNotVisitCount}</p>
+          <p className="text-xs text-rose-600 font-semibold mt-1">Scheduled date passed</p>
+        </div>
       </div>
 
       {/* Dropdown Filters Bar */}
@@ -311,6 +347,7 @@ const MessVisits = () => {
                 { value: 'SCHEDULED', label: `Pending Visit (${scheduledCount})` },
                 { value: 'IN_REVIEW', label: `In Review (${inReviewCount})` },
                 { value: 'COMPLETED', label: `Completed & Verified (${completedCount})` },
+                { value: 'DID_NOT_VISIT', label: `Didn't Visit (${didNotVisitCount})` },
               ]}
             />
           </div>
@@ -369,6 +406,7 @@ const MessVisits = () => {
             const isScheduled = visit.status === 'SCHEDULED';
             const isInReview = visit.status === 'IN_REVIEW';
             const isCompleted = visit.status === 'COMPLETED';
+            const isDidNotVisit = visit.status === 'DID_NOT_VISIT';
 
             return (
               <div
@@ -392,20 +430,38 @@ const MessVisits = () => {
                       </p>
                     </div>
 
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${
-                        isScheduled
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : isInReview
-                          ? 'bg-blue-100 text-blue-800 border border-blue-200 animate-pulse'
-                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      }`}
-                    >
-                      {isScheduled && <Clock size={12} />}
-                      {isInReview && <Eye size={12} />}
-                      {isCompleted && <CheckCircle2 size={12} />}
-                      {isScheduled ? 'Pending Visit' : isInReview ? 'Ready for Review' : 'Verified & Done'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${
+                          isScheduled
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : isInReview
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200 animate-pulse'
+                            : isCompleted
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-rose-100 text-rose-800 border border-rose-200'
+                        }`}
+                      >
+                        {isScheduled && <Clock size={12} />}
+                        {isInReview && <Eye size={12} />}
+                        {isCompleted && <CheckCircle2 size={12} />}
+                        {isDidNotVisit && <XCircle size={12} />}
+                        {isScheduled ? 'Pending Visit' : isInReview ? 'Ready for Review' : isCompleted ? 'Verified & Done' : "Didn't Visit"}
+                      </span>
+
+                      {/* College Admin: Delete Visit */}
+                      {isCollegeAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteVisit(visit._id)}
+                          disabled={deletingVisitId === visit._id}
+                          className="p-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-300 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                          title="Delete this mess inspection visit"
+                        >
+                          <Trash2 size={14} className="text-rose-600" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Purpose & Instructions */}
@@ -484,6 +540,13 @@ const MessVisits = () => {
                     >
                       <FileText size={14} /> View Completed Audit Record
                     </Button>
+                  )}
+
+                  {/* Didn't visit status notice */}
+                  {isDidNotVisit && (
+                    <div className="w-full text-center text-xs text-rose-700 bg-rose-50 py-2.5 rounded-xl font-bold border border-rose-200 flex items-center justify-center gap-1.5">
+                      <XCircle size={14} /> Scheduled Date Passed — Committee member did not visit
+                    </div>
                   )}
                 </div>
               </div>

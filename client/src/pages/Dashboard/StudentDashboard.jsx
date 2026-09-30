@@ -47,14 +47,27 @@ const StudentDashboard = () => {
   }, [user]);
 
   const handleUpvote = async (id) => {
+    const complaint = trendingComplaints.find(c => c._id === id);
+    const userId = user?._id || user?.id;
+    const isAlreadyVoted = Boolean(
+      complaint?.upvotes?.some(v => (v?._id || v)?.toString() === userId?.toString())
+    );
+
     try {
       await api.post(`/complaints/${id}/upvote`);
-      toast.success('Vote updated.');
+      if (!isAlreadyVoted) {
+        toast.success('Vote recorded.');
+      }
       setTrendingComplaints(prev => prev.map(c => {
          if (c._id === id) {
              const votes = c.upvotes || [];
-             const hasVoted = votes.includes(user._id);
-             return { ...c, upvotes: hasVoted ? votes.filter(v => v !== user._id) : [...votes, user._id] };
+             const hasVoted = votes.some(v => (v?._id || v)?.toString() === userId?.toString());
+             return {
+               ...c,
+               upvotes: hasVoted
+                 ? votes.filter(v => (v?._id || v)?.toString() !== userId?.toString())
+                 : [...votes, userId]
+             };
          }
          return c;
       }));

@@ -5,7 +5,8 @@ import {
   getCollegeVisits,
   getMyVisits,
   submitVisitReport,
-  markVisitDone
+  markVisitDone,
+  deleteVisit
 } from '../controllers/visit.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 import { visitSubmissionUpload } from '../middleware/upload.middleware.js';
@@ -23,5 +24,6 @@ router.get('/committee-members', authorizeRoles('college_admin'), getCollegeComm
 router.get('/', authorizeRoles('college_admin'), getCollegeVisits);
 router.post('/schedule', authorizeRoles('college_admin'), scheduleVisit);
 router.patch('/mark-done/:id', authorizeRoles('college_admin'), markVisitDone);
+router.delete('/:id', authorizeRoles('college_admin'), deleteVisit);
 
 export default router;

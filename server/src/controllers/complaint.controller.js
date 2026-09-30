@@ -527,3 +527,34 @@ export const upvoteComplaint = async (req, res) => {
         res.status(500).json({ status: 'error', message: error.message });
     }
 };
+
+// @desc    Delete complaint
+// @route   DELETE /api/complaints/:id
+// @access  Private (Author Student)
+export const deleteComplaint = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const complaint = await Complaint.findById(id);
+
+        if (!complaint) {
+            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+        }
+
+        // Only the author student can delete their own complaint
+        if (complaint.user_id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'You are not authorized to delete this complaint'
+            });
+        }
+
+        await Complaint.findByIdAndDelete(id);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Complaint deleted successfully'
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
