@@ -104,8 +104,9 @@ export const getStaff = async (req, res) => {
 // @access  Private (Vendor only)
 export const updateStaff = async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') {
-            return res.status(403).json({ status: 'error', message: 'Only vendors can update staff' });
+        const allowedRoles = ['vendor', 'college_admin'];
+        if (!allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({ status: 'error', message: 'Not authorized to update staff' });
         }
 
         let staff = await Staff.findById(req.params.id);
@@ -114,15 +115,17 @@ export const updateStaff = async (req, res) => {
             return res.status(404).json({ status: 'error', message: 'Staff not found' });
         }
 
-        // Ensure the staff belongs to the logged in vendor
-        if (staff.vendor.toString() !== req.user._id.toString()) {
+        if (req.user.role === 'vendor' && staff.vendor.toString() !== req.user._id.toString()) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to update this staff member' });
+        }
+        if (req.user.role === 'college_admin' && staff.collegeId.toString() !== req.collegeId.toString()) {
+            return res.status(403).json({ status: 'error', message: 'Staff does not belong to your college' });
         }
 
         staff = await Staff.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
-        });
+        }).populate('vendor', 'name email companyName').populate('mess', 'name');
 
         res.status(200).json({
             status: 'success',
@@ -136,11 +139,12 @@ export const updateStaff = async (req, res) => {
 
 // @desc    Delete a staff member
 // @route   DELETE /api/staff/:id
-// @access  Private (Vendor only)
+// @access  Private (Vendor, College Admin)
 export const deleteStaff = async (req, res) => {
     try {
-        if (req.user.role !== 'vendor') {
-            return res.status(403).json({ status: 'error', message: 'Only vendors can delete staff' });
+        const allowedRoles = ['vendor', 'college_admin'];
+        if (!allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({ status: 'error', message: 'Not authorized to delete staff' });
         }
 
         const staff = await Staff.findById(req.params.id);
@@ -149,9 +153,11 @@ export const deleteStaff = async (req, res) => {
             return res.status(404).json({ status: 'error', message: 'Staff not found' });
         }
 
-        // Ensure the staff belongs to the logged in vendor
-        if (staff.vendor.toString() !== req.user._id.toString()) {
+        if (req.user.role === 'vendor' && staff.vendor.toString() !== req.user._id.toString()) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to delete this staff member' });
+        }
+        if (req.user.role === 'college_admin' && staff.collegeId.toString() !== req.collegeId.toString()) {
+            return res.status(403).json({ status: 'error', message: 'Staff does not belong to your college' });
         }
 
         await staff.deleteOne();

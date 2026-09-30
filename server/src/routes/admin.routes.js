@@ -6,6 +6,12 @@ import {
     getPendingStaff,
     approveStaff,
     denyStaff,
+    getApprovedUsers,
+    getApprovedStaff,
+    updateApprovedUser,
+    deleteApprovedUser,
+    updateApprovedStaff,
+    deleteApprovedStaff,
     getCollegeAdminAnalytics
 } from '../controllers/admin.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
@@ -16,6 +22,8 @@ router.use(protect);
 router.use(authorizeRoles('college_admin'));
 
 router.get('/analytics', getCollegeAdminAnalytics);
+
+// Pending approvals
 router.get('/pending-users', getPendingUsers);
 router.patch('/approve-user/:id', approveUser);
 router.post('/deny-user/:id', denyUser);
@@ -23,5 +31,15 @@ router.post('/deny-user/:id', denyUser);
 router.get('/pending-staff', getPendingStaff);
 router.patch('/approve-staff/:id', approveStaff);
 router.delete('/deny-staff/:id', denyStaff);
+
+// Approved Vendors & Mess Committee management (Edit & Delete with cascading data cleanup)
+router.get('/approved-users', getApprovedUsers);
+router.patch('/users/:id', updateApprovedUser);
+router.delete('/users/:id', deleteApprovedUser);
+
+// Approved Staff management (Edit & Delete)
+router.get('/approved-staff', getApprovedStaff);
+router.patch('/staff/:id', updateApprovedStaff);
+router.delete('/staff/:id', deleteApprovedStaff);
 
 export default router;

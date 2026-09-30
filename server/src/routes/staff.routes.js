@@ -14,7 +14,7 @@ router.route('/')
     .post(authorizeRoles('vendor'), staffDocUpload, addStaff);
 
 router.route('/:id')
-    .patch(authorizeRoles('vendor'), updateStaff)
-    .delete(authorizeRoles('vendor'), deleteStaff);
+    .patch(authorizeRoles('vendor', 'college_admin'), updateStaff)
+    .delete(authorizeRoles('vendor', 'college_admin'), deleteStaff);
 
 export default router;

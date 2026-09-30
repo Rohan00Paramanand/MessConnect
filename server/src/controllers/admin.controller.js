@@ -5,6 +5,8 @@ import Mess from '../models/mess.model.js';
 import Complaint from '../models/complaint.model.js';
 import Feedback from '../models/feedback.model.js';
 import Notice from '../models/notice.model.js';
+import TimeTable from '../models/timeTable.model.js';
+import MessVisit from '../models/messVisit.model.js';
 
 import { sendEmail } from '../utils/sendEmail.js';
 import { registrationRejectedEmailTemplate } from '../utils/emailTemplates.js';
@@ -224,6 +226,244 @@ export const denyStaff = async (req, res) => {
             status: 'error',
             message: error.message
         });
+    }
+};
+
+/**
+ * GET /api/admin/approved-users
+ * Fetch approved vendors and mess committee members for the college
+ */
+export const getApprovedUsers = async (req, res) => {
+    try {
+        const query = {
+            role: { $in: ['vendor', 'mess_committee'] },
+            isApprovedByAdmin: true,
+            collegeId: req.collegeId
+        };
+
+        if (req.query.role && ['vendor', 'mess_committee'].includes(req.query.role)) {
+            query.role = req.query.role;
+        }
+
+        if (req.query.mess) {
+            query.messAssigned = req.query.mess;
+        }
+
+        const users = await User.find(query)
+            .populate('messAssigned', 'name')
+            .select('-password')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ status: 'success', data: users });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+/**
+ * GET /api/admin/approved-staff
+ * Fetch all approved staff members for this college
+ */
+export const getApprovedStaff = async (req, res) => {
+    try {
+        const query = {
+            collegeId: req.collegeId,
+            isApprovedByAdmin: true
+        };
+
+        if (req.query.mess) {
+            query.mess = req.query.mess;
+        }
+
+        if (req.query.role && req.query.role !== 'ALL') {
+            query.role = req.query.role;
+        }
+
+        const staffList = await Staff.find(query)
+            .populate('vendor', 'name email companyName messAssigned')
+            .populate('mess', 'name')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ status: 'success', data: staffList });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+/**
+ * PATCH /api/admin/users/:id
+ * Edit an approved vendor or committee member
+ */
+export const updateApprovedUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, phoneNumber, companyName, messAssigned, role } = req.body;
+
+        const user = await User.findOne({ _id: id, collegeId: req.collegeId });
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'User not found or does not belong to your college'
+            });
+        }
+
+        // If updating mess for a vendor, ensure no other vendor is already approved for that mess
+        if ((role === 'vendor' || user.role === 'vendor') && messAssigned && messAssigned.toString() !== user.messAssigned?.toString()) {
+            const existingApprovedVendor = await User.findOne({
+                role: 'vendor',
+                collegeId: req.collegeId,
+                messAssigned,
+                isApprovedByAdmin: true,
+                _id: { $ne: id }
+            });
+
+            if (existingApprovedVendor) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Another vendor is already approved for this mess.'
+                });
+            }
+        }
+
+        if (name) user.name = name.trim();
+        if (email) user.email = email.trim().toLowerCase();
+        if (phoneNumber) user.phoneNumber = phoneNumber.trim();
+        if (companyName !== undefined && (user.role === 'vendor' || role === 'vendor')) {
+            user.companyName = companyName.trim();
+        }
+        if (messAssigned !== undefined) {
+            user.messAssigned = messAssigned || null;
+        }
+
+        await user.save();
+
+        const updated = await User.findById(id).populate('messAssigned', 'name').select('-password');
+        res.status(200).json({ status: 'success', data: updated });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+/**
+ * DELETE /api/admin/users/:id
+ * Delete an approved vendor or mess committee member and ALL related data
+ */
+export const deleteApprovedUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findOne({ _id: id, collegeId: req.collegeId });
+
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'User not found or does not belong to your college'
+            });
+        }
+
+        const roleLabel = user.role === 'vendor' ? 'Vendor' : 'Mess committee member';
+
+        // Cascading deletion of all data related to this user
+        if (user.role === 'vendor') {
+            // 1. Delete all staff registered under this vendor
+            await Staff.deleteMany({ vendor: user._id });
+
+            // 2. Delete menu timetables created by this vendor
+            await TimeTable.deleteMany({ createdBy: user._id });
+
+            // 3. Delete notices created by this vendor
+            await Notice.deleteMany({ author: user._id });
+
+            // 4. Unassign complaints assigned to this vendor
+            await Complaint.updateMany(
+                { assignedTo: user._id },
+                { $unset: { assignedTo: 1 }, status: 'pending' }
+            );
+
+            // 5. Clean up meal attendance/pass if models exist
+            try {
+                const mongoose = (await import('mongoose')).default;
+                if (mongoose.models.MealAttendance) {
+                    await mongoose.models.MealAttendance.deleteMany({ vendor: user._id });
+                }
+            } catch {
+                // optional model
+            }
+        } else if (user.role === 'mess_committee') {
+            // 1. Delete visits scheduled for this committee member
+            await MessVisit.deleteMany({ assignedTo: user._id });
+
+            // 2. Delete notices created by this committee member
+            await Notice.deleteMany({ author: user._id });
+        }
+
+        // Delete user account
+        await User.deleteOne({ _id: user._id });
+
+        res.status(200).json({
+            status: 'success',
+            message: `${roleLabel} (${user.name}) and all related records deleted successfully`
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+/**
+ * PATCH /api/admin/staff/:id
+ * Edit an approved staff member
+ */
+export const updateApprovedStaff = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, phoneNumber, role, salary, mess } = req.body;
+
+        const staff = await Staff.findOne({ _id: id, collegeId: req.collegeId });
+        if (!staff) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Staff member not found or does not belong to your college'
+            });
+        }
+
+        if (name) staff.name = name.trim();
+        if (phoneNumber) staff.phoneNumber = phoneNumber.trim();
+        if (role) staff.role = role;
+        if (salary !== undefined) staff.salary = salary ? Number(salary) : undefined;
+        if (mess) staff.mess = mess;
+
+        await staff.save();
+
+        const updated = await Staff.findById(id).populate('vendor', 'name email companyName').populate('mess', 'name');
+        res.status(200).json({ status: 'success', data: updated });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+/**
+ * DELETE /api/admin/staff/:id
+ * Delete an approved staff member and their records
+ */
+export const deleteApprovedStaff = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const staff = await Staff.findOne({ _id: id, collegeId: req.collegeId });
+
+        if (!staff) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Staff member not found or does not belong to your college'
+            });
+        }
+
+        await staff.deleteOne();
+
+        res.status(200).json({
+            status: 'success',
+            message: `Staff member (${staff.name}) and all related records deleted successfully`
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
     }
 };
 
