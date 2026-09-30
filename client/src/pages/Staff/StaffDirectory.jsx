@@ -412,17 +412,13 @@ const StaffDirectory = () => {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200/60 flex-wrap">
-          <p className="text-xs text-gray-500 font-medium">
-            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredStaff.length)}</strong> of <strong className="text-gray-900">{filteredStaff.length}</strong> staff
-          </p>
-
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-col items-center justify-center gap-2.5 pt-6 border-t border-gray-200/60 w-full">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <button
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <ChevronLeft size={14} /> Previous
             </button>
@@ -432,7 +428,7 @@ const StaffDirectory = () => {
                 key={pg}
                 type="button"
                 onClick={() => setCurrentPage(pg)}
-                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   currentPage === pg
                     ? 'bg-gray-900 text-white shadow-sm'
                     : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -446,11 +442,15 @@ const StaffDirectory = () => {
               type="button"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               Next <ChevronRight size={14} />
             </button>
           </div>
+
+          <p className="text-xs text-gray-500 font-medium text-center">
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredStaff.length)}</strong> of <strong className="text-gray-900">{filteredStaff.length}</strong> staff
+          </p>
         </div>
       )}
     </div>

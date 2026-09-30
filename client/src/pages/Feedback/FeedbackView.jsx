@@ -349,16 +349,13 @@ const FeedbackView = () => {
       )}
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-200/60 flex-wrap">
-          <p className="text-xs text-gray-500 font-medium">
-            Page <strong className="text-gray-900">{page}</strong> of <strong className="text-gray-900">{totalPages}</strong>
-          </p>
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-col items-center justify-center gap-2.5 pt-6 border-t border-gray-200/60 w-full">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <button
               type="button"
               disabled={page === 1 || loading}
               onClick={() => handlePageChange(page - 1)}
-              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <ChevronLeft size={14} /> Previous
             </button>
@@ -368,7 +365,7 @@ const FeedbackView = () => {
                 type="button"
                 disabled={loading}
                 onClick={() => handlePageChange(pg)}
-                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   page === pg ? 'bg-amber-500 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -379,11 +376,14 @@ const FeedbackView = () => {
               type="button"
               disabled={page === totalPages || loading}
               onClick={() => handlePageChange(page + 1)}
-              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               Next <ChevronRight size={14} />
             </button>
           </div>
+          <p className="text-xs text-gray-500 font-medium text-center">
+            Page <strong className="text-gray-900">{page}</strong> of <strong className="text-gray-900">{totalPages}</strong>
+          </p>
         </div>
       )}
     </div>

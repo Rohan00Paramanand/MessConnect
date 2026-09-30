@@ -503,6 +503,10 @@ const ComplaintsList = () => {
               (complaint.user_id?._id === user?._id || complaint.user_id === user?._id) &&
               !complaint.resolutionFeedback?.rating;
 
+            const hasActions =
+              (user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status)) ||
+              (user?.role === 'vendor' && complaint.status === 'assigned');
+
             return (
             <div
               key={complaint._id}
@@ -522,8 +526,8 @@ const ComplaintsList = () => {
                   </span>
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
+              <div className={`flex flex-col ${hasActions ? 'sm:flex-row sm:items-start justify-between gap-4' : ''} w-full`}>
+                <div className="flex-1 min-w-0 w-full">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <StatusBadge status={complaint.status} />
                     {complaint.status === 'rejected' && complaint.rejectionReason && (
@@ -620,8 +624,8 @@ const ComplaintsList = () => {
 
                   {/* Vendor Resolution Proof */}
                   {complaint.resolutionProof?.image && (
-                    <div className="mt-3.5 p-3 sm:p-3.5 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                    <div className="mt-3.5 p-3 sm:p-3.5 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
                           onClick={() => setSelectedPhoto({
                             url: getImageUrl(complaint.resolutionProof.image),
@@ -638,7 +642,7 @@ const ComplaintsList = () => {
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div className="space-y-0.5">
+                        <div className="space-y-0.5 flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
                             <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
                             <span>Vendor Resolution Proof (Geotagged)</span>
@@ -651,7 +655,7 @@ const ComplaintsList = () => {
                           {complaint.resolutionProof.location?.address && (
                             <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
                               <MapPin size={11} className="flex-shrink-0" />
-                              <span className="truncate max-w-[220px] sm:max-w-xs">{complaint.resolutionProof.location.address}</span>
+                              <span className="truncate">{complaint.resolutionProof.location.address}</span>
                             </p>
                           )}
                         </div>
@@ -664,7 +668,7 @@ const ComplaintsList = () => {
                           description: complaint.resolutionProof.remarks || 'Complaint resolved with on-site geotagged proof.',
                           address: complaint.resolutionProof.location?.address || (complaint.resolutionProof.location?.latitude ? `${complaint.resolutionProof.location.latitude.toFixed(4)}, ${complaint.resolutionProof.location.longitude.toFixed(4)}` : null)
                         })}
-                        className="text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-sm flex items-center gap-1 whitespace-nowrap self-end sm:self-auto cursor-pointer"
+                        className="text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-sm flex items-center gap-1 whitespace-nowrap self-end sm:self-auto cursor-pointer flex-shrink-0"
                       >
                         View Proof Photo →
                       </button>
@@ -673,15 +677,15 @@ const ComplaintsList = () => {
 
                   {/* Student Resolution Satisfaction Feedback */}
                   {['resolved', 'vendor_completed'].includes(complaint.status) && (
-                    <div className="mt-3">
+                    <div className="mt-3 w-full">
                       {(complaint.user_id?._id === user?._id || complaint.user_id === user?._id) ? (
                         complaint.resolutionFeedback?.rating ? (
-                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs ${
+                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs w-full ${
                             complaint.resolutionFeedback.rating === 'satisfied'
                               ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
                               : 'bg-rose-50/70 border-rose-200 text-rose-900'
                           }`}>
-                            <div className="space-y-0.5">
+                            <div className="space-y-0.5 flex-1 min-w-0">
                               <p className="font-bold flex items-center gap-1.5">
                                 <span>{complaint.resolutionFeedback.rating === 'satisfied' ? '😊' : '🙁'}</span>
                                 <span>You rated this resolution: <strong className="uppercase">{complaint.resolutionFeedback.rating}</strong></span>
@@ -695,7 +699,7 @@ const ComplaintsList = () => {
                             </span>
                           </div>
                         ) : (
-                          <div className="p-3.5 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5">
+                          <div className="p-3.5 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border border-indigo-200/90 rounded-2xl space-y-2.5 w-full">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                               <p className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
                                 <span>⭐</span> Were you satisfied with this complaint resolution?
@@ -753,12 +757,12 @@ const ComplaintsList = () => {
                         )
                       ) : (
                         complaint.resolutionFeedback?.rating ? (
-                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs ${
+                          <div className={`p-3 rounded-2xl border flex items-start justify-between gap-3 text-xs w-full ${
                             complaint.resolutionFeedback.rating === 'satisfied'
                               ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
                               : 'bg-rose-50/80 border-rose-200 text-rose-950'
                           }`}>
-                            <div className="space-y-0.5">
+                            <div className="space-y-0.5 flex-1 min-w-0">
                               <p className="font-bold flex items-center gap-1.5">
                                 <span>{complaint.resolutionFeedback.rating === 'satisfied' ? '😊' : '🙁'}</span>
                                 <span>Student Rating: <strong className="uppercase">{complaint.resolutionFeedback.rating}</strong></span>
@@ -786,86 +790,88 @@ const ComplaintsList = () => {
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[280px] flex-shrink-0">
-                  {/* Committee Actions */}
-                  {user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status) && (
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Update Status</label>
-                      <Select
-                        variant="compact"
-                        truncateText={false}
-                        value={complaint.status}
-                        onChange={(e) => handleStatusUpdate(complaint._id, e.target.value)}
-                        options={
-                          complaint.status === 'pending'
-                            ? [
-                                { value: 'pending', label: '⏳ Pending' },
-                                { value: 'assigned', label: '🔁 Assign to Vendor' },
-                                { isHeader: true, label: '❌ Reject Reason:' },
-                                { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
-                                { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
-                                { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
-                                { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
-                                { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
-                              ]
-                            : complaint.status === 'assigned'
-                            ? [
-                                { value: 'assigned', label: '🔁 Assigned to Vendor' },
-                                { isHeader: true, label: '❌ Reject Reason:' },
-                                { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
-                                { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
-                                { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
-                                { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
-                                { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
-                              ]
-                            : [
-                                { value: 'vendor_completed', label: '🔍 Select Action...', disabled: true },
-                                { value: 'assigned', label: '🔁 Re-assign to Vendor' },
-                                { value: 'resolved', label: '✅ Resolve' },
-                              ]
-                        }
-                      />
-                      {complaint.status === 'vendor_completed' && (
-                        <div className="space-y-2 mt-1">
-                          <div className="text-[11px] text-center text-amber-700 bg-amber-50 rounded-xl px-2.5 py-1.5 font-bold border border-amber-200">
-                            Vendor marked complete — awaiting review
+                {hasActions && (
+                  <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[280px] flex-shrink-0">
+                    {/* Committee Actions */}
+                    {user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status) && (
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Update Status</label>
+                        <Select
+                          variant="compact"
+                          truncateText={false}
+                          value={complaint.status}
+                          onChange={(e) => handleStatusUpdate(complaint._id, e.target.value)}
+                          options={
+                            complaint.status === 'pending'
+                              ? [
+                                  { value: 'pending', label: '⏳ Pending' },
+                                  { value: 'assigned', label: '🔁 Assign to Vendor' },
+                                  { isHeader: true, label: '❌ Reject Reason:' },
+                                  { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
+                                  { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
+                                  { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
+                                  { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
+                                  { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
+                                ]
+                              : complaint.status === 'assigned'
+                              ? [
+                                  { value: 'assigned', label: '🔁 Assigned to Vendor' },
+                                  { isHeader: true, label: '❌ Reject Reason:' },
+                                  { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
+                                  { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
+                                  { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
+                                  { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
+                                  { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
+                                ]
+                              : [
+                                  { value: 'vendor_completed', label: '🔍 Select Action...', disabled: true },
+                                  { value: 'assigned', label: '🔁 Re-assign to Vendor' },
+                                  { value: 'resolved', label: '✅ Resolve' },
+                                ]
+                          }
+                        />
+                        {complaint.status === 'vendor_completed' && (
+                          <div className="space-y-2 mt-1">
+                            <div className="text-[11px] text-center text-amber-700 bg-amber-50 rounded-xl px-2.5 py-1.5 font-bold border border-amber-200">
+                              Vendor marked complete — awaiting review
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleStatusUpdate(complaint._id, 'assigned')}
+                                className="flex-1 py-2 px-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                                title="Send back to vendor for rework"
+                              >
+                                <RefreshCw size={12} />
+                                <span>Re-assign</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStatusUpdate(complaint._id, 'resolved')}
+                                className="flex-1 py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                                title="Approve and mark resolved"
+                              >
+                                <CheckCircle size={12} />
+                                <span>Resolve</span>
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleStatusUpdate(complaint._id, 'assigned')}
-                              className="flex-1 py-2 px-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                              title="Send back to vendor for rework"
-                            >
-                              <RefreshCw size={12} />
-                              <span>Re-assign</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleStatusUpdate(complaint._id, 'resolved')}
-                              className="flex-1 py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                              title="Approve and mark resolved"
-                            >
-                              <CheckCircle size={12} />
-                              <span>Resolve</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
 
-                  {/* Vendor Actions */}
-                  {user?.role === 'vendor' && complaint.status === 'assigned' && (
-                    <Button
-                      variant="vendor"
-                      onClick={() => setVendorResolveModalComplaint(complaint)}
-                      className="text-xs flex items-center gap-1.5"
-                    >
-                      <Camera size={14} /> Resolve with Photo Proof
-                    </Button>
-                  )}
-                </div>
+                    {/* Vendor Actions */}
+                    {user?.role === 'vendor' && complaint.status === 'assigned' && (
+                      <Button
+                        variant="vendor"
+                        onClick={() => setVendorResolveModalComplaint(complaint)}
+                        className="text-xs flex items-center gap-1.5"
+                      >
+                        <Camera size={14} /> Resolve with Photo Proof
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             );
@@ -875,17 +881,13 @@ const ComplaintsList = () => {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200/60 flex-wrap">
-          <p className="text-xs text-gray-500 font-medium">
-            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredComplaints.length)}</strong> of <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints
-          </p>
-
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-col items-center justify-center gap-2.5 pt-6 border-t border-gray-200/60 w-full">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <button
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <ChevronLeft size={14} /> Previous
             </button>
@@ -895,7 +897,7 @@ const ComplaintsList = () => {
                 key={pg}
                 type="button"
                 onClick={() => setCurrentPage(pg)}
-                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   currentPage === pg
                     ? 'bg-gray-900 text-white shadow-sm'
                     : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -909,11 +911,15 @@ const ComplaintsList = () => {
               type="button"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               Next <ChevronRight size={14} />
             </button>
           </div>
+
+          <p className="text-xs text-gray-500 font-medium text-center">
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredComplaints.length)}</strong> of <strong className="text-gray-900">{filteredComplaints.length}</strong> complaints
+          </p>
         </div>
       )}
 
