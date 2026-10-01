@@ -328,6 +328,11 @@ const CollegeManagement = () => {
       return;
     }
 
+    if (user?.email && email.toLowerCase() === user.email.toLowerCase()) {
+      toast.error('You cannot send a college admin invitation to yourself');
+      return;
+    }
+
     setAssigning(true);
     try {
       const { data } = await api.post(`/superadmin/colleges/${assigningCollege._id}/assign-admin`, {

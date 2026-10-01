@@ -103,6 +103,11 @@ const SuperAdminDashboard = () => {
       return;
     }
 
+    if (user?.email && email.toLowerCase() === user.email.toLowerCase()) {
+      toast.error('You cannot send a college admin invitation to yourself');
+      return;
+    }
+
     if (!inviteForm.collegeId) {
       toast.error('Please select a college portal');
       return;
@@ -131,6 +136,10 @@ const SuperAdminDashboard = () => {
   };
 
   const handleResendInvite = async (email, collegeId) => {
+    if (user?.email && email?.toLowerCase() === user.email.toLowerCase()) {
+      toast.error('You cannot send a college admin invitation to yourself');
+      return;
+    }
     try {
       await api.post('/superadmin/admins/invite', { email, collegeId });
       toast.success('Invitation resent successfully!');

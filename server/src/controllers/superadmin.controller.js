@@ -337,11 +337,25 @@ const inviteAdminSchema = z.object({
 export const inviteAdmin = async (req, res) => {
     try {
         const validated = inviteAdminSchema.parse(req.body);
+        const normalizedEmail = validated.email.toLowerCase().trim();
+
+        // Check if super admin is attempting to invite themselves
+        if (req.user?.email && req.user.email.toLowerCase() === normalizedEmail) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'You cannot send a college admin invitation to yourself'
+            });
+        }
 
         // 1. Check if user already exists
-        const normalizedEmail = validated.email.toLowerCase().trim();
         const userExists = await User.findOne({ email: normalizedEmail });
         if (userExists) {
+            if (userExists.role === 'super_admin') {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'A Super Admin cannot be invited as a College Admin'
+                });
+            }
             return res.status(400).json({ status: 'error', message: 'An account with this email address already exists. Please sign in instead.' });
         }
 
@@ -438,6 +452,15 @@ export const assignCollegeAdmin = async (req, res) => {
     try {
         const { id: collegeId } = req.params;
         const { email, name } = assignCollegeAdminSchema.parse(req.body);
+        const normalizedEmail = email.toLowerCase().trim();
+
+        // Check if super admin is attempting to invite or assign themselves
+        if (req.user?.email && req.user.email.toLowerCase() === normalizedEmail) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'You cannot send a college admin invitation to yourself'
+            });
+        }
 
         // 1. Check if college exists
         const college = await College.findById(collegeId);
@@ -449,9 +472,15 @@ export const assignCollegeAdmin = async (req, res) => {
         }
 
         // 2. Check if user already exists
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ email: normalizedEmail });
 
         if (user) {
+            if (user.role === 'super_admin') {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'A Super Admin cannot be assigned or invited as a College Admin'
+                });
+            }
             // Already an admin for this exact college
             if (user.role === 'college_admin' && user.collegeId && user.collegeId.toString() === collegeId) {
                 return res.status(200).json({
