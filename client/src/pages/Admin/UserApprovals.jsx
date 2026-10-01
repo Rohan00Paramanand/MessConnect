@@ -361,7 +361,7 @@ const UserApprovals = () => {
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-200/60 rounded-full text-indigo-700 text-xs font-bold uppercase tracking-wider mb-2">
             <ShieldCheck size={13} /> College Admin Operations
@@ -377,7 +377,7 @@ const UserApprovals = () => {
         <button
           onClick={refreshAllData}
           disabled={loading}
-          className="self-start md:self-auto px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh Data
@@ -385,7 +385,7 @@ const UserApprovals = () => {
       </div>
 
       {/* Main Navigation Segment Tabs */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-gray-100/90 rounded-2xl border border-gray-200/80">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1.5 bg-gray-100/90 rounded-2xl border border-gray-200/80">
         <button
           onClick={() => {
             setMainTab('pending');
@@ -393,14 +393,16 @@ const UserApprovals = () => {
             setRoleFilter('ALL');
             setMessFilter('');
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`flex items-center justify-between sm:justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             mainTab === 'pending'
               ? 'bg-white text-indigo-700 shadow-sm border border-indigo-100'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <Clock size={16} />
-          <span>Pending Approvals</span>
+          <div className="flex items-center gap-2">
+            <Clock size={16} />
+            <span>Pending Approvals</span>
+          </div>
           <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800">
             {pendingUsers.length + pendingStaff.length}
           </span>
@@ -413,14 +415,16 @@ const UserApprovals = () => {
             setRoleFilter('ALL');
             setMessFilter('');
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`flex items-center justify-between sm:justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             mainTab === 'approved_users'
               ? 'bg-white text-indigo-700 shadow-sm border border-indigo-100'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <UserCheck size={16} />
-          <span>Vendors & Committee</span>
+          <div className="flex items-center gap-2">
+            <UserCheck size={16} />
+            <span>Vendors & Committee</span>
+          </div>
           <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-100 text-indigo-800">
             {approvedUsers.length}
           </span>
@@ -433,14 +437,16 @@ const UserApprovals = () => {
             setRoleFilter('ALL');
             setMessFilter('');
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`flex items-center justify-between sm:justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             mainTab === 'approved_staff'
               ? 'bg-white text-indigo-700 shadow-sm border border-indigo-100'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <Users size={16} />
-          <span>Approved Staff</span>
+          <div className="flex items-center gap-2">
+            <Users size={16} />
+            <span>Approved Staff</span>
+          </div>
           <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-teal-800">
             {approvedStaff.length}
           </span>
@@ -452,11 +458,11 @@ const UserApprovals = () => {
       {/* ============================================================== */}
       {mainTab === 'pending' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200 w-full sm:w-fit">
               <button
                 onClick={() => setPendingSubTab('accounts')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   pendingSubTab === 'accounts' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
@@ -464,7 +470,7 @@ const UserApprovals = () => {
               </button>
               <button
                 onClick={() => setPendingSubTab('staff')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   pendingSubTab === 'staff' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
@@ -482,7 +488,7 @@ const UserApprovals = () => {
                   { value: '', label: 'All Messes' },
                   ...messes.map((m) => ({ value: m._id, label: m.name })),
                 ]}
-                className="w-auto min-w-[160px]"
+                className="w-full sm:w-auto min-w-[160px]"
               />
             )}
           </div>
@@ -490,14 +496,98 @@ const UserApprovals = () => {
           {/* Pending Sub-tab: Accounts */}
           {pendingSubTab === 'accounts' && (
             <div className="glass-panel overflow-hidden border border-white/40 shadow-xl shadow-gray-200/40 rounded-2xl bg-white/70">
-              <div className="overflow-x-auto responsive-table-wrapper">
+              {/* Mobile Card View (block md:hidden) */}
+              <div className="block md:hidden divide-y divide-gray-100">
+                {loading ? (
+                  <div className="p-6 text-center text-gray-500 font-medium">Loading pending requests...</div>
+                ) : pendingUsers.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 font-medium text-xs">No pending vendor or committee requests. All caught up!</div>
+                ) : (
+                  pendingUsers.map((user) => (
+                    <div key={user._id} className="p-4 space-y-3 hover:bg-white/80 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-bold text-gray-900 text-sm truncate">{user.name}</p>
+                          {user.companyName && (
+                            <p className="text-xs font-bold text-teal-700 mt-0.5 inline-flex items-center gap-1">
+                              <Store size={12} className="shrink-0" /> {user.companyName}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`px-2.5 py-0.5 text-[10px] font-extrabold rounded-full uppercase tracking-wider shrink-0 ${
+                          user.role === 'vendor' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {user.role.replace('_', ' ')}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 text-xs text-gray-500">
+                        <p className="truncate">{user.email} • {user.phoneNumber}</p>
+                        {user.messAssigned?.name && (
+                          <p className="text-gray-700 font-semibold">Mess: {user.messAssigned.name}</p>
+                        )}
+                      </div>
+
+                      {user.vendorDocuments && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Documents</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {user.vendorDocuments.udyamCertificate && (
+                              <a href={user.vendorDocuments.udyamCertificate} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> Udyam
+                              </a>
+                            )}
+                            {user.vendorDocuments.fssaiLicense && (
+                              <a href={user.vendorDocuments.fssaiLicense} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> FSSAI
+                              </a>
+                            )}
+                            {user.vendorDocuments.labourLicense && (
+                              <a href={user.vendorDocuments.labourLicense} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> Labour
+                              </a>
+                            )}
+                            {user.vendorDocuments.gstCertificate && (
+                              <a href={user.vendorDocuments.gstCertificate} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> GST
+                              </a>
+                            )}
+                            {user.vendorDocuments.panCard && (
+                              <a href={user.vendorDocuments.panCard} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> PAN
+                              </a>
+                            )}
+                            {user.vendorDocuments.aadhaarCard && (
+                              <a href={user.vendorDocuments.aadhaarCard} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> Aadhaar
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                        <Button onClick={() => handleApproveUser(user._id)} variant="primary" className="w-full text-xs py-2 bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center">
+                          <CheckCircle size={14} className="mr-1 inline" /> Approve
+                        </Button>
+                        <Button onClick={() => setDenyingUser(user)} variant="danger" className="w-full text-xs py-2 flex items-center justify-center">
+                          <XCircle size={14} className="mr-1 inline" /> Deny
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop Table View (hidden md:block) */}
+              <div className="hidden md:block overflow-x-auto responsive-table-wrapper">
                 <table className="w-full text-left border-collapse min-w-[650px]">
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100">
                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Applicant Details</th>
                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role & Mess</th>
                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Compliance Documents</th>
-                      <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                      <th className="p-4 pr-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -565,7 +655,7 @@ const UserApprovals = () => {
                               <span className="text-xs text-gray-400 font-medium">N/A</span>
                             )}
                           </td>
-                          <td className="p-4 text-right">
+                          <td className="p-4 pr-6 text-right">
                             <div className="flex justify-end gap-2">
                               <Button onClick={() => handleApproveUser(user._id)} variant="primary" className="text-xs bg-indigo-600 hover:bg-indigo-700">
                                 <CheckCircle size={14} className="mr-1 inline" /> Approve
@@ -587,14 +677,75 @@ const UserApprovals = () => {
           {/* Pending Sub-tab: Staff */}
           {pendingSubTab === 'staff' && (
             <div className="glass-panel overflow-hidden border border-white/40 shadow-xl shadow-gray-200/40 rounded-2xl bg-white/70">
-              <div className="overflow-x-auto responsive-table-wrapper">
+              {/* Mobile Card View (block md:hidden) */}
+              <div className="block md:hidden divide-y divide-gray-100">
+                {loading ? (
+                  <div className="p-6 text-center text-gray-500 font-medium">Loading staff verification queue...</div>
+                ) : filteredPendingStaff.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 font-medium text-xs">No pending staff members found for the selected mess.</div>
+                ) : (
+                  filteredPendingStaff.map((member) => (
+                    <div key={member._id} className="p-4 space-y-3 hover:bg-white/80 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-bold text-gray-900 text-sm">{member.name}</p>
+                          <p className="text-xs text-gray-500">{member.phoneNumber}</p>
+                        </div>
+                        <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-gray-100 text-gray-800 shrink-0">
+                          {member.role}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 text-xs text-gray-500">
+                        <p className="text-gray-800 font-medium">Vendor: <strong>{member.vendor?.companyName || member.vendor?.name}</strong></p>
+                        <p className="text-gray-600">Mess: <strong>{member.mess?.name || 'N/A'}</strong></p>
+                      </div>
+
+                      {member.documents && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Documents</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {member.documents.identityProof && (
+                              <a href={member.documents.identityProof} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> Identity
+                              </a>
+                            )}
+                            {member.documents.policeVerification && (
+                              <a href={member.documents.policeVerification} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> Police Report
+                              </a>
+                            )}
+                            {member.documents.medicalReport && (
+                              <a href={member.documents.medicalReport} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
+                                <FileText size={10} /> Medical
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                        <Button onClick={() => handleApproveStaff(member._id)} variant="primary" className="w-full text-xs py-2 bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center">
+                          <CheckCircle size={14} className="mr-1 inline" /> Approve Staff
+                        </Button>
+                        <Button onClick={() => handleDenyStaff(member._id)} variant="danger" className="w-full text-xs py-2 flex items-center justify-center">
+                          <XCircle size={14} className="mr-1 inline" /> Deny
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop Table View (hidden md:block) */}
+              <div className="hidden md:block overflow-x-auto responsive-table-wrapper">
                 <table className="w-full text-left border-collapse min-w-[650px]">
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100">
                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Staff Member</th>
                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Vendor & Mess</th>
                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Verification Documents</th>
-                      <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                      <th className="p-4 pr-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -636,7 +787,7 @@ const UserApprovals = () => {
                               <span className="text-xs text-gray-400 font-medium">No documents</span>
                             )}
                           </td>
-                          <td className="p-4 text-right">
+                          <td className="p-4 pr-6 text-right">
                             <div className="flex justify-end gap-2">
                               <Button onClick={() => handleApproveStaff(member._id)} variant="primary" className="text-xs bg-indigo-600 hover:bg-indigo-700">
                                 <CheckCircle size={14} className="mr-1 inline" /> Approve Staff
@@ -675,11 +826,11 @@ const UserApprovals = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
               >
                 <option value="ALL">All Roles</option>
                 <option value="vendor">Vendor Only</option>
@@ -689,7 +840,7 @@ const UserApprovals = () => {
               <select
                 value={messFilter}
                 onChange={(e) => setMessFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
               >
                 <option value="">All Messes</option>
                 {messes.map(m => (
@@ -699,9 +850,80 @@ const UserApprovals = () => {
             </div>
           </div>
 
-          {/* Approved Users List Table */}
+          {/* Approved Users List */}
           <div className="glass-panel overflow-hidden border border-white/40 shadow-xl shadow-gray-200/40 rounded-2xl bg-white/80">
-            <div className="overflow-x-auto responsive-table-wrapper">
+            {/* Mobile Card View (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-gray-100">
+              {loading ? (
+                <div className="p-6 text-center text-gray-500 font-medium">Loading approved members...</div>
+              ) : filteredApprovedUsers.length === 0 ? (
+                <div className="p-6 text-center text-gray-500 font-medium text-xs">No approved vendors or committee members found matching criteria.</div>
+              ) : (
+                filteredApprovedUsers.map((u) => (
+                  <div key={u._id} className="p-4 space-y-3 hover:bg-gray-50/50 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 text-sm truncate">{u.name}</p>
+                        {u.companyName && (
+                          <p className="text-xs font-extrabold text-teal-700 mt-0.5 inline-flex items-center gap-1">
+                            <Store size={12} className="shrink-0" /> {u.companyName}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`px-2.5 py-0.5 text-[10px] font-black rounded-full uppercase tracking-wider shrink-0 ${
+                        u.role === 'vendor' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {u.role.replace('_', ' ')}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col text-xs text-gray-500 space-y-1">
+                      <span className="flex items-center gap-1.5"><Mail size={12} className="text-gray-400 shrink-0" /> <span className="truncate">{u.email}</span></span>
+                      <span className="flex items-center gap-1.5"><Phone size={12} className="text-gray-400 shrink-0" /> {u.phoneNumber}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[11px] font-semibold text-gray-400 uppercase">Mess:</span>
+                        {u.messAssigned?.name ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-lg text-xs font-bold text-gray-700 truncate">
+                            <Building2 size={12} className="text-gray-500 shrink-0" />
+                            {u.messAssigned.name}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400 font-medium italic">Unassigned</span>
+                        )}
+                      </div>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                        <CheckCircle2 size={12} /> Approved
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => openEditUser(u)}
+                        className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all border border-indigo-200/60 inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                        title="Edit user details"
+                      >
+                        <Edit2 size={13} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingUser(u)}
+                        className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-all border border-rose-200/60 inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                        title="Delete user & all related data"
+                      >
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto responsive-table-wrapper">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-gray-50/80 border-b border-gray-100">
@@ -709,7 +931,7 @@ const UserApprovals = () => {
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role & Authority</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Assigned Mess</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    <th className="p-4 pr-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -754,7 +976,7 @@ const UserApprovals = () => {
                             <CheckCircle2 size={12} /> Approved
                           </span>
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 pr-6 text-right">
                           <div className="flex justify-end items-center gap-2">
                             <button
                               type="button"
@@ -802,11 +1024,11 @@ const UserApprovals = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
               >
                 <option value="ALL">All Roles</option>
                 <option value="Cook">Cook</option>
@@ -818,7 +1040,7 @@ const UserApprovals = () => {
               <select
                 value={messFilter}
                 onChange={(e) => setMessFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
               >
                 <option value="">All Messes</option>
                 {messes.map(m => (
@@ -828,9 +1050,73 @@ const UserApprovals = () => {
             </div>
           </div>
 
-          {/* Approved Staff Table */}
+          {/* Approved Staff List */}
           <div className="glass-panel overflow-hidden border border-white/40 shadow-xl shadow-gray-200/40 rounded-2xl bg-white/80">
-            <div className="overflow-x-auto responsive-table-wrapper">
+            {/* Mobile Card View (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-gray-100">
+              {loading ? (
+                <div className="p-6 text-center text-gray-500 font-medium">Loading approved staff...</div>
+              ) : filteredApprovedStaff.length === 0 ? (
+                <div className="p-6 text-center text-gray-500 font-medium text-xs">No approved staff members found matching criteria.</div>
+              ) : (
+                filteredApprovedStaff.map((s) => (
+                  <div key={s._id} className="p-4 space-y-3 hover:bg-gray-50/50 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm">{s.name}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                          <Phone size={11} className="text-gray-400" /> {s.phoneNumber}
+                        </p>
+                      </div>
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-gray-100 text-gray-800 shrink-0">
+                        {s.role}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 pt-1">
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase">Mess & Vendor</p>
+                        <p className="font-bold text-gray-900 truncate">{s.mess?.name || 'N/A'}</p>
+                        <p className="text-[11px] text-gray-500 truncate">{s.vendor?.companyName || s.vendor?.name || 'Assigned'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase">Monthly Salary</p>
+                        {s.salary ? (
+                          <p className="text-xs text-emerald-700 font-bold">₹{Number(s.salary).toLocaleString('en-IN')}/mo</p>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">Not set</p>
+                        )}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 mt-1">
+                          <CheckCircle2 size={11} /> Approved
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => openEditStaff(s)}
+                        className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all border border-indigo-200/60 inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                        title="Edit staff details"
+                      >
+                        <Edit2 size={13} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingStaff(s)}
+                        className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-all border border-rose-200/60 inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                        title="Delete staff member"
+                      >
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto responsive-table-wrapper">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-gray-50/80 border-b border-gray-100">
@@ -838,7 +1124,7 @@ const UserApprovals = () => {
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role & Salary</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Mess & Vendor</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    <th className="p-4 pr-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -879,7 +1165,7 @@ const UserApprovals = () => {
                             <CheckCircle2 size={12} /> Approved
                           </span>
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 pr-6 text-right">
                           <div className="flex justify-end items-center gap-2">
                             <button
                               type="button"
