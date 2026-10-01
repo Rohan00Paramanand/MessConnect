@@ -656,7 +656,7 @@ const StaffDirectory = () => {
             <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-950 space-y-2 leading-relaxed">
               <p className="font-extrabold text-rose-900 flex items-center gap-1.5 text-sm">
                 <AlertTriangle size={16} className="text-rose-600 flex-shrink-0" />
-                Agr delete kiya toh sara data related to them will be deleted!
+                Deleting this staff member will permanently erase all associated data!
               </p>
               <ul className="list-disc list-inside space-y-1 text-rose-800 font-medium pl-1 text-[11px]">
                 <li>Staff employment profile and verification history will be permanently deleted.</li>
