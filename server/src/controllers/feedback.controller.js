@@ -65,6 +65,8 @@ export const submitFeedback = async (req, res) => {
             });
             if (comment) existingFeedback.comment = comment; // Update comment if provided
             await existingFeedback.save();
+            await existingFeedback.populate('user', 'name email');
+            await existingFeedback.populate('mess', 'name');
             
             return res.status(200).json({
                 status: 'success',
@@ -80,6 +82,9 @@ export const submitFeedback = async (req, res) => {
             ratings,
             comment
         });
+
+        await feedback.populate('user', 'name email');
+        await feedback.populate('mess', 'name');
 
         res.status(201).json({
             status: 'success',
@@ -99,38 +104,29 @@ export const submitFeedback = async (req, res) => {
 // @access  Private
 export const getFeedback = async (req, res) => {
     try {
-        const page = parseInt(req.query.page, 10) || 1;
-        const limit = parseInt(req.query.limit, 10) || 20;
-        const skip = (page - 1) * limit;
-
-        // Always scope to the requesting user's college first
-        let aggregateFilter = { collegeId: req.collegeId };
-
-        // All roles except vendors may filter further by a specific mess within their college
-        if (req.query.mess && ['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
-            // Validate the requested mess belongs to this college before trusting the param
-            const messDoc = await Mess.findOne({ _id: req.query.mess, collegeId: req.collegeId });
-            if (!messDoc) {
-                return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
-            }
-            aggregateFilter.mess = req.query.mess;
+        // Enforce tenant isolation for non-super-admins
+        let aggregateFilter = {};
+        if (req.user.role !== 'super_admin' || req.collegeId) {
+            aggregateFilter.collegeId = req.collegeId;
         }
 
         // Vendors are strictly locked to their assigned mess
         if (req.user.role === 'vendor') {
-            if (!req.user.messAssigned || req.user.messAssigned === 'None') {
+            const vendorMessId = req.user.messAssigned?._id || req.user.messAssigned;
+            if (!vendorMessId || vendorMessId === 'None') {
                 return res.status(200).json({
                     status: 'success',
                     count: 0,
                     total: 0,
-                    page: 1,
-                    totalPages: 1,
                     categoryAverages: {},
                     avgRating: '–',
                     data: []
                 });
             }
-            aggregateFilter.mess = req.user.messAssigned;
+            aggregateFilter.mess = vendorMessId;
+        } else if (req.query.mess) {
+            // All other roles may filter by a specific mess if provided
+            aggregateFilter.mess = req.query.mess;
         }
         
         // Calculate aggregations correctly mapped to entirety
@@ -156,29 +152,32 @@ export const getFeedback = async (req, res) => {
         Object.keys(catScores).forEach(cat => { categoryAverages[cat] = (catScores[cat] / catCounts[cat]).toFixed(1); });
         const avgRating = totalRatings ? (totalScore / totalRatings).toFixed(1) : '–';
 
+        let query = Feedback.find(aggregateFilter)
+            .populate('mess', 'name')
+            .sort({ date: -1, createdAt: -1 });
 
-        let listQueryFilter = { ...aggregateFilter };
-        if (req.user.role === 'mess_committee') {
-            listQueryFilter.comment = { $exists: true, $ne: '' };
-        }
-
-        let query = Feedback.find(listQueryFilter).populate('mess', 'name');
-
-        if (['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
-            query = query.populate('user', 'name email');
-        } else if (req.user.role === 'vendor') {
+        if (req.user.role === 'vendor') {
+            // Vendors strictly see feedback anonymously (identity protected, same as complaints)
             query = query.select('-user');
+        } else {
+            query = query.populate('user', 'name email');
         }
 
-        const total = await Feedback.countDocuments(listQueryFilter);
-        const feedbackList = await query.sort({ date: -1 }).skip(skip).limit(limit);
+        let feedbackList;
+        const total = await Feedback.countDocuments(aggregateFilter);
+        if (req.query.page && req.query.limit) {
+            const page = parseInt(req.query.page, 10) || 1;
+            const limit = parseInt(req.query.limit, 10) || 20;
+            const skip = (page - 1) * limit;
+            feedbackList = await query.skip(skip).limit(limit);
+        } else {
+            feedbackList = await query;
+        }
 
         res.status(200).json({
             status: 'success',
             count: feedbackList.length,
             total,
-            page,
-            totalPages: Math.ceil(total / limit),
             categoryAverages,
             avgRating,
             data: feedbackList

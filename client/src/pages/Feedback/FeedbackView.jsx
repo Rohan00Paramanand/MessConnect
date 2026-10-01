@@ -31,8 +31,8 @@ const FeedbackView = () => {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [categoryAverages, setCategoryAverages] = useState({});
   const [avgRating, setAvgRating] = useState('–');
@@ -53,14 +53,22 @@ const FeedbackView = () => {
               setMessFilter(vendorMessId);
               setSubmissionMess(vendorMessId);
             }
-          } else if (list.length > 0) {
-            setMessFilter(list[0]._id);
-            setSubmissionMess(list[0]._id);
+          } else {
+            setMessFilter('');
+            if (list.length > 0) {
+              setSubmissionMess(list[0]._id);
+            }
           }
         })
         .catch(err => {
           console.error('Failed to load messes', err);
         });
+    } else if (user?.role === 'vendor') {
+      const vendorMessId = user?.messAssigned?._id || user?.messAssigned;
+      if (vendorMessId) {
+        setMessFilter(vendorMessId);
+        setSubmissionMess(vendorMessId);
+      }
     }
   }, [user]);
 
@@ -78,10 +86,10 @@ const FeedbackView = () => {
     (r) => r.category === selectedCat
   );
   
-  const fetchFeedback = useCallback(async (pageNum = 1, filterVal = messFilter) => {
+  const fetchFeedback = useCallback(async (filterVal = messFilter) => {
     setLoading(true);
     try { 
-      const params = { page: pageNum, limit: 9 };
+      const params = {};
       if (user?.role === 'vendor') {
         const vendorMessId = user?.messAssigned?._id || user?.messAssigned;
         if (vendorMessId) params.mess = vendorMessId;
@@ -91,7 +99,6 @@ const FeedbackView = () => {
       const { data } = await api.get(`/feedback`, { params }); 
 
       setFeedbacks(data.data || []);
-      setTotalPages(data.totalPages || 1);
       if (data.categoryAverages) setCategoryAverages(data.categoryAverages);
       if (data.avgRating !== undefined) setAvgRating(data.avgRating || '–');
     } catch { 
@@ -102,16 +109,9 @@ const FeedbackView = () => {
   }, [messFilter, user]);
 
   useEffect(() => { 
-    setPage(1);
-    fetchFeedback(1, messFilter); 
+    setCurrentPage(1);
+    fetchFeedback(messFilter); 
   }, [messFilter, fetchFeedback]);
-
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages) return;
-    setPage(newPage);
-    fetchFeedback(newPage, messFilter);
-    window.scrollTo({ top: 300, behavior: 'smooth' });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -146,6 +146,12 @@ const FeedbackView = () => {
     return fb.ratings?.some((r) => r.category === categoryFilter) || fb.category === categoryFilter;
   });
 
+  const totalPages = Math.ceil(displayedFeedbacks.length / ITEMS_PER_PAGE);
+  const paginatedFeedbacks = displayedFeedbacks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6 pb-8">
       {/* Premium Header */}
@@ -166,13 +172,24 @@ const FeedbackView = () => {
             </p>
           </div>
           <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
-            {user?.role !== 'vendor' && (
+            {user?.role !== 'vendor' ? (
               <Select
                 variant="header"
                 value={messFilter}
-                onChange={(e) => setMessFilter(e.target.value)}
-                options={messes.map((m) => ({ value: m._id, label: m.name }))}
+                onChange={(e) => {
+                  setMessFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map((m) => ({ value: m._id, label: m.name }))
+                ]}
               />
+            ) : (
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-white/30 text-white font-bold text-sm flex items-center gap-1.5">
+                <span>🏛️</span>
+                <span>{messes.find(m => m._id === messFilter)?.name || user?.messAssigned?.name || 'Assigned Mess'}</span>
+              </div>
             )}
             <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2.5 sm:py-4 border border-white/30">
               <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
@@ -270,7 +287,10 @@ const FeedbackView = () => {
             <Select
               label="Filter Reviews by Category"
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               options={[
                 { value: 'ALL', label: `All Categories (${feedbacks.length})` },
                 ...categories.map((cat) => ({
@@ -292,7 +312,10 @@ const FeedbackView = () => {
               </span>
               <button
                 type="button"
-                onClick={() => setCategoryFilter('ALL')}
+                onClick={() => {
+                  setCategoryFilter('ALL');
+                  setCurrentPage(1);
+                }}
                 className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
               >
                 Clear filter
@@ -323,7 +346,7 @@ const FeedbackView = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {displayedFeedbacks.map(fb => (
+          {paginatedFeedbacks.map(fb => (
             <div key={fb._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.5rem] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -334,10 +357,10 @@ const FeedbackView = () => {
                     🏛️ {fb.mess?.name || messes.find(m => m._id === fb.mess)?.name || 'Mess'}
                   </span>
                 </div>
-                {user?.role !== 'mess_committee' && (!fb.ratings || fb.ratings.length === 0) && <StarRating rating={fb.rating} readOnly />}
+                {(!fb.ratings || fb.ratings.length === 0) && <StarRating rating={fb.rating} readOnly />}
               </div>
 
-              {user?.role !== 'mess_committee' && fb.ratings && fb.ratings.length > 0 && (
+              {fb.ratings && fb.ratings.length > 0 && (
                 <div className="grid grid-cols-2 gap-x-2 gap-y-4 mb-5 border-b border-gray-100 pb-5">
                   {fb.ratings.map(r => (
                      <div key={r.category} className="flex flex-col gap-1">
@@ -352,57 +375,118 @@ const FeedbackView = () => {
                   "{fb.comment}"
                 </p>
               )}
-              {fb.user && (
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
-                    {(fb.user?.name || 'S').charAt(0)}
+              {(() => {
+                if (user?.role === 'vendor') {
+                  return (
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold shadow-sm shrink-0">
+                          S
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-gray-700 truncate">
+                            Student
+                          </p>
+                          <p className="text-[11px] text-gray-400 truncate">
+                            Identity Protected
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const feedbackUserId = (fb.user?._id || fb.user)?.toString();
+                const isCurrentUser = user?._id && feedbackUserId === user._id.toString();
+                const studentName = (typeof fb.user === 'object' && fb.user?.name)
+                  ? fb.user.name
+                  : (isCurrentUser ? (user?.name || 'Student') : 'Student');
+                const studentEmail = (typeof fb.user === 'object' && fb.user?.email)
+                  ? fb.user.email
+                  : (isCurrentUser ? user?.email : null);
+
+                return (
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
+                        {studentName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-sm font-bold text-gray-800 truncate">
+                            {studentName}
+                          </p>
+                          {isCurrentUser && (
+                            <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        {studentEmail && (
+                          <p className="text-[11px] text-gray-400 truncate">
+                            {studentEmail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    {fb.user?.name || 'Student'}
-                    {user?._id && ((fb.user?._id || fb.user)?.toString() === user._id.toString()) ? ' (You)' : ''}
-                  </p>
-                </div>
-              )}
+                );
+              })()}
             </div>
           ))}
         </div>
       )}
 
+      {/* Pagination Controls — identical to ComplaintsList */}
       {totalPages > 1 && (
         <div className="flex flex-col items-center justify-center gap-2.5 pt-6 border-t border-gray-200/60 w-full">
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <button
               type="button"
-              disabled={page === 1 || loading}
-              onClick={() => handlePageChange(page - 1)}
+              disabled={currentPage === 1 || loading}
+              onClick={() => {
+                setCurrentPage((p) => Math.max(1, p - 1));
+                window.scrollTo({ top: 300, behavior: 'smooth' });
+              }}
               className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <ChevronLeft size={14} /> Previous
             </button>
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
               <button
                 key={pg}
                 type="button"
                 disabled={loading}
-                onClick={() => handlePageChange(pg)}
+                onClick={() => {
+                  setCurrentPage(pg);
+                  window.scrollTo({ top: 300, behavior: 'smooth' });
+                }}
                 className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  page === pg ? 'bg-amber-500 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  currentPage === pg
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 {pg}
               </button>
             ))}
+
             <button
               type="button"
-              disabled={page === totalPages || loading}
-              onClick={() => handlePageChange(page + 1)}
+              disabled={currentPage === totalPages || loading}
+              onClick={() => {
+                setCurrentPage((p) => Math.min(totalPages, p + 1));
+                window.scrollTo({ top: 300, behavior: 'smooth' });
+              }}
               className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               Next <ChevronRight size={14} />
             </button>
           </div>
+
           <p className="text-xs text-gray-500 font-medium text-center">
-            Page <strong className="text-gray-900">{page}</strong> of <strong className="text-gray-900">{totalPages}</strong>
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, displayedFeedbacks.length)}</strong> of <strong className="text-gray-900">{displayedFeedbacks.length}</strong> reviews
           </p>
         </div>
       )}
