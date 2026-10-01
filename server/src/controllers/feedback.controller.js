@@ -106,10 +106,6 @@ export const getFeedback = async (req, res) => {
         // Always scope to the requesting user's college first
         let aggregateFilter = { collegeId: req.collegeId };
 
-        if (req.user.role === 'user') {
-            aggregateFilter.user = req.user._id;
-        }
-
         // All roles except vendors may filter further by a specific mess within their college
         if (req.query.mess && ['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
             // Validate the requested mess belongs to this college before trusting the param
@@ -168,7 +164,7 @@ export const getFeedback = async (req, res) => {
 
         let query = Feedback.find(listQueryFilter).populate('mess', 'name');
 
-        if (['mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
+        if (['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(req.user.role)) {
             query = query.populate('user', 'name email');
         } else if (req.user.role === 'vendor') {
             query = query.select('-user');

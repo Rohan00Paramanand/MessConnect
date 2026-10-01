@@ -64,10 +64,14 @@ const FeedbackView = () => {
     }
   }, [user]);
 
-  // Check if there is already a feedback submitted for the selected date and mess
-  const existingFeedbackForDate = feedbacks.find(
-    (f) => new Date(f.date).toISOString().split('T')[0] === date && f.mess === submissionMess
-  );
+  // Check if current user has already submitted feedback for the selected date and mess
+  const existingFeedbackForDate = feedbacks.find((f) => {
+    const feedbackUserId = f.user?._id?.toString() || f.user?.toString();
+    const currentUserId = user?._id?.toString();
+    const feedbackMessId = f.mess?._id?.toString() || f.mess?.toString();
+    const isCurrentUser = feedbackUserId && currentUserId ? feedbackUserId === currentUserId : true;
+    return isCurrentUser && feedbackMessId === submissionMess && new Date(f.date).toISOString().split('T')[0] === date;
+  });
   
   // Check if the selected category has already been rated on this date
   const hasRatedCategory = existingFeedbackForDate?.ratings?.some(
@@ -158,7 +162,7 @@ const FeedbackView = () => {
             </div>
             <h1 className="text-2xl sm:text-3xl font-black mb-1">Daily Mess Ratings</h1>
             <p className="text-white/70 text-sm sm:text-base font-medium">
-              {(user?.role === 'user' || user?.role === 'student') ? "Rate today's meals and share your thoughts" : 'View all feedback submitted by users'}
+              {(user?.role === 'user' || user?.role === 'student') ? "Rate today's meals and see reviews from your peers" : 'View all feedback submitted by users'}
             </p>
           </div>
           <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
@@ -348,12 +352,15 @@ const FeedbackView = () => {
                   "{fb.comment}"
                 </p>
               )}
-              {(user?.role === 'vendor' || user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && fb.user && (
+              {fb.user && (
                 <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
                     {(fb.user?.name || 'S').charAt(0)}
                   </div>
-                  <p className="text-xs text-gray-400 font-medium">{fb.user?.name || 'Student'}</p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    {fb.user?.name || 'Student'}
+                    {user?._id && ((fb.user?._id || fb.user)?.toString() === user._id.toString()) ? ' (You)' : ''}
+                  </p>
                 </div>
               )}
             </div>
