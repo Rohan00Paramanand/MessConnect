@@ -136,7 +136,7 @@ export const getColleges = async (req, res) => {
     try {
         const colleges = await College.find().lean();
         const admins = await User.find({ role: 'college_admin' })
-            .select('name email role collegeId isActive')
+            .select('name email phoneNumber role collegeId isActive')
             .lean();
 
         // Attach assigned admins to each college

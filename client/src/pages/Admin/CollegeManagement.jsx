@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle, Globe } from 'lucide-react';
+import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle, Globe, ChevronDown } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import useAuthStore from '../../store/useAuthStore';
@@ -148,6 +148,7 @@ const CollegeManagement = () => {
   // Assign Admin state
   const [assigningCollege, setAssigningCollege] = useState(null);
   const [adminFormData, setAdminFormData] = useState({ email: '', name: '' });
+  const [selectedAdminByCollege, setSelectedAdminByCollege] = useState({});
   const [assigning, setAssigning] = useState(false);
   const [revoking, setRevoking] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -287,9 +288,15 @@ const CollegeManagement = () => {
   // Assign Admin handlers
   const openAssignModal = (college) => {
     setAssigningCollege(college);
+    const collegeAdmins = (college.admins && college.admins.length > 0)
+      ? college.admins.filter(a => a.isActive !== false)
+      : (college.admin ? [college.admin] : []);
+    const selectedId = selectedAdminByCollege[college._id];
+    const targetAdmin = collegeAdmins.find(a => a._id === selectedId) || collegeAdmins[0] || college.admin;
+
     setAdminFormData({
-      email: college.admin?.email || '',
-      name: college.admin?.name || ''
+      email: targetAdmin?.email || '',
+      name: targetAdmin?.name || ''
     });
   };
 
@@ -458,21 +465,56 @@ const handleDeleteAdmin = async (userId) => {
                     <tr><td colSpan="5" className="p-8 text-center text-gray-500">No colleges registered yet. Use the form to add one.</td></tr>
                   ) : (
                     colleges.map((college) => {
-                      const admin = college.admin;
+                      const allAdmins = (college.admins && college.admins.length > 0)
+                        ? college.admins
+                        : (college.admin ? [college.admin] : []);
+                      const activeAdmins = allAdmins.filter(a => a.isActive !== false);
+
+                      const selectedAdminId = selectedAdminByCollege[college._id] || (activeAdmins[0]?._id);
+                      const currentAdmin = activeAdmins.find(a => a._id === selectedAdminId) || activeAdmins[0] || null;
+
                       return (
                         <tr key={college._id} className="hover:bg-white/60 transition-colors">
                           <td className="p-4">
                             <p className="font-bold text-gray-900">{college.name}</p>
                           </td>
                           <td className="p-4">
-                            {admin ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-xs">
-                                  <Shield size={14} />
+                            {activeAdmins.length > 0 ? (
+                              <div className="flex flex-col gap-1.5 min-w-[210px] max-w-[270px]">
+                                <div className="relative">
+                                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-violet-600">
+                                    <Shield size={13} />
+                                  </div>
+                                  <select
+                                    value={currentAdmin?._id || ''}
+                                    onChange={(e) => {
+                                      const adminId = e.target.value;
+                                      setSelectedAdminByCollege((prev) => ({
+                                        ...prev,
+                                        [college._id]: adminId
+                                      }));
+                                    }}
+                                    className="w-full text-xs font-semibold bg-violet-50/80 hover:bg-violet-100/70 border border-violet-200/90 rounded-xl pl-7 pr-7 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 cursor-pointer appearance-none transition-all truncate shadow-xs"
+                                    title="Active College Admins"
+                                  >
+                                    {activeAdmins.map((adm) => (
+                                      <option key={adm._id} value={adm._id} className="text-gray-900 bg-white py-1">
+                                        {adm.name || 'Admin'} ({adm.email})
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                                    <ChevronDown size={14} />
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="font-bold text-gray-900 text-xs">{admin.name || 'Admin'}</p>
-                                  <p className="text-[11px] text-gray-500">{admin.email}</p>
+
+                                <div className="flex items-center justify-between text-[11px] px-1">
+                                  <span className="text-gray-500 truncate max-w-[145px]" title={currentAdmin?.email}>
+                                    {currentAdmin?.email}
+                                  </span>
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                    {activeAdmins.length} Active {activeAdmins.length === 1 ? 'Admin' : 'Admins'}
+                                  </span>
                                 </div>
                               </div>
                             ) : (
@@ -520,15 +562,15 @@ const handleDeleteAdmin = async (userId) => {
                               {isSuperAdmin && (
                                 <button
                                   onClick={() => openAssignModal(college)}
-                                  title={admin ? "Change Admin" : "Assign Admin"}
+                                  title={activeAdmins.length > 0 ? "Change Admin" : "Assign Admin"}
                                   className={`text-xs px-2.5 py-1.5 font-bold rounded-xl flex items-center gap-1 border transition-all ${
-                                    admin 
+                                    activeAdmins.length > 0 
                                       ? 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100' 
                                       : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                   }`}
                                 >
-                                  {admin ? <UserCheck size={13} /> : <UserPlus size={13} />}
-                                  {admin ? 'Change Admin' : 'Assign Admin'}
+                                  {activeAdmins.length > 0 ? <UserCheck size={13} /> : <UserPlus size={13} />}
+                                  {activeAdmins.length > 0 ? 'Change Admin' : 'Assign Admin'}
                                 </button>
                               )}
                               {(isSuperAdmin || (user?.collegeId && user.collegeId.toString() === college._id.toString())) && (
@@ -652,34 +694,51 @@ const handleDeleteAdmin = async (userId) => {
               </button>
             </div>
 
-            {assigningCollege.admin && (
-              <div className="mb-5 p-3.5 bg-violet-50/70 border border-violet-100 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-bold text-violet-600 uppercase tracking-wider">Current Admin</p>
-                  <p className="text-sm font-bold text-gray-900">{assigningCollege.admin.name || 'Admin'}</p>
-                  <p className="text-xs text-gray-600">{assigningCollege.admin.email}</p>
-                </div>
-                <div className="flex items-center gap-2">
-  <button
-    type="button"
-    onClick={() => handleRevokeAdmin(assigningCollege.admin._id)}
-    disabled={revoking || deleting}
-    className="px-2.5 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors flex items-center gap-1"
-  >
-    <UserX size={13} /> {revoking ? 'Revoking...' : 'Revoke'}
-  </button>
+            {(() => {
+              const modalAdmins = (assigningCollege.admins && assigningCollege.admins.length > 0)
+                ? assigningCollege.admins.filter(a => a.isActive !== false)
+                : (assigningCollege.admin ? [assigningCollege.admin] : []);
 
-  <button
-    type="button"
-    onClick={() => handleDeleteAdmin(assigningCollege.admin._id)}
-    disabled={deleting || revoking}
-    className="px-2.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors flex items-center gap-1"
-  >
-    <X size={13} /> {deleting ? 'Deleting...' : 'Delete'}
-  </button>
-</div>
-              </div>
-            )}
+              if (modalAdmins.length === 0) return null;
+
+              return (
+                <div className="mb-5 space-y-2">
+                  <p className="text-[11px] font-bold text-violet-600 uppercase tracking-wider">
+                    Active College Administrators ({modalAdmins.length})
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {modalAdmins.map((adm) => (
+                      <div key={adm._id} className="p-3 bg-violet-50/70 border border-violet-100 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{adm.name || 'Admin'}</p>
+                          <p className="text-xs text-gray-600">{adm.email}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleRevokeAdmin(adm._id)}
+                            disabled={revoking || deleting}
+                            className="px-2.5 py-1 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors flex items-center gap-1"
+                            title="Revoke admin access"
+                          >
+                            <UserX size={12} /> {revoking ? 'Revoking...' : 'Revoke'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAdmin(adm._id)}
+                            disabled={deleting || revoking}
+                            className="px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors flex items-center gap-1"
+                            title="Delete admin account permanently"
+                          >
+                            <X size={12} /> {deleting ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             <form onSubmit={handleAssignAdminSubmit} className="space-y-4">
               <Input

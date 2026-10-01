@@ -331,7 +331,9 @@ export const updateApprovedUser = async (req, res) => {
         if (companyName !== undefined && (user.role === 'vendor' || role === 'vendor')) {
             user.companyName = companyName.trim();
         }
-        if (messAssigned !== undefined) {
+        if (user.role === 'mess_committee') {
+            user.messAssigned = null;
+        } else if (messAssigned !== undefined) {
             user.messAssigned = messAssigned || null;
         }
 
