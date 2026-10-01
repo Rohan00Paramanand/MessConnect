@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
-import { Camera, X, MapPin } from 'lucide-react';
+import { Camera, X, MapPin, Check } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
 const ComplaintForm = ({ onComplaintAdded }) => {
@@ -41,8 +42,20 @@ const ComplaintForm = ({ onComplaintAdded }) => {
     }
   }, [user]);
 
+  // Lock body scroll when camera is active
+  useEffect(() => {
+    if (isCameraOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCameraOpen]);
+
   // Separate effect to handle video stream attachment
-  React.useEffect(() => {
+  useEffect(() => {
     if (isCameraOpen && videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
@@ -276,100 +289,111 @@ const ComplaintForm = ({ onComplaintAdded }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Evidence Image</label>
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                <input 
-                  type="file" 
-                  accept=".jpeg,.jpg,.png,.gif,.webp"
-                  onChange={(e) => {
-                    setImage(e.target.files[0]);
-                    setCoords(null); // Reset coords if manual upload
-                  }}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label 
-                  htmlFor="file-upload"
-                  className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-gray-900/20 hover:bg-gray-100 transition-all text-sm font-bold text-gray-600"
-                >
-                  Upload File
-                </label>
-                <div className="text-gray-300 text-center sm:text-left text-xs sm:text-sm font-medium">or</div>
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  className="min-h-[44px] flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all text-sm font-bold shadow-lg shadow-gray-900/20"
-                >
-                  <Camera size={18} />
-                  Take Photo
-                </button>
-              </div>
 
-              {image && (
-                <div className="relative w-full rounded-2xl overflow-hidden border border-gray-200 bg-gray-900/5 flex items-center justify-center p-2">
+            <div className="flex flex-col gap-3">
+              {!image ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="min-h-[44px] flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-bold shadow-md shadow-gray-900/10 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Camera size={18} />
+                    Take Photo
+                  </button>
+                </div>
+              ) : (
+                <div className="relative w-full rounded-2xl overflow-hidden border border-gray-200 bg-gray-900/5 flex flex-col items-center justify-center p-2">
                   <img 
                     src={URL.createObjectURL(image)} 
                     alt="Preview" 
                     className="w-full max-h-72 sm:max-h-80 object-contain rounded-xl"
                   />
-                  <button 
-                    type="button"
-                    onClick={() => { setImage(null); setCoords(null); }}
-                    className="absolute top-4 right-4 p-1.5 bg-black/60 hover:bg-black text-white rounded-full transition-all shadow-md"
-                    title="Remove photo"
-                  >
-                    <X size={16} />
-                  </button>
-                  {coords && (
-                    <div className="absolute bottom-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md rounded-xl text-xs text-white flex items-center gap-1.5 font-bold shadow-md">
-                      <MapPin size={12} className="text-teal-400" />
-                      Geo-tagged
+                  <div className="w-full flex items-center justify-between mt-2 pt-2 border-t border-gray-100 px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 inline-flex items-center gap-1">
+                        <Check size={13} className="stroke-[3]" /> Live Photo Captured
+                      </span>
+                      {coords && (
+                        <span className="text-xs font-semibold text-gray-600 inline-flex items-center gap-1">
+                          <MapPin size={13} className="text-teal-600" /> Geo-tagged
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-xl text-xs font-bold transition-all border border-teal-200 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Camera size={13} /> Retake
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setImage(null); setCoords(null); }}
+                        className="px-2.5 py-1.5 bg-gray-100 hover:bg-rose-50 text-gray-600 hover:text-rose-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        title="Remove photo"
+                      >
+                        <X size={14} /> Remove
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {isCameraOpen && (
-          <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4">
-            <div className="relative w-full max-w-lg aspect-[3/4] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
+        {isCameraOpen && typeof document !== 'undefined' && createPortal(
+          <div className="fixed inset-0 z-[99999] bg-black flex flex-col justify-between items-center overflow-hidden select-none">
+            {/* Camera Viewport */}
+            <div className="relative w-full h-full flex items-center justify-center bg-black">
               <video 
                 ref={videoRef} 
                 autoPlay 
                 playsInline 
+                muted
                 className="w-full h-full object-cover"
               />
               <canvas ref={canvasRef} className="hidden" />
-              
-              {/* Camera Controls */}
-              <div className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-8">
+
+              {/* Top Bar with Status and Close Button */}
+              <div className="absolute top-0 inset-x-0 pt-6 pb-12 px-5 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between z-30 pointer-events-auto">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shadow-lg">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Live Camera
+                </span>
                 <button
                   type="button"
                   onClick={stopCamera}
-                  className="p-4 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all"
+                  className="w-11 h-11 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-black/80 active:scale-90 transition-all cursor-pointer shadow-lg"
+                  title="Close Camera"
                 >
-                  <X size={24} />
+                  <X size={22} />
                 </button>
-                <button
-                  type="button"
-                  onClick={capturePhoto}
-                  className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all border-8 border-white/20"
-                >
-                  <div className="w-12 h-12 rounded-full border-4 border-gray-900"></div>
-                </button>
-                <div className="w-14"></div> {/* Spacer to keep capture centered */}
               </div>
 
-              {/* Tips */}
-              <div className="absolute top-8 left-0 right-0 flex justify-center">
-                <div className="px-4 py-2 bg-black/40 backdrop-blur-md rounded-full text-white/80 text-xs font-bold uppercase tracking-widest border border-white/10">
-                  Ensure good lighting
+              {/* Bottom Controls Bar */}
+              <div className="absolute bottom-0 inset-x-0 pb-10 pt-16 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex flex-col items-center justify-center gap-3 z-30 px-6 pointer-events-auto">
+                <p className="text-white/80 text-xs font-medium tracking-wide drop-shadow text-center">
+                  Hold steady & tap button to capture photo
+                </p>
+                <div className="flex items-center justify-center gap-8 w-full max-w-sm mt-1">
+                  <div className="w-14"></div>
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="w-20 h-20 rounded-full bg-white p-1.5 shadow-2xl active:scale-90 transition-all flex items-center justify-center border-4 border-white/50 ring-4 ring-black/40 cursor-pointer"
+                    title="Take Photo"
+                  >
+                    <div className="w-full h-full rounded-full border-[3px] border-gray-900 bg-white hover:bg-gray-100 transition-colors"></div>
+                  </button>
+                  <div className="w-14"></div>
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         <Button type="submit" disabled={loading} variant="student" className="w-full sm:w-auto">

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
-import { Camera, UploadCloud, MapPin, X, Check } from 'lucide-react';
+import { Camera, MapPin, X, Check } from 'lucide-react';
 
 const VendorResolutionModal = ({ complaint, onClose, onSuccess }) => {
   const [image, setImage] = useState(null);
@@ -151,21 +151,6 @@ const VendorResolutionModal = ({ complaint, onClose, onSuccess }) => {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setImage(file);
-    setImagePreview(URL.createObjectURL(file));
-
-    // Automatically prompt location capture for upload
-    try {
-      await fetchCurrentLocation();
-      toast.success('Photo selected and current location geotagged!');
-    } catch {
-      // Handled in fetchCurrentLocation
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -231,9 +216,16 @@ const VendorResolutionModal = ({ complaint, onClose, onSuccess }) => {
           
           {/* Photo Capture / Upload Section */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-              Resolution Proof Photo *
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Resolution Proof Photo *
+              </label>
+              {imagePreview && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <Check size={12} className="stroke-[3]" /> Live Proof Captured
+                </span>
+              )}
+            </div>
 
             {/* Live Camera View */}
             {isCameraOpen ? (
@@ -262,7 +254,7 @@ const VendorResolutionModal = ({ complaint, onClose, onSuccess }) => {
               </div>
             ) : imagePreview ? (
               /* Image Preview with Geotag Stamp */
-              <div className="relative rounded-2xl overflow-hidden border border-emerald-300 bg-gray-50 p-2 space-y-2">
+              <div className="relative rounded-2xl overflow-hidden border border-emerald-300 bg-gray-50 p-2.5 space-y-2.5">
                 <div className="relative max-h-56 rounded-xl overflow-hidden flex items-center justify-center bg-black/5">
                   <img src={imagePreview} alt="Resolution Preview" className="max-h-56 w-full object-contain" />
                   <button
@@ -278,58 +270,53 @@ const VendorResolutionModal = ({ complaint, onClose, onSuccess }) => {
                   </button>
                 </div>
 
-                {/* Location Status */}
-                {coords ? (
-                  <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2">
-                    <MapPin size={14} className="text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold">
-                        Geotag Verified: {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}
-                      </p>
-                      <p className="text-[11px] text-emerald-700 line-clamp-2 mt-0.5">{address}</p>
+                {/* Location Status & Retake button */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  {coords ? (
+                    <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 flex items-start gap-1.5 flex-1 min-w-0">
+                      <MapPin size={13} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-bold truncate">
+                          Verified: {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}
+                        </p>
+                        <p className="text-[10px] text-emerald-700 line-clamp-1">{address}</p>
+                      </div>
                     </div>
-                  </div>
-                ) : (
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={fetchCurrentLocation}
+                      disabled={fetchingLocation}
+                      className="py-1.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold border border-amber-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <MapPin size={13} />
+                      {fetchingLocation ? 'Detecting Location...' : 'Add Geotag *'}
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    onClick={fetchCurrentLocation}
-                    disabled={fetchingLocation}
-                    className="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold border border-amber-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                    onClick={() => {
+                      setImage(null);
+                      setImagePreview(null);
+                      startCamera();
+                    }}
+                    className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-xl text-xs font-bold transition-all border border-indigo-200 flex items-center gap-1 cursor-pointer flex-shrink-0"
                   >
-                    <MapPin size={13} />
-                    {fetchingLocation ? 'Detecting Location...' : 'Click to Add Geotag Coordinates *'}
+                    <Camera size={13} /> Retake
                   </button>
-                )}
+                </div>
               </div>
             ) : (
-              /* Capture or Choose File Options */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  className="p-4 rounded-2xl border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/40 hover:bg-indigo-50/70 transition-all flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Camera size={20} />
-                  </div>
-                  <span className="text-xs font-bold text-gray-800">Use Live Camera</span>
-                  <span className="text-[10px] text-gray-500 font-medium">Automatic on-site geotag</span>
-                </button>
-
-                <label className="p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-gray-400 bg-gray-50/60 hover:bg-gray-100/60 transition-all flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer group">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <UploadCloud size={20} />
-                  </div>
-                  <span className="text-xs font-bold text-gray-800">Upload Photo</span>
-                  <span className="text-[10px] text-gray-500 font-medium">From device files</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
+              /* Live Camera Capture Button */
+              <button
+                type="button"
+                onClick={startCamera}
+                className="w-full min-h-[44px] flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-600/15 active:scale-95 transition-all cursor-pointer"
+              >
+                <Camera size={18} />
+                Take Photo
+              </button>
             )}
           </div>
 

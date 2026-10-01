@@ -122,10 +122,10 @@ export const getComplaints = async (req, res) => {
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
         } else if (req.user.role === 'vendor') {
-            // Vendors strictly see complaints for their assigned mess only
+            // Vendors strictly see complaints for their assigned mess only (complainee identity protected)
             queryFilter.mess = req.user.messAssigned;
             complaints = await Complaint.find(queryFilter)
-                .populate('user_id', 'name email avatar trustMeter role')
+                .populate('user_id', 'role')
                 .populate('assignedTo', 'name email')
                 .populate('resolvedBy', 'name email role')
                 .populate('mess', 'name')

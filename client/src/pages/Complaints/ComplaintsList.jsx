@@ -219,19 +219,25 @@ const ComplaintCard = ({
           <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-gray-100/50 w-full min-w-0">
             <p className="text-xs text-gray-400 font-medium flex items-center gap-2 flex-wrap">
               <span>Submitted {new Date(complaint.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-              {complaint.user_id?.name && (
-                <span className="flex items-center gap-1.5 flex-wrap">
-                  <span>· by {complaint.user_id.name}</span>
-                  {['user', 'student'].includes(complaint.user_id.role) && typeof complaint.user_id.trustMeter === 'number' && (
-                    <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                      complaint.user_id.trustMeter >= 80 ? 'bg-green-50 text-green-700 border-green-200' :
-                      complaint.user_id.trustMeter >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      'bg-red-50 text-red-700 border-red-200'
-                    }`} title="User Trust Score">
-                      🛡️ {complaint.user_id.trustMeter}% Trust
-                    </span>
-                  )}
+              {user?.role === 'vendor' ? (
+                <span className="flex items-center gap-1.5 flex-wrap text-gray-400">
+                  <span>· by Student (Identity Protected)</span>
                 </span>
+              ) : (
+                complaint.user_id?.name && (
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    <span>· by {complaint.user_id.name}</span>
+                    {['user', 'student'].includes(complaint.user_id.role) && typeof complaint.user_id.trustMeter === 'number' && (
+                      <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        complaint.user_id.trustMeter >= 80 ? 'bg-green-50 text-green-700 border-green-200' :
+                        complaint.user_id.trustMeter >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        'bg-red-50 text-red-700 border-red-200'
+                      }`} title="User Trust Score">
+                        🛡️ {complaint.user_id.trustMeter}% Trust
+                      </span>
+                    )}
+                  </span>
+                )
               )}
             </p>
             {complaint.location?.latitude && (
