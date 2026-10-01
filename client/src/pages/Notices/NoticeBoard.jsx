@@ -41,7 +41,7 @@ const NoticeBoard = () => {
   const isPrivileged = ['mess_committee', 'college_admin', 'super_admin'].includes(user?.role);
 
   const filteredNotices = notices.filter(n => {
-    if (audienceFilter === 'ALL') return true;
+    if (!isPrivileged || audienceFilter === 'ALL') return true;
     return n.targetRole === audienceFilter;
   });
 
@@ -245,25 +245,25 @@ const NoticeBoard = () => {
         </div>
       )}
 
-      {/* Dropdown Filters Bar (Every Single Role) */}
-      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-          <div className="w-full sm:w-64">
-            <Select
-              label="Filter by Target Audience"
-              value={audienceFilter}
-              onChange={(e) => { setAudienceFilter(e.target.value); setCurrentPage(1); }}
-              options={[
-                { value: 'ALL', label: `All Audiences (${notices.length})` },
-                { value: 'all', label: `General / Everyone (${notices.filter((n) => n.targetRole === 'all').length})` },
-                { value: 'user', label: `Students (${notices.filter((n) => n.targetRole === 'user').length})` },
-                { value: 'vendor', label: `Vendors (${notices.filter((n) => n.targetRole === 'vendor').length})` },
-                { value: 'mess_committee', label: `Mess Committee (${notices.filter((n) => n.targetRole === 'mess_committee').length})` },
-              ]}
-            />
-          </div>
+      {/* Dropdown Filters Bar (College Admin and Mess Committee only) */}
+      {isPrivileged && (
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+            <div className="w-full sm:w-64">
+              <Select
+                label="Filter by Target Audience"
+                value={audienceFilter}
+                onChange={(e) => { setAudienceFilter(e.target.value); setCurrentPage(1); }}
+                options={[
+                  { value: 'ALL', label: `All Audiences (${notices.length})` },
+                  { value: 'all', label: `General / Everyone (${notices.filter((n) => n.targetRole === 'all').length})` },
+                  { value: 'user', label: `Students (${notices.filter((n) => n.targetRole === 'user').length})` },
+                  { value: 'vendor', label: `Vendors (${notices.filter((n) => n.targetRole === 'vendor').length})` },
+                  { value: 'mess_committee', label: `Mess Committee (${notices.filter((n) => n.targetRole === 'mess_committee').length})` },
+                ]}
+              />
+            </div>
 
-          {isPrivileged && (
             <div className="w-full sm:w-64">
               <Select
                 label="Filter by Expiry Status"
@@ -275,24 +275,24 @@ const NoticeBoard = () => {
                 ]}
               />
             </div>
+          </div>
+
+          {(audienceFilter !== 'ALL' || viewFilter !== 'active') && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 font-medium">
+                Showing <strong>{filteredNotices.length}</strong> of <strong>{notices.length}</strong> announcements
+              </span>
+              <button
+                type="button"
+                onClick={() => { setAudienceFilter('ALL'); setViewFilter('active'); setCurrentPage(1); }}
+                className="text-xs font-bold text-violet-600 hover:text-violet-800 hover:underline cursor-pointer"
+              >
+                Reset filters
+              </button>
+            </div>
           )}
         </div>
-
-        {(audienceFilter !== 'ALL' || (isPrivileged && viewFilter !== 'active')) && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 font-medium">
-              Showing <strong>{filteredNotices.length}</strong> of <strong>{notices.length}</strong> announcements
-            </span>
-            <button
-              type="button"
-              onClick={() => { setAudienceFilter('ALL'); setViewFilter('active'); setCurrentPage(1); }}
-              className="text-xs font-bold text-violet-600 hover:text-violet-800 hover:underline cursor-pointer"
-            >
-              Reset filters
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Notices Grid */}
       {loading ? (

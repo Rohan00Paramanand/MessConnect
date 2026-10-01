@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -19,10 +20,13 @@ const WeeklyTimetable = () => {
   const [timetable, setTimetable] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCell, setActiveCell] = useState(null);
+  const [activeSlotEl, setActiveSlotEl] = useState(null);
+  const [popoverStyle, setPopoverStyle] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [itemsInput, setItemsInput] = useState('');
   const [messFilter, setMessFilter] = useState('');
   const [messes, setMesses] = useState([]);
+  const popoverRef = useRef(null);
 
   useEffect(() => {
     if (user?.collegeId) {
@@ -59,6 +63,130 @@ const WeeklyTimetable = () => {
     return () => clearTimeout(timer);
   }, [messFilter, fetchTimetable]);
 
+  // Dynamically compute popover coordinates directly beside the clicked slot in viewport space
+  const updatePopoverPosition = useCallback((targetEl) => {
+    if (!targetEl) return;
+    const rect = targetEl.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const popoverWidth = Math.min(340, vw - 32);
+    const popoverHeight = popoverRef.current ? popoverRef.current.offsetHeight : 275;
+    const gap = 12;
+    const pad = 16;
+
+    let placement = 'right';
+    let left = 0;
+    let top = 0;
+
+    // Prefer placing on the right; if it overflows viewport, place on the left
+    if (rect.right + gap + popoverWidth <= vw - pad) {
+      placement = 'right';
+      left = rect.right + gap;
+    } else if (rect.left - gap - popoverWidth >= pad) {
+      placement = 'left';
+      left = rect.left - gap - popoverWidth;
+    } else {
+      // Mobile fallback: position below or above slot
+      placement = (rect.bottom + gap + popoverHeight <= vh - pad) ? 'bottom' : 'top';
+      left = Math.max(pad, Math.min(vw - popoverWidth - pad, rect.left + (rect.width - popoverWidth) / 2));
+    }
+
+    if (placement === 'right' || placement === 'left') {
+      const targetCenterY = rect.top + rect.height / 2;
+      // Vertically center the popover next to the slot
+      top = targetCenterY - popoverHeight / 2;
+
+      // Clamp vertically so the popover remains fully on-screen
+      if (top + popoverHeight > vh - pad) {
+        top = vh - popoverHeight - pad;
+      }
+      if (top < pad) {
+        top = pad;
+      }
+
+      const arrowTop = Math.max(20, Math.min(popoverHeight - 20, targetCenterY - top));
+      setPopoverStyle({
+        position: 'fixed',
+        top: `${Math.round(top)}px`,
+        left: `${Math.round(left)}px`,
+        width: `${popoverWidth}px`,
+        placement,
+        arrowTop: `${Math.round(arrowTop)}px`,
+      });
+    } else {
+      if (placement === 'bottom') {
+        top = rect.bottom + gap;
+      } else {
+        top = Math.max(pad, rect.top - gap - popoverHeight);
+      }
+      const targetCenterX = rect.left + rect.width / 2;
+      const arrowLeft = Math.max(20, Math.min(popoverWidth - 20, targetCenterX - left));
+
+      setPopoverStyle({
+        position: 'fixed',
+        top: `${Math.round(top)}px`,
+        left: `${Math.round(left)}px`,
+        width: `${popoverWidth}px`,
+        placement,
+        arrowLeft: `${Math.round(arrowLeft)}px`,
+      });
+    }
+  }, []);
+
+  // Reposition popover when the window or the table scroll container scrolls
+  useEffect(() => {
+    if (!activeCell || !activeSlotEl) return;
+
+    const handleScrollOrResize = () => {
+      updatePopoverPosition(activeSlotEl);
+    };
+
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+    };
+  }, [activeCell, activeSlotEl, updatePopoverPosition]);
+
+  // Dismiss on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && activeCell) {
+        handleClosePopover();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeCell]);
+
+  const handleClosePopover = () => {
+    setActiveCell(null);
+    setActiveSlotEl(null);
+    setPopoverStyle(null);
+    setItemsInput('');
+  };
+
+  const handleSlotClick = (e, date, type) => {
+    if (user?.role !== 'vendor') return;
+
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    const dateStr = d.toISOString().split('T')[0];
+
+    // Toggle close if clicking already open slot
+    if (activeCell && activeCell.date === dateStr && activeCell.mealType === type) {
+      handleClosePopover();
+      return;
+    }
+
+    const clickedEl = e.currentTarget;
+    setActiveSlotEl(clickedEl);
+    setActiveCell({ date: dateStr, mealType: type });
+    updatePopoverPosition(clickedEl);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault(); 
     if (!activeCell) return;
@@ -73,9 +201,8 @@ const WeeklyTimetable = () => {
       const { data } = await api.post('/timetable', payload);
       if (data.status === 'success') {
         toast.success('Meal added!'); 
-        setTimetable([...timetable, data.data]);
-        setActiveCell(null); 
-        setItemsInput('');
+        setTimetable(prev => [...prev, data.data]);
+        handleClosePopover();
       }
     } catch (error) { 
       toast.error(error.response?.data?.message || 'Failed to add meal'); 
@@ -105,7 +232,6 @@ const WeeklyTimetable = () => {
   };
   const weekDates = getWeekDates();
   const mealTypes = ['Breakfast', 'Lunch', 'Evening Snack', 'Dinner'];
-
 
   return (
     <div className="space-y-6 pb-8">
@@ -142,42 +268,118 @@ const WeeklyTimetable = () => {
         </div>
       </div>
 
-      {/* Add Meal Modal */}
-      {activeCell && user?.role === 'vendor' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-md animate-fade-in">
-          <div className="bg-white rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative">
-            <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${mealTypeConfig[activeCell.mealType]?.gradient || 'from-teal-400 to-emerald-500'}`}></div>
-            
-            <button onClick={() => {setActiveCell(null); setItemsInput('');}} className="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
-              <X size={20} />
-            </button>
-            
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-1">Add Meal</h3>
-            <p className="text-sm text-gray-500 font-medium mb-6">
-              {activeCell.mealType} • {new Date(activeCell.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric'})}
-            </p>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Add Meal Popover (rendered into document.body to avoid parent scroll/filter container traps) */}
+      {activeCell && user?.role === 'vendor' && popoverStyle && createPortal(
+        <>
+          {/* Subtle click-outside backdrop overlay */}
+          <div 
+            className="fixed inset-0 z-50 bg-black/15 backdrop-blur-[1px] transition-opacity"
+            onClick={handleClosePopover}
+          />
+
+          {/* Contextual Popover Card */}
+          <div 
+            ref={popoverRef}
+            style={{
+              position: 'fixed',
+              top: popoverStyle.top,
+              left: popoverStyle.left,
+              width: popoverStyle.width,
+            }}
+            className="z-50 bg-white border border-gray-200/90 rounded-2xl p-5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.25),0_0_0_1px_rgba(0,0,0,0.05)] animate-in fade-in zoom-in-95 duration-150"
+          >
+            {/* Pointer arrow pointing to the clicked slot */}
+            {popoverStyle.placement === 'right' && (
+              <div 
+                className="absolute -left-2 w-4 h-4 bg-white rotate-45 border-l border-b border-gray-200/90 pointer-events-none"
+                style={{ top: popoverStyle.arrowTop || '32px' }}
+              />
+            )}
+            {popoverStyle.placement === 'left' && (
+              <div 
+                className="absolute -right-2 w-4 h-4 bg-white rotate-45 border-r border-t border-gray-200/90 pointer-events-none"
+                style={{ top: popoverStyle.arrowTop || '32px' }}
+              />
+            )}
+            {popoverStyle.placement === 'bottom' && (
+              <div 
+                className="absolute -top-2 w-4 h-4 bg-white rotate-45 border-l border-t border-gray-200/90 pointer-events-none"
+                style={{ left: popoverStyle.arrowLeft || '50%' }}
+              />
+            )}
+            {popoverStyle.placement === 'top' && (
+              <div 
+                className="absolute -bottom-2 w-4 h-4 bg-white rotate-45 border-r border-b border-gray-200/90 pointer-events-none"
+                style={{ left: popoverStyle.arrowLeft || '50%' }}
+              />
+            )}
+
+            {/* Accent colored top bar */}
+            <div className={`h-1.5 w-full rounded-full mb-3 bg-gradient-to-r ${mealTypeConfig[activeCell.mealType]?.gradient || 'from-teal-400 to-emerald-500'}`} />
+
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-lg ${mealTypeConfig[activeCell.mealType]?.bg || 'bg-teal-50'}`}>
+                  {React.createElement(mealTypeConfig[activeCell.mealType]?.icon || UtensilsCrossed, {
+                    size: 16,
+                    className: mealTypeConfig[activeCell.mealType]?.text || 'text-teal-600'
+                  })}
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-900 leading-tight">Add {activeCell.mealType}</h3>
+                  <p className="text-xs text-gray-500 font-medium">
+                    {new Date(activeCell.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric'})}
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                type="button"
+                onClick={handleClosePopover} 
+                className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Menu Items <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Menu Items <span className="text-gray-400 font-normal">(comma-separated)</span>
+                </label>
                 <textarea 
+                  autoFocus
                   required 
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400/60 focus:bg-white transition-all resize-none" 
+                  className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400/60 focus:bg-white transition-all resize-none leading-relaxed" 
                   rows="3" 
                   value={itemsInput} 
                   onChange={e => setItemsInput(e.target.value)}
                   placeholder="e.g. Idli, Sambar, Chutney, Tea"
                 />
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => {setActiveCell(null); setItemsInput('');}} className="px-6 py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold rounded-xl flex-1 transition-colors">Cancel</button>
-                <Button type="submit" variant="primary" className="flex-1" disabled={formLoading}>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button 
+                  type="button" 
+                  onClick={handleClosePopover} 
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-xl flex-1 transition-colors"
+                >
+                  Cancel
+                </button>
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  className="flex-1 !py-2 text-sm" 
+                  disabled={formLoading}
+                >
                   {formLoading ? 'Saving...' : 'Save Meal'}
                 </Button>
               </div>
             </form>
           </div>
-        </div>
+        </>,
+        document.body
       )}
 
       {/* Timetable */}
@@ -225,6 +427,10 @@ const WeeklyTimetable = () => {
                         };
                         
                         const meal = timetable.find(m => m.mealType === type && isSameDay(date, m.date));
+                        const dateMidday = new Date(date);
+                        dateMidday.setHours(12, 0, 0, 0);
+                        const dateKey = dateMidday.toISOString().split('T')[0];
+                        const isActiveSlot = activeCell?.date === dateKey && activeCell?.mealType === type;
                         
                         return (
                           <td key={colIndex} className={`p-4 align-top hover:bg-gray-50/50 transition-colors ${colIndex === 6 ? '' : 'border-r'} border-gray-200/60 ${rowIndex === 3 ? (colIndex === 6 ? 'rounded-br-2xl' : '') : 'border-b'}`}>
@@ -246,25 +452,41 @@ const WeeklyTimetable = () => {
                               </div>
                             ) : (
                               <div 
-                                className={`h-full flex flex-col items-center justify-center p-4 min-h-[120px] rounded-xl transition-all ${user?.role === 'vendor' ? 'cursor-pointer group hover:bg-white hover:shadow-sm border border-transparent hover:border-teal-100' : ''}`}
-                                onClick={() => {
-                                  if (user?.role === 'vendor') {
-                                    // Set midnight local time to avoid timezone offset
-                                    const d = new Date(date);
-                                    d.setHours(12,0,0,0); // Midday protects against DST/timezone leaps
-                                    setActiveCell({ date: d.toISOString().split('T')[0], mealType: type });
-                                  }
-                                }}
+                                className={`h-full flex flex-col items-center justify-center p-4 min-h-[120px] rounded-xl transition-all ${
+                                  user?.role === 'vendor' ? 'cursor-pointer group' : ''
+                                } ${
+                                  isActiveSlot
+                                    ? 'bg-teal-50 border-2 border-teal-500 shadow-md ring-4 ring-teal-500/15'
+                                    : user?.role === 'vendor'
+                                      ? 'border border-transparent hover:bg-white hover:shadow-sm hover:border-teal-100'
+                                      : ''
+                                }`}
+                                onClick={(e) => handleSlotClick(e, date, type)}
                               >
                                 {user?.role === 'vendor' ? (
-                                  <>
-                                    <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-500 font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform scale-75 group-hover:scale-100 mb-2">
-                                      <Plus size={18} strokeWidth={3} />
-                                    </div>
-                                    <span className="text-[11px] uppercase tracking-widest text-gray-300 font-bold select-none text-center group-hover:text-teal-600 transition-colors">Add Meal</span>
-                                  </>
+                                  isActiveSlot ? (
+                                    <>
+                                      <div className="w-8 h-8 rounded-full bg-teal-500 text-white font-bold flex items-center justify-center mb-2 shadow-sm animate-pulse">
+                                        <Plus size={18} strokeWidth={3} />
+                                      </div>
+                                      <span className="text-[11px] uppercase tracking-widest text-teal-700 font-black select-none text-center">
+                                        Adding Meal...
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-500 font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform scale-75 group-hover:scale-100 mb-2">
+                                        <Plus size={18} strokeWidth={3} />
+                                      </div>
+                                      <span className="text-[11px] uppercase tracking-widest text-gray-300 font-bold select-none text-center group-hover:text-teal-600 transition-colors">
+                                        Add Meal
+                                      </span>
+                                    </>
+                                  )
                                 ) : (
-                                  <span className="text-[11px] uppercase tracking-widest text-gray-300 font-bold select-none text-center bg-gray-50 px-3 py-1.5 rounded-lg border border-dashed border-gray-200">No Meal</span>
+                                  <span className="text-[11px] uppercase tracking-widest text-gray-300 font-bold select-none text-center bg-gray-50 px-3 py-1.5 rounded-lg border border-dashed border-gray-200">
+                                    No Meal
+                                  </span>
                                 )}
                               </div>
                             )}
