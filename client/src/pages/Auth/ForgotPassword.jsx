@@ -83,8 +83,32 @@ const ForgotPassword = () => {
       return;
     }
 
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    const upperCaseRegex = /[A-Z]/;
+    const lowerCaseRegex = /[a-z]/;
+
     if (formData.newPassword.length < 8) {
       toast.error('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (formData.newPassword.length > 50) {
+      toast.error('Password cannot exceed 50 characters');
+      return;
+    }
+
+    if (!upperCaseRegex.test(formData.newPassword)) {
+      toast.error('Password must contain at least one uppercase letter (A-Z)');
+      return;
+    }
+
+    if (!lowerCaseRegex.test(formData.newPassword)) {
+      toast.error('Password must contain at least one lowercase letter (a-z)');
+      return;
+    }
+
+    if (!specialCharRegex.test(formData.newPassword)) {
+      toast.error('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)');
       return;
     }
 

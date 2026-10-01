@@ -88,19 +88,23 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-6 pb-4">
-        <div className="flex items-center gap-3 mb-5">
-          <img src="/pcet.png" alt="MessConnect Logo" className="w-10 h-10 flex-shrink-0 object-cover rounded-xl shadow-md ring-1 ring-gray-200" />
-          <h1 className="text-xl font-black text-gray-900 tracking-tight truncate min-w-0">PCET MessConnect</h1>
+      {/* Logo & Brand Section - aligned with top navbar */}
+      <div className="h-16 sm:h-20 px-6 flex items-center justify-between border-b border-gray-200/70 flex-shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <img src="/pcet.png" alt="MessConnect Logo" className="w-9 h-9 flex-shrink-0 object-cover rounded-xl shadow-md ring-1 ring-gray-200" />
+          <h1 className="text-base sm:text-lg font-black text-gray-900 tracking-tight truncate min-w-0">PCET MessConnect</h1>
         </div>
-        {role && (
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-xl border ${theme.pill}`}>
+      </div>
+
+      {/* Role Pill Banner */}
+      {role && (
+        <div className="px-6 pt-4 pb-2">
+          <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl border ${theme.pill}`}>
             <span className={`w-2 h-2 rounded-full ${theme.dot} animate-pulse flex-shrink-0`}></span>
             {role.replace('_', ' ')}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
@@ -144,7 +148,7 @@ const Sidebar = ({ mobileOpen: propMobileOpen, setMobileOpen: propSetMobileOpen 
   return (
     <>
       {/* ─── Desktop Sidebar ─── */}
-      <aside className="hidden lg:flex w-64 xl:w-72 m-3 rounded-[2rem] flex-col flex-shrink-0 h-[calc(100vh-1.5rem)] shadow-[0_8px_32px_rgba(0,0,0,0.04)] relative z-20 overflow-hidden border border-white/60 bg-white/70 backdrop-blur-xl">
+      <aside className="hidden lg:flex w-64 xl:w-72 flex-col flex-shrink-0 h-screen shadow-[0_4px_24px_rgba(0,0,0,0.02)] relative z-20 overflow-hidden border-r border-gray-200/70 bg-white/70 backdrop-blur-xl">
         <SidebarContent user={user} role={role} links={links} onLinkClick={null} />
       </aside>
 

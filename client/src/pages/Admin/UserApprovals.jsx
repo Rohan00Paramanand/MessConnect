@@ -839,26 +839,26 @@ const UserApprovals = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
-              <select
+              <Select
+                variant="compact"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
-              >
-                <option value="ALL">All Roles</option>
-                <option value="vendor">Vendor Only</option>
-                <option value="mess_committee">Mess Committee Only</option>
-              </select>
+                options={[
+                  { value: 'ALL', label: 'All Roles' },
+                  { value: 'vendor', label: 'Vendor Only' },
+                  { value: 'mess_committee', label: 'Mess Committee Only' },
+                ]}
+              />
 
-              <select
+              <Select
+                variant="compact"
                 value={messFilter}
                 onChange={(e) => setMessFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
-              >
-                <option value="">All Messes</option>
-                {messes.map(m => (
-                  <option key={m._id} value={m._id}>{m.name}</option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map(m => ({ value: m._id, label: m.name })),
+                ]}
+              />
             </div>
           </div>
 
@@ -1051,28 +1051,28 @@ const UserApprovals = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
-              <select
+              <Select
+                variant="compact"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
-              >
-                <option value="ALL">All Roles</option>
-                <option value="Cook">Cook</option>
-                <option value="Cleaner">Cleaner</option>
-                <option value="Cashier">Cashier</option>
-                <option value="Manager">Manager</option>
-              </select>
+                options={[
+                  { value: 'ALL', label: 'All Roles' },
+                  { value: 'Cook', label: 'Cook' },
+                  { value: 'Cleaner', label: 'Cleaner' },
+                  { value: 'Cashier', label: 'Cashier' },
+                  { value: 'Manager', label: 'Manager' },
+                ]}
+              />
 
-              <select
+              <Select
+                variant="compact"
                 value={messFilter}
                 onChange={(e) => setMessFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
-              >
-                <option value="">All Messes</option>
-                {messes.map(m => (
-                  <option key={m._id} value={m._id}>{m.name}</option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'All Messes' },
+                  ...messes.map(m => ({ value: m._id, label: m.name })),
+                ]}
+              />
             </div>
           </div>
 
@@ -1338,17 +1338,15 @@ const UserApprovals = () => {
 
               {editingUser.role === 'vendor' && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned Mess</label>
-                  <select
+                  <Select
+                    label="Assigned Mess"
                     value={editUserData.messAssigned}
                     onChange={(e) => setEditUserData({ ...editUserData, messAssigned: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                  >
-                    <option value="">Unassigned</option>
-                    {messes.map(m => (
-                      <option key={m._id} value={m._id}>{m.name}</option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: '', label: 'Unassigned' },
+                      ...messes.map(m => ({ value: m._id, label: m.name })),
+                    ]}
+                  />
                 </div>
               )}
 
@@ -1493,21 +1491,21 @@ const UserApprovals = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Staff Role</label>
-                  <select
+                  <Select
+                    label="Staff Role"
                     value={editStaffData.role}
                     onChange={(e) => setEditStaffData({ ...editStaffData, role: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                  >
-                    <option value="Cook">Cook</option>
-                    <option value="Cleaner">Cleaner</option>
-                    <option value="Cashier">Cashier</option>
-                    <option value="Manager">Manager</option>
-                  </select>
+                    options={[
+                      { value: 'Cook', label: 'Cook' },
+                      { value: 'Cleaner', label: 'Cleaner' },
+                      { value: 'Cashier', label: 'Cashier' },
+                      { value: 'Manager', label: 'Manager' },
+                    ]}
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Monthly Salary (₹)</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Monthly Salary (₹)</label>
                   <Input
                     type="number"
                     value={editStaffData.salary}
@@ -1518,17 +1516,16 @@ const UserApprovals = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned Mess</label>
-                <select
+                <Select
+                  label="Assigned Mess"
                   value={editStaffData.mess}
                   onChange={(e) => setEditStaffData({ ...editStaffData, mess: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                >
-                  <option value="">Select Mess</option>
-                  {messes.map(m => (
-                    <option key={m._id} value={m._id}>{m.name}</option>
-                  ))}
-                </select>
+                  placeholder="Select Mess"
+                  options={[
+                    { value: '', label: 'Select Mess' },
+                    ...messes.map(m => ({ value: m._id, label: m.name })),
+                  ]}
+                />
               </div>
 
               <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100">

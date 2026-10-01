@@ -101,9 +101,11 @@ export const createCollege = async (req, res) => {
 
         // Zod validation error
         if (error.name === 'ZodError') {
+            const errorMsg = (error.issues || error.errors)?.map(e => e.message).join(', ') || 'Invalid input format';
             return res.status(400).json({
                 status: 'error',
-                errors: error.errors
+                message: errorMsg,
+                errors: error.issues || error.errors
             });
         }
 
@@ -328,7 +330,7 @@ export const getAdmins = async (req, res) => {
 };
 
 const inviteAdminSchema = z.object({
-    email: z.string().email('Invalid email address').transform(v => v.toLowerCase()),
+    email: z.string().email('Please enter a valid email address').transform(v => v.toLowerCase().trim()),
     collegeId: z.string().min(1, 'College ID is required')
 });
 
@@ -403,7 +405,8 @@ If you did not request this invitation, please ignore this email.`,
 
     } catch (error) {
         if (error.name === 'ZodError') {
-            return res.status(400).json({ status: 'error', errors: error.errors });
+            const errorMsg = (error.issues || error.errors)?.map(e => e.message).join(', ') || 'Please enter a valid email address';
+            return res.status(400).json({ status: 'error', message: errorMsg, errors: error.issues || error.errors });
         }
         console.error(error);
         res.status(500).json({ status: 'error', message: error.message || 'Something went wrong' });
@@ -427,7 +430,7 @@ export const getInvitations = async (req, res) => {
 };
 
 const assignCollegeAdminSchema = z.object({
-    email: z.string().email('Invalid email address').transform(v => v.toLowerCase().trim()),
+    email: z.string().email('Please enter a valid email address').transform(v => v.toLowerCase().trim()),
     name: z.string().trim().optional(),
 });
 
@@ -521,7 +524,8 @@ If you did not request this invitation, please ignore this email.`,
 
     } catch (error) {
         if (error.name === 'ZodError') {
-            return res.status(400).json({ status: 'error', errors: error.errors });
+            const errorMsg = (error.issues || error.errors)?.map(e => e.message).join(', ') || 'Please enter a valid email address';
+            return res.status(400).json({ status: 'error', message: errorMsg, errors: error.issues || error.errors });
         }
         console.error(error);
         return res.status(500).json({ status: 'error', message: error.message || 'Something went wrong' });

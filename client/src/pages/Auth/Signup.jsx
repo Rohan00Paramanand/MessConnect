@@ -76,10 +76,30 @@ const Signup = () => {
     }
   };
 
+  const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+  const upperCaseRegex = /[A-Z]/;
+  const lowerCaseRegex = /[a-z]/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const passwordValidations = {
+    hasMinLength: formData.password.length >= 8 && formData.password.length <= 50,
+    hasUpper: upperCaseRegex.test(formData.password),
+    hasLower: lowerCaseRegex.test(formData.password),
+    hasSpecial: specialCharRegex.test(formData.password),
+    matchesConfirm: formData.password && formData.confirmPassword && formData.password === formData.confirmPassword
+  };
+
+  const isPasswordValid = 
+    passwordValidations.hasMinLength &&
+    passwordValidations.hasUpper &&
+    passwordValidations.hasLower &&
+    passwordValidations.hasSpecial;
+
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (!formData.email && !formData.phoneNumber) {
-      toast.error('Please provide an email or phone number');
+
+    if (!formData.name.trim()) {
+      toast.error("Please enter your full name.");
       return;
     }
 
@@ -88,31 +108,24 @@ const Signup = () => {
       return;
     }
 
-    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
-    const upperCaseRegex = /[A-Z]/;
-    const lowerCaseRegex = /[a-z]/;
-
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters long.");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-    if (!upperCaseRegex.test(formData.password)) {
-      toast.error("Password must contain at least one uppercase letter (A-Z).");
+    if (formData.name.trim().length > 50) {
+      toast.error("Full Name cannot exceed 50 characters.");
       return;
     }
 
-    if (formData.phoneNumber.length !== 10) {
-      toast.error("Phone number must be exactly 10 digits long.");
+    if (!formData.email.trim()) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
     // Validate email domain matches college allowedDomains for users/committee
     if (formData.role === 'user' || formData.role === 'mess_committee') {
-      const emailParts = formData.email.split('@');
+      const emailParts = formData.email.trim().split('@');
       if (emailParts.length !== 2) {
         toast.error("Please enter a valid email address.");
         return;
@@ -126,6 +139,52 @@ const Signup = () => {
         toast.error(`Your email domain (${emailDomain}) is not registered with any college.`);
         return;
       }
+    }
+
+    // Password validations before OTP
+    if (!formData.password) {
+      toast.error("Please enter a password.");
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (formData.password.length > 50) {
+      toast.error("Password cannot exceed 50 characters.");
+      return;
+    }
+
+    if (!upperCaseRegex.test(formData.password)) {
+      toast.error("Password must contain at least one uppercase letter (A-Z).");
+      return;
+    }
+
+    if (!lowerCaseRegex.test(formData.password)) {
+      toast.error("Password must contain at least one lowercase letter (a-z).");
+      return;
+    }
+
+    if (!specialCharRegex.test(formData.password)) {
+      toast.error("Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>).");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    if (!formData.phoneNumber) {
+      toast.error("Please provide a phone number.");
+      return;
+    }
+
+    if (formData.phoneNumber.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits long.");
+      return;
     }
 
     // Validate vendor specific fields before sending OTP
@@ -154,7 +213,8 @@ const Signup = () => {
     setSendingOtp(true);
     try {
       const { data } = await api.post('/auth/send-otp', {
-        email: formData.email,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
         phoneNumber: formData.phoneNumber,
         role: formData.role,
         collegeId: formData.collegeId,
@@ -166,7 +226,8 @@ const Signup = () => {
         setResendTimer(60);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send OTP');
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Failed to send OTP';
+      toast.error(typeof errorMsg === 'string' ? errorMsg : 'Failed to send OTP');
     } finally {
       setSendingOtp(false);
     }
@@ -251,7 +312,18 @@ const Signup = () => {
       if (error.response?.status === 413) {
         toast.error("The uploaded files exceed the maximum allowed size (50MB total). Please upload smaller files or compress them.");
       } else {
-        toast.error(error.response?.data?.message || error.response?.data?.error || 'Something went wrong during signup');
+        const errorData = error.response?.data;
+        let errorMsg = 'Something went wrong during signup';
+        if (typeof errorData?.message === 'string' && errorData.message) {
+          errorMsg = errorData.message;
+        } else if (typeof errorData?.error === 'string' && errorData.error) {
+          errorMsg = errorData.error;
+        } else if (Array.isArray(errorData?.error)) {
+          errorMsg = errorData.error.map(e => e.message || JSON.stringify(e)).join(', ');
+        } else if (errorData?.error?.issues && Array.isArray(errorData.error.issues)) {
+          errorMsg = errorData.error.issues.map(e => e.message || JSON.stringify(e)).join(', ');
+        }
+        toast.error(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -311,10 +383,54 @@ const Signup = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                   />
-                  <p className="text-[10px] text-gray-400 font-semibold px-1">
-                    Re-enter your password
-                  </p>
+                  {formData.confirmPassword && formData.password !== formData.confirmPassword ? (
+                    <p className="text-[10px] text-red-500 font-semibold px-1">
+                      Passwords do not match
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-gray-400 font-semibold px-1">
+                      Re-enter your password
+                    </p>
+                  )}
                 </div>
+
+                {/* Real-time Password Compliance Requirements */}
+                {formData.password && (
+                  <div className="w-full md:col-span-2 p-3 bg-gray-50/80 backdrop-blur-sm rounded-xl border border-gray-200/80 text-xs space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-700">Password Compliance</span>
+                      <span className={`text-[11px] font-semibold ${isPasswordValid ? 'text-teal-600' : 'text-amber-600'}`}>
+                        {isPasswordValid ? 'All specifications met' : 'Requirements pending'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasMinLength ? 'text-teal-700 font-medium' : 'text-gray-500'}`}>
+                        <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasMinLength ? 'bg-teal-100 text-teal-700 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                          {passwordValidations.hasMinLength ? '✓' : '•'}
+                        </span>
+                        8 to 50 characters
+                      </div>
+                      <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasUpper ? 'text-teal-700 font-medium' : 'text-gray-500'}`}>
+                        <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasUpper ? 'bg-teal-100 text-teal-700 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                          {passwordValidations.hasUpper ? '✓' : '•'}
+                        </span>
+                        1 uppercase letter (A-Z)
+                      </div>
+                      <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasLower ? 'text-teal-700 font-medium' : 'text-gray-500'}`}>
+                        <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasLower ? 'bg-teal-100 text-teal-700 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                          {passwordValidations.hasLower ? '✓' : '•'}
+                        </span>
+                        1 lowercase letter (a-z)
+                      </div>
+                      <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasSpecial ? 'text-teal-700 font-medium' : 'text-gray-500'}`}>
+                        <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasSpecial ? 'bg-teal-100 text-teal-700 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                          {passwordValidations.hasSpecial ? '✓' : '•'}
+                        </span>
+                        1 special char (!@#$...)
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} />
                   <p className="text-[10px] text-gray-400 font-semibold px-1">At least 10 digits</p>

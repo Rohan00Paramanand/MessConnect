@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw, Trash2, BarChart3 } from 'lucide-react';
+import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw, Trash2, BarChart3, AlertTriangle, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
@@ -21,6 +22,29 @@ const SuperAdminDashboard = () => {
 
   const [loading, setLoading] = useState(true);
   const [submittingInvite, setSubmittingInvite] = useState(false);
+  const [deletingInvitation, setDeletingInvitation] = useState(null);
+  const [isDeletingInvitation, setIsDeletingInvitation] = useState(false);
+
+  // Freeze background scrolling while modal is open
+  useEffect(() => {
+    if (!deletingInvitation) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isDeletingInvitation) {
+        setDeletingInvitation(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [deletingInvitation, isDeletingInvitation]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -67,20 +91,40 @@ const SuperAdminDashboard = () => {
 
   const handleInviteAdmin = async (e) => {
     e.preventDefault();
-    if (!inviteForm.email || !inviteForm.collegeId) {
-      toast.error('Please fill in all fields');
+    const email = inviteForm.email.trim();
+    if (!email) {
+      toast.error('Please enter an admin email address');
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address (e.g. admin@college.edu)');
+      return;
+    }
+
+    if (!inviteForm.collegeId) {
+      toast.error('Please select a college portal');
+      return;
+    }
+
     setSubmittingInvite(true);
     try {
       const { data } = await api.post(`/superadmin/colleges/${inviteForm.collegeId}/assign-admin`, {
-        email: inviteForm.email
+        email
       });
       toast.success(data.message || 'Administrator assigned / invited successfully!');
       setInviteForm({ email: '', collegeId: '' });
       await fetchDashboardData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to send invitation / assign admin');
+      const errorData = err.response?.data;
+      let errorMsg = 'Failed to send invitation / assign admin';
+      if (typeof errorData?.message === 'string' && errorData.message) {
+        errorMsg = errorData.message;
+      } else if (Array.isArray(errorData?.errors)) {
+        errorMsg = errorData.errors.map(e => e.message || JSON.stringify(e)).join(', ');
+      }
+      toast.error(errorMsg);
     } finally {
       setSubmittingInvite(false);
     }
@@ -102,21 +146,20 @@ const SuperAdminDashboard = () => {
     toast.success('Invitation link copied to clipboard!');
   };
 
-  const handleDeleteInvitation = async (id, email) => {
-    const confirmMessage = email
-      ? `Are you sure you want to revoke the invitation for ${email}?`
-      : 'Are you sure you want to revoke this invitation?';
-    if (!window.confirm(confirmMessage)) return;
+  const confirmDeleteInvitation = async () => {
+    if (!deletingInvitation) return;
+    setIsDeletingInvitation(true);
     try {
-      await api.delete(`/superadmin/admins/invitations/${id}`);
+      await api.delete(`/superadmin/admins/invitations/${deletingInvitation.id}`);
       toast.success('Invitation revoked successfully');
+      setDeletingInvitation(null);
       await fetchDashboardData();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to revoke invitation');
+    } finally {
+      setIsDeletingInvitation(false);
     }
   };
-
-  const handleDeleteInvite = handleDeleteInvitation;
 
   return (
     <div className="space-y-8 pb-12">
@@ -347,9 +390,13 @@ const SuperAdminDashboard = () => {
                               </span>
                             )}
                             <button
-                              onClick={() => handleDeleteInvitation(inv._id, inv.email)}
-                              title="Delete Invitation"
-                              className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100"
+                              onClick={() => setDeletingInvitation({
+                                id: inv._id,
+                                email: inv.email,
+                                collegeName: inv.collegeId?.name
+                              })}
+                              title="Revoke Invitation"
+                              className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100 cursor-pointer"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -364,6 +411,86 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete / Revoke Invitation Confirmation Modal */}
+      {deletingInvitation && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100dvh',
+          }}
+          onClick={() => {
+            if (!isDeletingInvitation) setDeletingInvitation(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-7 shadow-2xl border border-rose-100 relative max-h-[90vh] overflow-y-auto animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3.5 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">Revoke Invitation</h3>
+                  <p className="text-xs text-rose-600 font-bold uppercase tracking-wider">Confirmation Required</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDeletingInvitation(null)}
+                disabled={isDeletingInvitation}
+                className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none p-1 rounded-lg hover:bg-gray-100 cursor-pointer disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Are you sure you want to revoke the administrator invitation for:
+              </p>
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80">
+                <p className="font-bold text-gray-900 text-sm break-all">{deletingInvitation.email}</p>
+                {deletingInvitation.collegeName && (
+                  <p className="text-xs text-gray-500 font-medium mt-1">
+                    College Portal: <span className="font-semibold text-gray-700">{deletingInvitation.collegeName}</span>
+                  </p>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 font-medium">
+                The invitation link will immediately become invalid and can no longer be used to register.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setDeletingInvitation(null)}
+                disabled={isDeletingInvitation}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmDeleteInvitation}
+                disabled={isDeletingInvitation}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-lg shadow-rose-600/20 cursor-pointer"
+              >
+                {isDeletingInvitation ? 'Revoking...' : 'Yes, Revoke Invitation'}
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

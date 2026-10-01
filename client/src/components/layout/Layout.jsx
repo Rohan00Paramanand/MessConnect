@@ -46,8 +46,8 @@ const Layout = () => {
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 w-full min-w-0">
-        {/* ─── Top Floating Header / Navbar (Fixed on Mobile, Sticky on Desktop) ─── */}
-        <header className="fixed top-0 left-0 right-0 lg:static lg:sticky lg:top-0 z-30 flex-shrink-0 flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 border-b border-white/60 bg-white/85 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] transition-all">
+        {/* ─── Top Navbar (Connected seamlessly to Sidebar) ─── */}
+        <header className="fixed top-0 left-0 right-0 lg:static lg:sticky lg:top-0 z-30 h-16 sm:h-20 flex-shrink-0 flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 border-b border-gray-200/70 bg-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
             {/* Mobile Hamburger Button integrated into navbar */}
             <button
@@ -90,11 +90,11 @@ const Layout = () => {
           )}
         </header>
 
-        {/* ─── Page Content (Blurred Glassmorphic Dashboard Background) ─── */}
+        {/* ─── Page Content ─── */}
         <main
           ref={mainScrollRef}
           id="main-content-scroll"
-          className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-6 lg:p-8 pt-[68px] sm:pt-[76px] lg:pt-8 pb-32 sm:pb-36 lg:pb-8 flex flex-col justify-between backdrop-blur-sm overscroll-y-contain"
+          className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8 pt-[76px] sm:pt-[92px] lg:pt-8 pb-32 sm:pb-36 lg:pb-8 flex flex-col justify-between backdrop-blur-xs overscroll-y-contain"
         >
           <div className="max-w-7xl mx-auto w-full flex-1">
             <Outlet />

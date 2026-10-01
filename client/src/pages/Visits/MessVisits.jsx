@@ -615,41 +615,37 @@ const MessVisits = () => {
 
             <form onSubmit={handleScheduleSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Mess *
-                </label>
-                <select
+                <Select
+                  label="Mess"
                   required
                   value={scheduleData.messId}
                   onChange={(e) => setScheduleData({ ...scheduleData, messId: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">Select Mess</option>
-                  {messes.map((m) => (
-                    <option key={m._id} value={m._id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select Mess"
+                  options={[
+                    { value: '', label: 'Select Mess' },
+                    ...messes.map((m) => ({
+                      value: m._id,
+                      label: m.name,
+                    })),
+                  ]}
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Committee Member *
-                </label>
-                <select
+                <Select
+                  label="Committee Member"
                   required
                   value={scheduleData.assignedTo}
                   onChange={(e) => setScheduleData({ ...scheduleData, assignedTo: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">Select Member</option>
-                  {committeeMembers.map((cm) => (
-                    <option key={cm._id} value={cm._id}>
-                      {cm.name} ({cm.email}) {cm.messAssigned ? `• Mess: ${cm.messAssigned.name}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select Member"
+                  options={[
+                    { value: '', label: 'Select Member' },
+                    ...committeeMembers.map((cm) => ({
+                      value: cm._id,
+                      label: `${cm.name} (${cm.email})${cm.messAssigned ? ` • Mess: ${cm.messAssigned.name}` : ''}`,
+                    })),
+                  ]}
+                />
               </div>
 
               <div>

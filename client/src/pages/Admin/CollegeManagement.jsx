@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle, Globe, ChevronDown } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import useAuthStore from '../../store/useAuthStore';
 
 // Dynamic multi-domain assignment component with interactive chips
@@ -178,6 +180,18 @@ const CollegeManagement = () => {
   }, []);
 
   useEffect(() => {
+    const isAnyModalOpen = editingCollege || assigningCollege || deletingCollege;
+    if (!isAnyModalOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [editingCollege, assigningCollege, deletingCollege]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       fetchColleges();
     }, 0);
@@ -302,23 +316,37 @@ const CollegeManagement = () => {
 
   const handleAssignAdminSubmit = async (e) => {
     e.preventDefault();
-    if (!adminFormData.email) {
+    const email = adminFormData.email.trim();
+    if (!email) {
       toast.error('Admin email is required');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address (e.g. admin@college.edu)');
       return;
     }
 
     setAssigning(true);
     try {
       const { data } = await api.post(`/superadmin/colleges/${assigningCollege._id}/assign-admin`, {
-        email: adminFormData.email,
-        name: adminFormData.name || undefined
+        email,
+        name: adminFormData.name?.trim() || undefined
       });
 
       toast.success(data.message || 'Admin assigned successfully!');
       await fetchColleges();
       setAssigningCollege(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to assign administrator');
+      const errorData = err.response?.data;
+      let errorMsg = 'Failed to assign administrator';
+      if (typeof errorData?.message === 'string' && errorData.message) {
+        errorMsg = errorData.message;
+      } else if (Array.isArray(errorData?.errors)) {
+        errorMsg = errorData.errors.map(e => e.message || JSON.stringify(e)).join(', ');
+      }
+      toast.error(errorMsg);
     } finally {
       setAssigning(false);
     }
@@ -481,32 +509,24 @@ const handleDeleteAdmin = async (userId) => {
                           <td className="p-4">
                             {activeAdmins.length > 0 ? (
                               <div className="flex flex-col gap-1.5 min-w-[210px] max-w-[270px]">
-                                <div className="relative">
-                                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-violet-600">
-                                    <Shield size={13} />
-                                  </div>
-                                  <select
-                                    value={currentAdmin?._id || ''}
-                                    onChange={(e) => {
-                                      const adminId = e.target.value;
-                                      setSelectedAdminByCollege((prev) => ({
-                                        ...prev,
-                                        [college._id]: adminId
-                                      }));
-                                    }}
-                                    className="w-full text-xs font-semibold bg-violet-50/80 hover:bg-violet-100/70 border border-violet-200/90 rounded-xl pl-7 pr-7 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 cursor-pointer appearance-none transition-all truncate shadow-xs"
-                                    title="Active College Admins"
-                                  >
-                                    {activeAdmins.map((adm) => (
-                                      <option key={adm._id} value={adm._id} className="text-gray-900 bg-white py-1">
-                                        {adm.name || 'Admin'} ({adm.email})
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                                    <ChevronDown size={14} />
-                                  </div>
-                                </div>
+                                <Select
+                                  variant="compact"
+                                  icon={Shield}
+                                  value={currentAdmin?._id || ''}
+                                  onChange={(e) => {
+                                    const adminId = e.target.value;
+                                    setSelectedAdminByCollege((prev) => ({
+                                      ...prev,
+                                      [college._id]: adminId
+                                    }));
+                                  }}
+                                  options={activeAdmins.map((adm) => ({
+                                    value: adm._id,
+                                    label: `${adm.name || 'Admin'} (${adm.email})`
+                                  }))}
+                                  placeholder="Active College Admins"
+                                  ariaLabel="Active College Admins"
+                                />
 
                                 <div className="flex items-center justify-between text-[11px] px-1">
                                   <span className="text-gray-500 truncate max-w-[145px]" title={currentAdmin?.email}>
@@ -605,9 +625,16 @@ const handleDeleteAdmin = async (userId) => {
       </div>
 
       {/* Edit College Modal */}
-      {editingCollege && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
+      {editingCollege && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => setEditingCollege(null)}
+        >
+          <div
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <School className="text-violet-600" size={22} />
@@ -669,13 +696,21 @@ const handleDeleteAdmin = async (userId) => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Assign / Change College Admin Modal */}
-      {assigningCollege && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
+      {assigningCollege && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => setAssigningCollege(null)}
+        >
+          <div
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <Shield className="text-violet-600" size={22} />
@@ -781,13 +816,23 @@ const handleDeleteAdmin = async (userId) => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete College Confirmation Modal */}
-      {deletingCollege && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-[95%] sm:w-full p-4 sm:p-8 shadow-2xl border border-rose-100 relative max-h-[90vh] overflow-y-auto">
+      {deletingCollege && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => {
+            if (!isDeletingCollege) setDeletingCollege(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-[95%] sm:w-full p-4 sm:p-8 shadow-2xl border border-rose-100 relative max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
@@ -854,7 +899,8 @@ const handleDeleteAdmin = async (userId) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -60,17 +60,66 @@ const AcceptInvitation = () => {
   }, [token]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    if (name === 'phoneNumber') {
+      const sanitized = value.replace(/\D/g, '');
+      if (sanitized.length <= 10) {
+        setFormData(prev => ({ ...prev, [name]: sanitized }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
+
+  const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+  const upperCaseRegex = /[A-Z]/;
+  const lowerCaseRegex = /[a-z]/;
+
+  const passwordValidations = {
+    hasMinLength: formData.password.length >= 8 && formData.password.length <= 50,
+    hasUpper: upperCaseRegex.test(formData.password),
+    hasLower: lowerCaseRegex.test(formData.password),
+    hasSpecial: specialCharRegex.test(formData.password),
+    matchesConfirm: formData.password && formData.confirmPassword && formData.password === formData.confirmPassword
+  };
+
+  const isPasswordValid = 
+    passwordValidations.hasMinLength &&
+    passwordValidations.hasUpper &&
+    passwordValidations.hasLower &&
+    passwordValidations.hasSpecial;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+    if (!formData.name.trim()) {
+      toast.error('Please enter your full name');
+      return;
+    }
+
+    if (formData.name.trim().length < 3) {
+      toast.error('Full Name must be at least 3 characters long');
+      return;
+    }
+
+    if (formData.name.trim().length > 50) {
+      toast.error('Full Name cannot exceed 50 characters');
+      return;
+    }
+
+    if (!formData.phoneNumber) {
+      toast.error('Please provide a phone number');
+      return;
+    }
+
+    const cleanedPhone = formData.phoneNumber.replace(/\D/g, '');
+    if (cleanedPhone.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits long');
+      return;
+    }
+
+    if (!formData.password) {
+      toast.error('Please enter a password');
       return;
     }
 
@@ -79,12 +128,37 @@ const AcceptInvitation = () => {
       return;
     }
 
+    if (formData.password.length > 50) {
+      toast.error('Password cannot exceed 50 characters');
+      return;
+    }
+
+    if (!upperCaseRegex.test(formData.password)) {
+      toast.error('Password must contain at least one uppercase letter (A-Z)');
+      return;
+    }
+
+    if (!lowerCaseRegex.test(formData.password)) {
+      toast.error('Password must contain at least one lowercase letter (a-z)');
+      return;
+    }
+
+    if (!specialCharRegex.test(formData.password)) {
+      toast.error('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data } = await api.post('/auth/accept-invitation', {
         token,
-        name: formData.name,
-        phoneNumber: formData.phoneNumber,
+        name: formData.name.trim(),
+        phoneNumber: cleanedPhone,
         password: formData.password
       });
 
@@ -96,7 +170,18 @@ const AcceptInvitation = () => {
         toast.error(data.message || 'Failed to complete registration');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to complete registration');
+      const errorData = error.response?.data;
+      let errorMsg = 'Failed to complete registration';
+      if (typeof errorData?.message === 'string' && errorData.message) {
+        errorMsg = errorData.message;
+      } else if (typeof errorData?.error === 'string' && errorData.error) {
+        errorMsg = errorData.error;
+      } else if (Array.isArray(errorData?.errors)) {
+        errorMsg = errorData.errors.map(e => e.message || JSON.stringify(e)).join(', ');
+      } else if (Array.isArray(errorData?.error)) {
+        errorMsg = errorData.error.map(e => e.message || JSON.stringify(e)).join(', ');
+      }
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -117,17 +202,24 @@ const AcceptInvitation = () => {
     return (
       <div className="min-h-screen auth-gradient flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden select-none">
         <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <img
+              src="/pcet.png"
+              alt="PCET MessConnect Logo"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200"
+            />
+          </div>
           <div className="glass-panel py-10 px-6 shadow-2xl shadow-gray-400/20 sm:rounded-3xl sm:px-12 border border-white/60 text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
-              <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-rose-100 text-rose-600 mb-6 ring-8 ring-rose-50">
+              <svg className="h-8 w-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             <h3 className="text-xl font-black text-gray-900 mb-2">Invalid Invitation Link</h3>
-            <p className="text-sm text-gray-500 mb-8">{invitationError}</p>
+            <p className="text-sm text-gray-600 mb-8 leading-relaxed font-medium">{invitationError}</p>
             <Link to="/login">
-              <Button variant="secondary" className="w-full">
-                Go to Login
+              <Button variant="primary" className="w-full">
+                Return to Login
               </Button>
             </Link>
           </div>
@@ -144,9 +236,11 @@ const AcceptInvitation = () => {
       <div className="w-full max-w-xl relative z-10 my-auto">
         <div className="text-center animate-fade-in mb-6 sm:mb-8">
           <div className="flex justify-center mb-4 sm:mb-6">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-indigo-600/20">
-              <span className="text-white font-black text-2xl sm:text-3xl">M</span>
-            </div>
+            <img
+              src="/pcet.png"
+              alt="PCET MessConnect Logo"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-xl shadow-gray-900/20 ring-1 ring-gray-200"
+            />
           </div>
           <h2 className="mt-2 text-center text-3xl sm:text-4xl font-black tracking-tight text-gray-900">Complete Admin Setup</h2>
           <p className="mt-2 sm:mt-3 text-center text-xs sm:text-sm font-medium text-gray-500">
@@ -186,39 +280,93 @@ const AcceptInvitation = () => {
                 onChange={handleChange}
               />
 
-              <Input
-                label="Phone Number"
-                name="phoneNumber"
-                required
-                placeholder="10 digit number"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-              />
+              <div className="space-y-1">
+                <Input
+                  label="Phone Number"
+                  name="phoneNumber"
+                  type="tel"
+                  required
+                  maxLength={10}
+                  placeholder="10 digit number"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                />
+                <p className="text-[10px] text-gray-400 font-semibold px-1">Exactly 10 digits</p>
+              </div>
 
-              <Input
-                label="Password"
-                type="password"
-                name="password"
-                required
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-              />
+              <div className="space-y-1">
+                <Input
+                  label="Password"
+                  type="password"
+                  name="password"
+                  required
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                <p className="text-[10px] text-gray-400 font-semibold px-1">
+                  Min 8 chars, 1 uppercase, 1 lowercase, 1 special char
+                </p>
+              </div>
 
-              <Input
-                label="Confirm Password"
-                type="password"
-                name="confirmPassword"
-                required
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="space-y-1">
+                <Input
+                  label="Confirm Password"
+                  type="password"
+                  name="confirmPassword"
+                  required
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+                {formData.confirmPassword && formData.password !== formData.confirmPassword ? (
+                  <p className="text-[10px] text-red-500 font-semibold px-1">
+                    Passwords do not match
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-gray-400 font-semibold px-1">
+                    Re-enter your password
+                  </p>
+                )}
+              </div>
 
-            <div className="p-4 bg-violet-50/50 border border-violet-100 rounded-2xl text-xs text-violet-800 space-y-1 font-medium">
-              <p className="font-bold text-violet-900">Security Note:</p>
-              <p>Your password must contain at least 8 characters, with at least one uppercase letter, one lowercase letter, and one special character.</p>
+              {/* Real-time Password Compliance Requirements */}
+              {formData.password && (
+                <div className="w-full md:col-span-2 p-3 bg-violet-50/60 backdrop-blur-sm rounded-xl border border-violet-200/70 text-xs space-y-2 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700">Password Compliance</span>
+                    <span className={`text-[11px] font-semibold ${isPasswordValid ? 'text-violet-700' : 'text-amber-600'}`}>
+                      {isPasswordValid ? 'All specifications met' : 'Requirements pending'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasMinLength ? 'text-violet-800 font-medium' : 'text-gray-500'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasMinLength ? 'bg-violet-200 text-violet-800 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                        {passwordValidations.hasMinLength ? '✓' : '•'}
+                      </span>
+                      8 to 50 characters
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasUpper ? 'text-violet-800 font-medium' : 'text-gray-500'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasUpper ? 'bg-violet-200 text-violet-800 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                        {passwordValidations.hasUpper ? '✓' : '•'}
+                      </span>
+                      1 uppercase letter (A-Z)
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasLower ? 'text-violet-800 font-medium' : 'text-gray-500'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasLower ? 'bg-violet-200 text-violet-800 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                        {passwordValidations.hasLower ? '✓' : '•'}
+                      </span>
+                      1 lowercase letter (a-z)
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${passwordValidations.hasSpecial ? 'text-violet-800 font-medium' : 'text-gray-500'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passwordValidations.hasSpecial ? 'bg-violet-200 text-violet-800 font-bold' : 'bg-gray-200 text-gray-400'}`}>
+                        {passwordValidations.hasSpecial ? '✓' : '•'}
+                      </span>
+                      1 special char (!@#$...)
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button type="submit" className="w-full mt-4" disabled={loading} variant="primary">

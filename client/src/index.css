@@ -100,8 +100,41 @@ body {
   }
 }
 
+@keyframes dropdownFadeInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdownFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .animate-dropdown {
-  animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top;
+  animation: dropdownFadeInDown 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-dropdown-down {
+  transform-origin: top;
+  animation: dropdownFadeInDown 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-dropdown-up {
+  transform-origin: bottom;
+  animation: dropdownFadeInUp 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Global native select polish as fallback */

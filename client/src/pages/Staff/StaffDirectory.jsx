@@ -570,21 +570,21 @@ const StaffDirectory = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Staff Role</label>
-                  <select
+                  <Select
+                    label="Staff Role"
                     value={editStaffData.role}
                     onChange={(e) => setEditStaffData({ ...editStaffData, role: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                  >
-                    <option value="Cook">Cook</option>
-                    <option value="Cleaner">Cleaner</option>
-                    <option value="Cashier">Cashier</option>
-                    <option value="Manager">Manager</option>
-                  </select>
+                    options={[
+                      { value: 'Cook', label: 'Cook' },
+                      { value: 'Cleaner', label: 'Cleaner' },
+                      { value: 'Cashier', label: 'Cashier' },
+                      { value: 'Manager', label: 'Manager' },
+                    ]}
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Monthly Salary (₹)</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Monthly Salary (₹)</label>
                   <Input
                     type="number"
                     value={editStaffData.salary}
@@ -596,17 +596,16 @@ const StaffDirectory = () => {
 
               {messes.length > 0 && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Assigned Mess</label>
-                  <select
+                  <Select
+                    label="Assigned Mess"
                     value={editStaffData.mess}
                     onChange={(e) => setEditStaffData({ ...editStaffData, mess: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                  >
-                    <option value="">Select Mess</option>
-                    {messes.map(m => (
-                      <option key={m._id} value={m._id}>{m.name}</option>
-                    ))}
-                  </select>
+                    placeholder="Select Mess"
+                    options={[
+                      { value: '', label: 'Select Mess' },
+                      ...messes.map(m => ({ value: m._id, label: m.name })),
+                    ]}
+                  />
                 </div>
               )}
 

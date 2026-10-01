@@ -51,9 +51,10 @@ const signup = async (req, res) => {
     const parsedData = baseSchema.safeParse(req.body);
 
     if (!parsedData.success) {
+        const errorMessages = parsedData.error.issues?.map(i => i.message).join(", ") || "Invalid input format";
         return res.status(400).json({
-            message: "Invalid input format",
-            error: parsedData.error
+            message: errorMessages,
+            error: parsedData.error.issues
         });
     }
 
@@ -440,8 +441,9 @@ const resetPassword = async (req, res) => {
         const parsedData = resetPasswordSchema.safeParse(req.body);
 
         if (!parsedData.success) {
+            const errorMessages = parsedData.error.issues?.map(i => i.message).join(", ") || "Invalid input format";
             return res.status(400).json({
-                message: "Invalid input format",
+                message: errorMessages,
                 error: parsedData.error.issues
             });
         }
@@ -567,7 +569,8 @@ const acceptInvitation = async (req, res) => {
     try {
         const parsed = acceptInvitationSchema.safeParse(req.body);
         if (!parsed.success) {
-            return res.status(400).json({ status: 'error', message: 'Invalid input format', error: parsed.error });
+            const errorMessages = parsed.error.issues?.map(i => i.message).join(", ") || "Invalid input format";
+            return res.status(400).json({ status: 'error', message: errorMessages, error: parsed.error.issues });
         }
 
         const { token, name, password, phoneNumber } = parsed.data;
