@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
-import { Star, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, TrendingUp, ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
 
 const StarRating = ({ rating, setRating, readOnly = false }) => (
   <div className="flex space-x-1">
@@ -20,6 +20,7 @@ const StarRating = ({ rating, setRating, readOnly = false }) => (
 );
 
 const categories = ["food", "cleanliness", "timeliness", "taste", "staff behaviour"];
+const ITEMS_PER_PAGE = 6;
 
 const FeedbackView = () => {
   const { user } = useAuthStore();
@@ -31,14 +32,23 @@ const FeedbackView = () => {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Server-side pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 6;
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [categoryAverages, setCategoryAverages] = useState({});
   const [avgRating, setAvgRating] = useState('–');
   const [messFilter, setMessFilter] = useState('');
   const [submissionMess, setSubmissionMess] = useState('');
   const [messes, setMesses] = useState([]);
+
+  // Date range filter: draft = what user types, applied = what gets sent to API
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [appliedStartDate, setAppliedStartDate] = useState('');
+  const [appliedEndDate, setAppliedEndDate] = useState('');
 
   // Fetch active messes dynamically on mount
   useEffect(() => {
@@ -86,19 +96,26 @@ const FeedbackView = () => {
     (r) => r.category === selectedCat
   );
   
-  const fetchFeedback = useCallback(async (filterVal = messFilter) => {
+  const fetchFeedback = useCallback(async (page = 1, filterVal = messFilter) => {
     setLoading(true);
     try { 
-      const params = {};
+      const params = { page, limit: ITEMS_PER_PAGE };
       if (user?.role === 'vendor') {
         const vendorMessId = user?.messAssigned?._id || user?.messAssigned;
         if (vendorMessId) params.mess = vendorMessId;
       } else if (filterVal) {
         params.mess = filterVal;
       }
+      // Only use the applied (committed) date values
+      if (appliedStartDate) params.startDate = appliedStartDate;
+      if (appliedEndDate) params.endDate = appliedEndDate;
+
       const { data } = await api.get(`/feedback`, { params }); 
 
       setFeedbacks(data.data || []);
+      setTotalPages(data.totalPages || 0);
+      setTotalCount(data.total || 0);
+      setCurrentPage(data.page || 1);
       if (data.categoryAverages) setCategoryAverages(data.categoryAverages);
       if (data.avgRating !== undefined) setAvgRating(data.avgRating || '–');
     } catch { 
@@ -106,12 +123,30 @@ const FeedbackView = () => {
     } finally { 
       setLoading(false); 
     }
-  }, [messFilter, user]);
+  }, [messFilter, user, appliedStartDate, appliedEndDate]);
 
   useEffect(() => { 
-    setCurrentPage(1);
-    fetchFeedback(messFilter); 
+    fetchFeedback(1, messFilter); 
   }, [messFilter, fetchFeedback]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+    fetchFeedback(newPage, messFilter);
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
+  const handleDateFilter = () => {
+    // Commit the draft dates to applied state, which triggers fetchFeedback via useEffect
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+  };
+
+  const handleClearDates = () => {
+    setStartDate('');
+    setEndDate('');
+    setAppliedStartDate('');
+    setAppliedEndDate('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -125,13 +160,8 @@ const FeedbackView = () => {
       const { data } = await api.post('/feedback', { date, ratings: ratingsArray, comment, mess: submissionMess });
       if (data.status === 'success') {
         toast.success(`Feedback for ${selectedCat} submitted — thanks!`);
-        // If it was an update, replace it in the array, otherwise unshift
-        const exists = feedbacks.find(f => f._id === data.data._id);
-        if (exists) {
-           setFeedbacks(feedbacks.map(f => f._id === data.data._id ? data.data : f));
-        } else {
-           setFeedbacks([data.data, ...feedbacks]); 
-        }
+        // Refresh the current page to include the new/updated feedback
+        fetchFeedback(currentPage, messFilter);
         setComment('');
         setCurrentRating(0);
       } else { toast.error(data.message || 'Error submitting feedback.'); }
@@ -139,18 +169,31 @@ const FeedbackView = () => {
     finally { setSubmitting(false); }
   };
 
-
-
+  // Client-side category filter within the current server page
   const displayedFeedbacks = feedbacks.filter((fb) => {
     if (categoryFilter === 'ALL') return true;
     return fb.ratings?.some((r) => r.category === categoryFilter) || fb.category === categoryFilter;
   });
 
-  const totalPages = Math.ceil(displayedFeedbacks.length / ITEMS_PER_PAGE);
-  const paginatedFeedbacks = displayedFeedbacks.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const hasDateFilter = startDate || endDate;
+
+  // Build page number buttons with ellipsis for large page counts
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = [];
+    pages.push(1);
+    if (currentPage > 3) pages.push('...');
+    const rangeStart = Math.max(2, currentPage - 1);
+    const rangeEnd = Math.min(totalPages - 1, currentPage + 1);
+    for (let i = rangeStart; i <= rangeEnd; i++) {
+      pages.push(i);
+    }
+    if (currentPage < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+    return pages;
+  };
 
   return (
     <div className="space-y-6 pb-8">
@@ -280,50 +323,95 @@ const FeedbackView = () => {
         </div>
       )}
 
-      {/* Dropdown Filter for Reviews */}
-      {feedbacks.length > 0 && (
-        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="w-full sm:w-72">
-            <Select
-              label="Filter Reviews by Category"
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              options={[
-                { value: 'ALL', label: `All Categories (${feedbacks.length})` },
-                ...categories.map((cat) => ({
-                  value: cat,
-                  label: `${cat.charAt(0).toUpperCase() + cat.slice(1)} (${
-                    feedbacks.filter(
-                      (fb) => fb.ratings?.some((r) => r.category === cat) || fb.category === cat
-                    ).length
-                  })`,
-                })),
-              ]}
-            />
+      {/* Date Filter & Category Filter */}
+      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+        {/* Date Range Filter */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+          <div className="flex items-center gap-1.5 text-gray-500 self-center sm:self-end sm:pb-2.5">
+            <Calendar size={16} className="text-amber-500" />
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Filter by Date</span>
           </div>
-
-          {categoryFilter !== 'ALL' && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 font-medium">
-                Showing <strong>{displayedFeedbacks.length}</strong> of <strong>{feedbacks.length}</strong> reviews
-              </span>
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">From</label>
+              <input
+                type="date"
+                value={startDate}
+                min="2026-09-30"
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400/40 focus:bg-white shadow-sm hover:border-gray-400 transition-all duration-300"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">To</label>
+              <input
+                type="date"
+                value={endDate}
+                min={date}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400/40 focus:bg-white shadow-sm hover:border-gray-400 transition-all duration-300"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end">
+            <button
+              type="button"
+              onClick={handleDateFilter}
+              className="min-h-[44px] px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 shadow-sm transition-all duration-300 active:scale-95 cursor-pointer"
+            >
+              Apply
+            </button>
+            {hasDateFilter && (
               <button
                 type="button"
-                onClick={() => {
-                  setCategoryFilter('ALL');
-                  setCurrentPage(1);
-                }}
-                className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
+                onClick={handleClearDates}
+                className="min-h-[44px] px-3.5 py-2.5 bg-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-200 transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-1"
               >
-                Clear filter
+                <X size={14} /> Clear
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Category filter + count */}
+        {totalCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
+            <div className="w-full sm:w-72">
+              <Select
+                label="Filter Reviews by Category"
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                }}
+                options={[
+                  { value: 'ALL', label: `All Categories (${totalCount})` },
+                  ...categories.map((cat) => ({
+                    value: cat,
+                    label: `${cat.charAt(0).toUpperCase() + cat.slice(1)}`,
+                  })),
+                ]}
+              />
+            </div>
+
+            {categoryFilter !== 'ALL' && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">
+                  Showing <strong>{displayedFeedbacks.length}</strong> of <strong>{feedbacks.length}</strong> on this page
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter('ALL');
+                  }}
+                  className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
+                >
+                  Clear filter
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Feedback Grid */}
       {loading ? (
@@ -337,7 +425,9 @@ const FeedbackView = () => {
           </div>
           <h3 className="font-bold text-gray-700 mb-1">No feedback found</h3>
           <p className="text-gray-400 text-sm">
-            {categoryFilter !== 'ALL'
+            {hasDateFilter
+              ? 'No feedback found for the selected date range.'
+              : categoryFilter !== 'ALL'
               ? `No feedback reviews matching category "${categoryFilter}".`
               : (user?.role === 'user' || user?.role === 'student')
               ? "Be the first to rate today's meal!"
@@ -346,7 +436,7 @@ const FeedbackView = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {paginatedFeedbacks.map(fb => (
+          {displayedFeedbacks.map(fb => (
             <div key={fb._id} className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.5rem] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -437,48 +527,45 @@ const FeedbackView = () => {
         </div>
       )}
 
-      {/* Pagination Controls — identical to ComplaintsList */}
+      {/* Pagination Controls — server-side */}
       {totalPages > 1 && (
         <div className="flex flex-col items-center justify-center gap-2.5 pt-6 border-t border-gray-200/60 w-full">
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <button
               type="button"
               disabled={currentPage === 1 || loading}
-              onClick={() => {
-                setCurrentPage((p) => Math.max(1, p - 1));
-                window.scrollTo({ top: 300, behavior: 'smooth' });
-              }}
+              onClick={() => handlePageChange(currentPage - 1)}
               className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <ChevronLeft size={14} /> Previous
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-              <button
-                key={pg}
-                type="button"
-                disabled={loading}
-                onClick={() => {
-                  setCurrentPage(pg);
-                  window.scrollTo({ top: 300, behavior: 'smooth' });
-                }}
-                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  currentPage === pg
-                    ? 'bg-gray-900 text-white shadow-sm'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {pg}
-              </button>
-            ))}
+            {getPageNumbers().map((pg, idx) =>
+              pg === '...' ? (
+                <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400 font-bold">
+                  …
+                </span>
+              ) : (
+                <button
+                  key={pg}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handlePageChange(pg)}
+                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    currentPage === pg
+                      ? 'bg-gray-900 text-white shadow-sm'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {pg}
+                </button>
+              )
+            )}
 
             <button
               type="button"
               disabled={currentPage === totalPages || loading}
-              onClick={() => {
-                setCurrentPage((p) => Math.min(totalPages, p + 1));
-                window.scrollTo({ top: 300, behavior: 'smooth' });
-              }}
+              onClick={() => handlePageChange(currentPage + 1)}
               className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
               Next <ChevronRight size={14} />
@@ -486,7 +573,7 @@ const FeedbackView = () => {
           </div>
 
           <p className="text-xs text-gray-500 font-medium text-center">
-            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, displayedFeedbacks.length)}</strong> of <strong className="text-gray-900">{displayedFeedbacks.length}</strong> reviews
+            Showing <strong className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong className="text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)}</strong> of <strong className="text-gray-900">{totalCount}</strong> reviews
           </p>
         </div>
       )}

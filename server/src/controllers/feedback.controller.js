@@ -118,6 +118,8 @@ export const getFeedback = async (req, res) => {
                     status: 'success',
                     count: 0,
                     total: 0,
+                    totalPages: 0,
+                    page: 1,
                     categoryAverages: {},
                     avgRating: '–',
                     data: []
@@ -128,8 +130,23 @@ export const getFeedback = async (req, res) => {
             // All other roles may filter by a specific mess if provided
             aggregateFilter.mess = req.query.mess;
         }
+
+        // Date range filter support
+        if (req.query.startDate || req.query.endDate) {
+            aggregateFilter.date = {};
+            if (req.query.startDate) {
+                const start = new Date(req.query.startDate);
+                start.setUTCHours(0, 0, 0, 0);
+                aggregateFilter.date.$gte = start;
+            }
+            if (req.query.endDate) {
+                const end = new Date(req.query.endDate);
+                end.setUTCHours(23, 59, 59, 999);
+                aggregateFilter.date.$lte = end;
+            }
+        }
         
-        // Calculate aggregations correctly mapped to entirety
+        // Calculate aggregations correctly mapped to the filtered set
         const allFeedbacksForAgg = await Feedback.find(aggregateFilter);
         let totalScore = 0; let totalRatings = 0;
         const catScores = {}; const catCounts = {};
@@ -163,21 +180,19 @@ export const getFeedback = async (req, res) => {
             query = query.populate('user', 'name email');
         }
 
-        let feedbackList;
         const total = await Feedback.countDocuments(aggregateFilter);
-        if (req.query.page && req.query.limit) {
-            const page = parseInt(req.query.page, 10) || 1;
-            const limit = parseInt(req.query.limit, 10) || 20;
-            const skip = (page - 1) * limit;
-            feedbackList = await query.skip(skip).limit(limit);
-        } else {
-            feedbackList = await query;
-        }
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 6;
+        const skip = (page - 1) * limit;
+        const totalPages = Math.ceil(total / limit);
+        const feedbackList = await query.skip(skip).limit(limit);
 
         res.status(200).json({
             status: 'success',
             count: feedbackList.length,
             total,
+            page,
+            totalPages,
             categoryAverages,
             avgRating,
             data: feedbackList
