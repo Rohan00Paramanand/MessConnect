@@ -23,6 +23,7 @@ const getLinks = (role) => {
     );
   } else if (role === 'vendor') {
     base.push(
+      { name: 'Monthly Report', path: '/vendor-reports', icon: BarChart3 },
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Feedback', path: '/feedback', icon: Star },
       { name: 'Notices', path: '/notices', icon: Bell },

@@ -14,6 +14,7 @@ import adminRoutes from './src/routes/admin.routes.js';
 import superadminRoutes from './src/routes/superadmin.routes.js';
 import messRoutes from './src/routes/mess.routes.js';
 import visitRoutes from './src/routes/visit.routes.js';
+import vendorRoutes from './src/routes/vendor.routes.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -102,6 +103,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/messes', messRoutes);
 app.use('/api/visits', visitRoutes);
+app.use('/api/vendor', vendorRoutes);
 
 
 // ERROR HANDLING

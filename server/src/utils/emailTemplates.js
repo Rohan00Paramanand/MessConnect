@@ -970,6 +970,131 @@ export const complaintStatusEmailTemplate = ({
   });
 };
 
+export const complaintAssignedToVendorEmailTemplate = ({
+  vendorName,
+  title,
+  category,
+  description,
+  messName,
+  dashboardUrl = '',
+}) => {
+  const safeName = escapeHtml(vendorName || 'Vendor');
+  const safeTitle = escapeHtml(title || 'Complaint');
+  const safeCategory = escapeHtml(category || 'General');
+  const safeDescription = escapeHtml(description || '');
+  const safeMess = escapeHtml(messName || 'Your Mess Facility');
+
+  const content = `
+    <h2 style="
+      margin: 0 0 16px;
+      color: #0f172a;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 28px;
+    ">
+      New Complaint Assigned for Resolution
+    </h2>
+
+    <p style="
+      margin: 0 0 20px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Hello <strong>${safeName}</strong>,
+    </p>
+
+    <p style="
+      margin: 0 0 25px;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      The Mess Committee has reviewed and assigned a student complaint to you for <strong>${safeMess}</strong>. Please review the details below, take corrective action, and upload a geotagged photo proof on your dashboard to mark it as completed.
+    </p>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        margin: 0 0 25px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+      "
+    >
+      <tr>
+        <td style="padding: 16px 18px;">
+          <div style="
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          ">
+            Category: ${safeCategory}
+          </div>
+
+          <div style="
+            color: #0f172a;
+            font-size: 15px;
+            line-height: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+          ">
+            ${safeTitle}
+          </div>
+
+          ${safeDescription ? `
+          <div style="
+            color: #475569;
+            font-size: 13px;
+            line-height: 20px;
+          ">
+            "${safeDescription}"
+          </div>` : ''}
+        </td>
+      </tr>
+    </table>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a
+        href="${dashboardUrl || '#'}"
+        style="
+          background-color: #e11d48;
+          color: #ffffff;
+          padding: 12px 28px;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 14px;
+          text-decoration: none;
+          display: inline-block;
+        "
+      >
+        View & Resolve on Dashboard
+      </a>
+    </div>
+
+    <p style="
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      Note: A geotagged on-site photograph is mandatory when submitting resolution proof.
+    </p>
+  `;
+
+  return emailLayout({
+    title: 'Complaint Assigned - Action Required',
+    preheader: `New complaint assigned at ${safeMess}: ${safeTitle}`,
+    content,
+  });
+};
+
 export const complaintFeedbackReceivedEmailTemplate = ({
   committeeName,
   studentName,

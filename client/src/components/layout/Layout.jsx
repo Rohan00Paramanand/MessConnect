@@ -17,6 +17,7 @@ const routeTitles = {
   '/messes':     'Manage Messes',
   '/colleges':   'College Management',
   '/analytics':  'Super Admin Analytics',
+  '/vendor-reports': 'Monthly Vendor Report',
 };
 
 const Layout = () => {

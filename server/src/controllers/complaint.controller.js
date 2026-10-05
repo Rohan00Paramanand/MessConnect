@@ -1,7 +1,11 @@
 import Complaint from '../models/complaint.model.js';
 import Mess from '../models/mess.model.js';
 import { sendEmail } from '../utils/sendEmail.js';
-import { complaintStatusEmailTemplate, complaintFeedbackReceivedEmailTemplate } from '../utils/emailTemplates.js';
+import { 
+    complaintStatusEmailTemplate, 
+    complaintFeedbackReceivedEmailTemplate,
+    complaintAssignedToVendorEmailTemplate 
+} from '../utils/emailTemplates.js';
 
 const rejectionLabels = {
     duplicate: 'Duplicate Complaint (Already Reported)',
@@ -92,14 +96,15 @@ export const getComplaints = async (req, res) => {
 
         // Vendors are strictly locked to their assigned mess
         if (req.user.role === 'vendor') {
-            if (!req.user.messAssigned || req.user.messAssigned === 'None') {
+            const vendorMessId = req.user.messAssigned?._id || req.user.messAssigned;
+            if (!vendorMessId || vendorMessId === 'None') {
                 return res.json({
                     status: 'success',
                     count: 0,
                     data: []
                 });
             }
-            queryFilter.mess = req.user.messAssigned;
+            queryFilter.mess = vendorMessId;
         }
 
         let complaints;
@@ -123,7 +128,8 @@ export const getComplaints = async (req, res) => {
                 .sort({ createdAt: -1 });
         } else if (req.user.role === 'vendor') {
             // Vendors strictly see complaints for their assigned mess only (complainee identity protected)
-            queryFilter.mess = req.user.messAssigned;
+            const vendorMessId = req.user.messAssigned?._id || req.user.messAssigned;
+            queryFilter.mess = vendorMessId;
             complaints = await Complaint.find(queryFilter)
                 .populate('user_id', 'role')
                 .populate('assignedTo', 'name email')
@@ -204,6 +210,7 @@ export const updateComplaintStatus = async (req, res) => {
         }
 
         // Handle auto-assignment when changing to 'assigned'
+        let assignedVendor = null;
         if (status === 'assigned') {
             const User = (await import('../models/user.model.js')).default;
             let vendor = null;
@@ -240,6 +247,7 @@ export const updateComplaintStatus = async (req, res) => {
             }
             complaint.assignedTo = vendor._id;
             complaint.vendorCompletedAt = null; // Clear completion timestamp on re-assignment
+            assignedVendor = vendor;
         }
 
         complaint.status = status;
@@ -282,7 +290,7 @@ export const updateComplaintStatus = async (req, res) => {
             }
         }
 
-        // Send email notification (asynchronously in background)
+        // Send email notification on resolution or rejection (asynchronously in background)
         if (status === 'resolved' || status === 'rejected') {
             (async () => {
                 try {
@@ -323,6 +331,40 @@ export const updateComplaintStatus = async (req, res) => {
             })();
         }
 
+        // Send email notification to vendor on assignment (asynchronously in background)
+        if (status === 'assigned' && assignedVendor && assignedVendor.email) {
+            (async () => {
+                try {
+                    const clientUrl = process.env.CLIENT_URL || 'https://pcet.connectmess.in';
+                    const dashboardUrl = `${clientUrl}/complaints`;
+
+                    let messName = '';
+                    if (complaint.mess) {
+                        const messDoc = await Mess.findById(complaint.mess).select('name');
+                        messName = messDoc ? messDoc.name : '';
+                    }
+
+                    const html = complaintAssignedToVendorEmailTemplate({
+                        vendorName: assignedVendor.name,
+                        title: complaint.title || complaint.category,
+                        category: complaint.category,
+                        description: complaint.description,
+                        messName,
+                        dashboardUrl
+                    });
+
+                    await sendEmail({
+                        email: assignedVendor.email,
+                        subject: `Action Required: New Complaint Assigned - MessConnect`,
+                        message: `Hello ${assignedVendor.name},\n\nA student complaint has been assigned to you by the Mess Committee:\n\nTitle: ${complaint.title || complaint.category}\nCategory: ${complaint.category}\nDescription: ${complaint.description}\n\nPlease visit your dashboard to upload geotagged photo proof and mark it as completed:\n${dashboardUrl}\n\nThank you,\nMessConnect Team`,
+                        html
+                    });
+                } catch (assignEmailErr) {
+                    console.error('Failed to send vendor assignment email:', assignEmailErr.message);
+                }
+            })();
+        }
+
         res.json({ status: 'success', data: updatedComplaint });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
@@ -342,6 +384,14 @@ export const markVendorCompleted = async (req, res) => {
 
         if (complaint.status !== 'assigned') {
             return res.status(400).json({ status: 'error', message: 'Only assigned complaints can be marked as completed' });
+        }
+
+        // Verify that this complaint is assigned to the current vendor
+        if (complaint.assignedTo && complaint.assignedTo.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'You can only resolve complaints that are assigned to you.'
+            });
         }
 
         // Validate mandatory resolution proof image

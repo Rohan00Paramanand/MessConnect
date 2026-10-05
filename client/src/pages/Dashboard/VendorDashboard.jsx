@@ -1,6 +1,6 @@
 import React from 'react';
 import useAuthStore from '../../store/useAuthStore';
-import { ChefHat, ClipboardList, Clock, ArrowRight } from 'lucide-react';
+import { ChefHat, ClipboardList, Clock, ArrowRight, BarChart3 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const VendorDashboard = () => {
@@ -20,17 +20,18 @@ const VendorDashboard = () => {
               {user?.companyName || 'Your Mess'},<br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-100 to-white">{user?.name}</span>
             </h1>
-            <p className="text-rose-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">Update the meal timetable, review feedback, and resolve assigned complaints.</p>
+            <p className="text-rose-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">Track monthly turnaround reports, update timetables, review student feedback, and resolve complaints.</p>
           </div>
         </div>
       </div>
 
       {/* Quick Action Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { to: '/complaints', label: 'Queue',     title: 'Tasks',     Icon: ClipboardList, color: 'text-rose-500',   bg: 'from-rose-100 to-pink-50',    hover: 'hover:text-rose-600' },
-          { to: '/timetable',  label: 'Schedule',  title: 'Timetable', Icon: Clock,         color: 'text-teal-500',   bg: 'from-teal-100 to-emerald-50', hover: 'hover:text-teal-600' },
-          { to: '/feedback',   label: 'Reviews',   title: 'Feedback',  Icon: ArrowRight,    color: 'text-amber-500',  bg: 'from-amber-100 to-orange-50',  hover: 'hover:text-amber-500' },
+          { to: '/vendor-reports', label: 'Audit & KPIs',  title: 'Reports',   Icon: BarChart3,     color: 'text-indigo-600', bg: 'from-indigo-100 to-violet-50', hover: 'hover:text-indigo-600' },
+          { to: '/complaints',     label: 'Queue',       title: 'Tasks',     Icon: ClipboardList, color: 'text-rose-500',   bg: 'from-rose-100 to-pink-50',    hover: 'hover:text-rose-600' },
+          { to: '/timetable',      label: 'Schedule',    title: 'Timetable', Icon: Clock,         color: 'text-teal-500',   bg: 'from-teal-100 to-emerald-50', hover: 'hover:text-teal-600' },
+          { to: '/feedback',       label: 'Reviews',     title: 'Feedback',  Icon: ArrowRight,    color: 'text-amber-500',  bg: 'from-amber-100 to-orange-50',  hover: 'hover:text-amber-500' },
         ].map((item) => {
           const { to, label, title, Icon, color, bg, hover } = item;
           return (

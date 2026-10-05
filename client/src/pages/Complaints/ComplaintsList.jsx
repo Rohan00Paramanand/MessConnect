@@ -85,9 +85,13 @@ const ComplaintCard = ({
     (complaint.user_id?._id === user?._id || complaint.user_id === user?._id) &&
     !complaint.resolutionFeedback?.rating;
 
+  const isVendor = user?.role === 'vendor';
+  const isAssignedToMe = !complaint.assignedTo ||
+    (complaint.assignedTo?._id || complaint.assignedTo).toString() === (user?._id || user?.id)?.toString();
+
   const hasActions =
     (user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status)) ||
-    (user?.role === 'vendor' && complaint.status === 'assigned');
+    isVendor;
 
   return (
     <div
@@ -483,14 +487,63 @@ const ComplaintCard = ({
             )}
 
             {/* Vendor Actions */}
-            {user?.role === 'vendor' && complaint.status === 'assigned' && (
-              <Button
-                variant="vendor"
-                onClick={() => setVendorResolveModalComplaint(complaint)}
-                className="text-xs flex items-center gap-1.5"
-              >
-                <Camera size={14} /> Resolve with Photo Proof
-              </Button>
+            {isVendor && (
+              <div className="space-y-2">
+                {complaint.status === 'pending' && (
+                  <div className="p-3 bg-amber-50/90 border border-amber-200/90 rounded-2xl text-amber-900 shadow-2xs space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800">
+                      <Clock size={13} className="text-amber-600 flex-shrink-0" />
+                      <span>Awaiting Assignment</span>
+                    </div>
+                    <p className="text-[11px] text-amber-700 leading-snug font-medium">
+                      Placed by student. The Mess Committee must review and assign this complaint before you can resolve it.
+                    </p>
+                  </div>
+                )}
+
+                {complaint.status === 'assigned' && (
+                  <div className="space-y-2">
+                    <div className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-xl text-center">
+                      <span className="text-[11px] font-bold text-blue-700 flex items-center justify-center gap-1">
+                        <RefreshCw size={11} className="text-blue-600" /> Action Required
+                      </span>
+                    </div>
+                    {isAssignedToMe ? (
+                      <Button
+                        variant="vendor"
+                        onClick={() => setVendorResolveModalComplaint(complaint)}
+                        className="text-xs flex items-center justify-center gap-1.5 w-full shadow-sm"
+                      >
+                        <Camera size={14} /> Resolve with Photo Proof
+                      </Button>
+                    ) : (
+                      <p className="text-[11px] text-gray-500 font-medium text-center">
+                        Assigned to another vendor
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {complaint.status === 'vendor_completed' && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-center shadow-2xs space-y-0.5">
+                    <div className="flex items-center justify-center gap-1 text-xs font-bold text-emerald-800">
+                      <CheckCircle size={13} className="text-emerald-600" />
+                      <span>Proof Submitted</span>
+                    </div>
+                    <p className="text-[10px] text-emerald-700 font-medium">
+                      Awaiting committee review
+                    </p>
+                  </div>
+                )}
+
+                {complaint.status === 'resolved' && (
+                  <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-gray-700 text-center shadow-2xs">
+                    <span className="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1">
+                      <CheckCircle size={13} /> Resolved & Closed
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -16,7 +16,8 @@ import {
   MapPin,
   ArrowRight,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  BarChart3
 } from 'lucide-react';
 
 const guideContent = {
@@ -171,6 +172,39 @@ const guideContent = {
             ]
           }
         ]
+      },
+      {
+        id: 'reports',
+        title: 'Monthly Reports & Quality Audits',
+        short: 'Monthly Report',
+        icon: BarChart3,
+        color: 'rose',
+        route: '/vendor-reports',
+        summary: 'Review your monthly performance infographics, resolution speed (SLA), food ratings, and export official PDF audit reports.',
+        sections: [
+          {
+            heading: 'Understanding Each Infographic & Metric',
+            steps: [
+              'Complaints & Trend: Shows total complaints logged this month and percentage change compared to the previous month.',
+              'Resolution Rate (%): The percentage of assigned complaints you successfully resolved and uploaded live photo proof for.',
+              'Resolution Speed (SLA): Shows your average turnaround time in hours, highlighting immediate (<2 hrs), same-day (2-12 hrs), and standard resolutions.',
+              'Student Satisfaction (%): Rates student happiness based on real post-resolution feedback (Satisfied vs Unsatisfied).',
+              'Dining Quality Scorecard: Breakdown of 1-5 star ratings across Food Quality, Cleanliness, Timeliness, Taste, and Staff Behavior.',
+              'Daily Rating Trend: A day-by-day line graph displaying student dining satisfaction across the entire month.',
+              'Committee Inspection Log: Official record of student mess committee hygiene visits and observations.'
+            ]
+          },
+          {
+            heading: 'How to Generate & Download Official PDF Reports',
+            steps: [
+              'Navigate to Monthly Report (/vendor-reports) from the sidebar or dashboard.',
+              'Use the Month and Year selector at the top to choose the desired audit period.',
+              'Click the "Generate Official Document" button.',
+              'An official A4 preview sheet will open with trust headers, summary tables, and signature sign-off blocks.',
+              'Click "Download PDF / Print" to save the official PDF document or print it directly for administrative compliance.'
+            ]
+          }
+        ]
       }
     ]
   },
@@ -322,6 +356,39 @@ const guideContent = {
               'नियमितपणे "Notice Board" (/notices) तपासा.',
               '"Vendor" किंवा "All" टॅग असलेल्या सूचना विशेषतः तुमच्यासाठी असतात.',
               'सुट्टीच्या दिवशी मेसची वेळ बदलणे किंवा तपासणीच्या तारखांची माहिती येथे मिळेल.'
+            ]
+          }
+        ]
+      },
+      {
+        id: 'reports',
+        title: 'मासिक ऑडिट अहवाल आणि कामगिरी',
+        short: 'मासिक अहवाल',
+        icon: BarChart3,
+        color: 'rose',
+        route: '/vendor-reports',
+        summary: 'तुमच्या मेसचे मासिक अहवाल, तक्रार निवारणाचा वेग (SLA), अन्नाचा दर्जा रेटिंग्ज आणि अधिकृत PDF रिपोर्ट डाउनलोड करा.',
+        sections: [
+          {
+            heading: 'इन्फोग्राफिक्स आणि आलेखांचा अर्थ समजून घ्या',
+            steps: [
+              'एकूण तक्रारी (Complaints): या महिन्यात विद्यार्थ्यांनी नोंदवलेल्या एकूण तक्रारी व मागील महिन्याशी तुलनात्मक टक्केवारी.',
+              'निवारण दर (Resolution Rate): तुम्ही फोटो पुराव्यासह यशस्वीरित्या सोडवलेल्या तक्रारींचे प्रमाण (टक्केवारीत).',
+              'निवारणाचा वेग (Resolution Speed - SLA): तक्रार आल्यापासून ती पूर्ण होईपर्यंत लागलेला सरासरी वेळ (२ तासांच्या आत, २ ते १२ तास, इ.).',
+              'विद्यार्थी समाधान (Satisfaction %): तक्रार सुटल्यानंतर विद्यार्थ्यांचे समाधान (समाधानी वि. असमाधानी रेटिंग्ज).',
+              'अन्न गुणवत्ता स्कोअरकार्ड (Dining Quality): अन्नाची चव, स्वच्छता, वेळेवर जेवण आणि कर्मचाऱ्यांचे वर्तन यावरील १ ते ५ स्टार्स सरासरी गुण.',
+              'दैनंदिन ट्रेंड (Daily Rating Trend): महिन्यातील प्रत्येक दिवसाच्या विद्यार्थ्यांच्या समाधानाचा चढ-उतार दर्शवणारा आलेख.',
+              'कमिटी तपासणी लॉग (Inspections): मेस कमिटीने प्रत्यक्ष केलेल्या तपासणीच्या नोंदी व शेरे.'
+            ]
+          },
+          {
+            heading: 'अधिकृत PDF अहवाल कसा तयार व डाउनलोड करावा?',
+            steps: [
+              'साइडबार किंवा डॅशबोर्डवरून "Monthly Report" (/vendor-reports) वर जा.',
+              'वर दिलेल्या महिन्याच्या बटणांवरून हवा असलेला महिना व वर्ष निवडा.',
+              '"Generate Official Document" या बटनावर क्लिक करा.',
+              'कॉलेज ट्रस्टचे नाव, तपशीलवार तक्ते व स्वाक्षरीच्या जागेसह एक परिपूर्ण A4 दस्तऐवज स्क्रीनवर दिसेल.',
+              '"Download PDF / Print" वर क्लिक करून अधिकृत PDF सेव्ह करा किंवा थेट प्रिंट काढा.'
             ]
           }
         ]

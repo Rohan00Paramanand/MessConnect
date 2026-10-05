@@ -32,6 +32,7 @@ import NoticeBoard from './pages/Notices/NoticeBoard'
 import StaffDirectory from './pages/Staff/StaffDirectory'
 import WeeklyTimetable from './pages/Timetable/WeeklyTimetable'
 import MessVisits from './pages/Visits/MessVisits'
+import VendorMonthlyReport from './pages/Vendor/VendorMonthlyReport'
 
 function App() {
   const { user, checkAuth } = useAuthStore()
@@ -77,6 +78,7 @@ function App() {
             <Route path="/dashboard/super_admin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminAnalytics /></ProtectedRoute>} />
             <Route path="/colleges" element={<ProtectedRoute allowedRoles={['super_admin']}><CollegeManagement /></ProtectedRoute>} />
+            <Route path="/vendor-reports" element={<ProtectedRoute allowedRoles={['vendor', 'college_admin', 'super_admin', 'mess_committee']}><VendorMonthlyReport /></ProtectedRoute>} />
 
             <Route
               path="/complaints"
