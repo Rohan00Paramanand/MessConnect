@@ -33,6 +33,7 @@ import StaffDirectory from './pages/Staff/StaffDirectory'
 import WeeklyTimetable from './pages/Timetable/WeeklyTimetable'
 import MessVisits from './pages/Visits/MessVisits'
 import VendorMonthlyReport from './pages/Vendor/VendorMonthlyReport'
+import MessRequests from './pages/Requests/MessRequests'
 
 function App() {
   const { user, checkAuth } = useAuthStore()
@@ -74,7 +75,7 @@ function App() {
             <Route path="/dashboard/student" element={<Navigate to="/dashboard/user" replace />} />
             <Route path="/dashboard/mess_committee" element={<ProtectedRoute allowedRoles={['mess_committee']}><CommitteeDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/vendor" element={<ProtectedRoute allowedRoles={['vendor']}><VendorDashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/college_admin" element={<ProtectedRoute allowedRoles={['college_admin']}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/college_admin" element={<ProtectedRoute allowedRoles={['college_admin', 'super_admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/super_admin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminAnalytics /></ProtectedRoute>} />
             <Route path="/colleges" element={<ProtectedRoute allowedRoles={['super_admin']}><CollegeManagement /></ProtectedRoute>} />
@@ -83,7 +84,7 @@ function App() {
             <Route
               path="/complaints"
               element={
-                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee', 'college_admin']}>
+                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee', 'college_admin', 'super_admin']}>
                   <ComplaintsList />
                 </ProtectedRoute>
               }
@@ -92,7 +93,7 @@ function App() {
             <Route
               path="/feedback"
               element={
-                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee', 'college_admin']}>
+                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee', 'college_admin', 'super_admin']}>
                   <FeedbackView />
                 </ProtectedRoute>
               }
@@ -101,7 +102,7 @@ function App() {
             <Route
               path="/notices"
               element={
-                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee', 'college_admin']}>
+                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee', 'college_admin', 'super_admin']}>
                   <NoticeBoard />
                 </ProtectedRoute>
               }
@@ -110,7 +111,7 @@ function App() {
             <Route
               path="/staff"
               element={
-                <ProtectedRoute allowedRoles={['vendor', 'mess_committee', 'college_admin']}>
+                <ProtectedRoute allowedRoles={['vendor', 'mess_committee', 'college_admin', 'super_admin']}>
                   <StaffDirectory />
                 </ProtectedRoute>
               }
@@ -119,15 +120,16 @@ function App() {
             <Route
               path="/timetable"
               element={
-                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee']}>
+                <ProtectedRoute allowedRoles={['user', 'student', 'vendor', 'mess_committee', 'college_admin', 'super_admin']}>
                   <WeeklyTimetable />
                 </ProtectedRoute>
               }
             />
-            <Route path="/approvals" element={<ProtectedRoute allowedRoles={['college_admin']}><UserApprovals /></ProtectedRoute>} />
-            <Route path="/messes" element={<ProtectedRoute allowedRoles={['college_admin']}><MessManagement /></ProtectedRoute>} />
-            <Route path="/college-analytics" element={<ProtectedRoute allowedRoles={['college_admin']}><CollegeAdminAnalytics /></ProtectedRoute>} />
-            <Route path="/visits" element={<ProtectedRoute allowedRoles={['college_admin', 'mess_committee']}><MessVisits /></ProtectedRoute>} />
+            <Route path="/approvals" element={<ProtectedRoute allowedRoles={['college_admin', 'super_admin']}><UserApprovals /></ProtectedRoute>} />
+            <Route path="/messes" element={<ProtectedRoute allowedRoles={['college_admin', 'super_admin']}><MessManagement /></ProtectedRoute>} />
+            <Route path="/college-analytics" element={<ProtectedRoute allowedRoles={['college_admin', 'super_admin']}><CollegeAdminAnalytics /></ProtectedRoute>} />
+            <Route path="/visits" element={<ProtectedRoute allowedRoles={['college_admin', 'mess_committee', 'super_admin']}><MessVisits /></ProtectedRoute>} />
+            <Route path="/mess-requests" element={<ProtectedRoute allowedRoles={['vendor', 'college_admin', 'mess_committee', 'super_admin']}><MessRequests /></ProtectedRoute>} />
 
             <Route path="/" element={
               <Navigate to={

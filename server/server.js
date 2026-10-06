@@ -15,6 +15,8 @@ import superadminRoutes from './src/routes/superadmin.routes.js';
 import messRoutes from './src/routes/mess.routes.js';
 import visitRoutes from './src/routes/visit.routes.js';
 import vendorRoutes from './src/routes/vendor.routes.js';
+import messRequestRoutes from './src/routes/messRequest.routes.js';
+import notificationRoutes from './src/routes/notification.routes.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -56,7 +58,7 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-college-id', 'X-College-Id'],
     optionsSuccessStatus: 200,
 };
 
@@ -74,7 +76,7 @@ const __dirname = path.resolve();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check endpoint (used by Docker, Nginx, and Maintenance auto-reconnect)
-app.get('/api/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -104,6 +106,8 @@ app.use('/api/superadmin', superadminRoutes);
 app.use('/api/messes', messRoutes);
 app.use('/api/visits', visitRoutes);
 app.use('/api/vendor', vendorRoutes);
+app.use('/api/mess-requests', messRequestRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 // ERROR HANDLING
