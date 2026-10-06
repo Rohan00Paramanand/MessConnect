@@ -1,6 +1,8 @@
 import Complaint from '../models/complaint.model.js';
 import Mess from '../models/mess.model.js';
+import User from '../models/user.model.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { notifyUser, notifyMultipleUsers } from '../utils/notificationService.js';
 import { 
     complaintStatusEmailTemplate, 
     complaintFeedbackReceivedEmailTemplate,
@@ -67,6 +69,28 @@ export const createComplaint = async (req, res) => {
             collegeId: req.collegeId
         });
 
+        // Notify Mess Committee in real-time
+        (async () => {
+            try {
+                const committee = await User.find({ collegeId: req.collegeId, role: 'mess_committee' }).select('_id');
+                if (committee.length > 0) {
+                    await notifyMultipleUsers(
+                        committee.map((c) => c._id),
+                        {
+                            collegeId: req.collegeId,
+                            title: 'New Student Complaint',
+                            message: `A new complaint has been filed for ${messDoc.name}: "${complaintTitle}".`,
+                            type: 'COMPLAINT_STATUS',
+                            link: '/complaints',
+                            metadata: { complaintId: complaint._id }
+                        }
+                    );
+                }
+            } catch (err) {
+                console.error('Failed to notify committee of new complaint:', err.message);
+            }
+        })();
+
         res.status(201).json({
             status: 'success',
             data: complaint
@@ -94,8 +118,8 @@ export const getComplaints = async (req, res) => {
             ]
         };
 
-        // Enforce tenant isolation for non-super-admins
-        if (req.user.role !== 'super_admin') {
+        // Enforce tenant isolation: scope if collegeId is present (for non-super-admins, or super-admin scoped to a college)
+        if (req.user.role !== 'super_admin' || req.collegeId) {
             queryFilter.collegeId = req.collegeId;
         }
 
@@ -347,6 +371,19 @@ export const updateComplaintStatus = async (req, res) => {
                             message: plainMessage,
                             html
                         });
+
+                        // Trigger instant in-app web notification for student
+                        await notifyUser({
+                            recipient: authorUser._id,
+                            collegeId: complaint.collegeId,
+                            title: status === 'resolved' ? 'Complaint Resolved' : 'Complaint Rejected',
+                            message: status === 'resolved'
+                                ? `Your complaint "${complaint.title}" has been resolved by the Mess Committee. Please rate your satisfaction.`
+                                : `Your complaint "${complaint.title}" was reviewed and rejected. Reason: ${humanRejection}`,
+                            type: 'COMPLAINT_STATUS',
+                            link: '/complaints',
+                            metadata: { complaintId: complaint._id }
+                        });
                     }
                 } catch (emailError) {
                     console.error('Failed to send notification email:', emailError.message);
@@ -391,6 +428,17 @@ export const updateComplaintStatus = async (req, res) => {
                         subject: `Action Required: New Complaint Assigned (3-Day SLA) - MessConnect`,
                         message: `Hello ${assignedVendor.name},\n\nA student complaint has been assigned to you by the Mess Committee:\n\nTitle: ${complaint.title || complaint.category}\nCategory: ${complaint.category}\nTarget SLA Deadline: ${deadlineFormatted}\nDescription: ${complaint.description}\n\nPlease visit your dashboard to upload geotagged photo proof and mark it as completed:\n${dashboardUrl}\n\nThank you,\nMessConnect Team`,
                         html
+                    });
+
+                    // Trigger instant in-app web notification for vendor
+                    await notifyUser({
+                        recipient: assignedVendor._id,
+                        collegeId: complaint.collegeId,
+                        title: 'New Complaint Assigned',
+                        message: `Complaint "${complaint.title || complaint.category}" has been assigned to you with a 3-Day SLA turnaround.`,
+                        type: 'COMPLAINT_ASSIGNED',
+                        link: '/complaints',
+                        metadata: { complaintId: complaint._id }
                     });
                 } catch (assignEmailErr) {
                     console.error('Failed to send vendor assignment email:', assignEmailErr.message);
@@ -570,6 +618,17 @@ export const submitComplaintFeedback = async (req, res) => {
                         subject: `Student Feedback: ${rating.toUpperCase()} on Complaint "${complaint.title}"`,
                         message: `Hello ${recipientUser.name},\n\nStudent ${req.user.name} submitted resolution feedback on complaint "${complaint.title}":\nRating: ${rating.toUpperCase()}\nComment: ${complaint.resolutionFeedback.comment || 'None'}\n\nView on dashboard: ${dashboardUrl}`,
                         html
+                    });
+
+                    // Trigger instant in-app web notification for committee member who resolved the complaint
+                    await notifyUser({
+                        recipient: recipientUser._id,
+                        collegeId: complaint.collegeId,
+                        title: `Student Feedback: ${rating.toUpperCase()}`,
+                        message: `${req.user.name} submitted resolution feedback on "${complaint.title}": rated ${rating.toUpperCase()}${complaint.resolutionFeedback.comment ? ` ("${complaint.resolutionFeedback.comment}")` : '.'}`,
+                        type: 'FEEDBACK',
+                        link: '/complaints',
+                        metadata: { complaintId: complaint._id }
                     });
                 } catch (emailErr) {
                     console.error('Failed to notify committee member of feedback:', emailErr.message);
@@ -790,6 +849,17 @@ export const nudgeVendor = async (req, res) => {
                 : `⚠️ Reminder: Complaint Approaching 3-Day SLA Deadline - MessConnect`,
             message: `Hello ${complaint.assignedTo.name},\n\nThis is an urgent reminder from the Mess Committee regarding the assigned complaint "${complaint.title || complaint.category}".\nDeadline: ${deadlineFormatted}\n\nPlease upload proof on your dashboard to complete it: ${dashboardUrl}`,
             html
+        });
+
+        // Trigger instant in-app web notification for vendor
+        await notifyUser({
+            recipient: complaint.assignedTo._id,
+            collegeId: complaint.collegeId,
+            title: isOverdue ? '🚨 URGENT: SLA Breached' : '⚠️ Action Required: SLA Reminder',
+            message: `Mess Committee sent a reminder regarding complaint "${complaint.title || complaint.category}". Target SLA: ${deadlineFormatted}.`,
+            type: 'SLA_NUDGE',
+            link: '/complaints',
+            metadata: { complaintId: complaint._id }
         });
 
         res.json({

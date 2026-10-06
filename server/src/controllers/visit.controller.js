@@ -2,6 +2,7 @@ import MessVisit from '../models/messVisit.model.js';
 import User from '../models/user.model.js';
 import Mess from '../models/mess.model.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { notifyUser } from '../utils/notificationService.js';
 import { visitScheduledEmailTemplate } from '../utils/emailTemplates.js';
 
 /**
@@ -100,8 +101,19 @@ export const scheduleVisit = async (req, res) => {
         message: `You have an inspection scheduled for ${mess.name} on ${new Date(visitDate).toLocaleDateString()}. Please check your Committee Portal.`,
         html: emailHtml
       });
+
+      // Trigger instant in-app web notification for the committee member
+      await notifyUser({
+        recipient: committeeMember._id,
+        collegeId: req.collegeId || req.user.collegeId,
+        title: 'Mess Inspection Visit Scheduled',
+        message: `You have an inspection scheduled for ${mess.name} on ${new Date(visitDate).toLocaleDateString()}.`,
+        type: 'VISIT_SCHEDULED',
+        link: '/visits',
+        metadata: { visitId: visit._id }
+      });
     } catch (err) {
-      console.error('[EMAIL WARNING] Failed to send visit schedule email:', err.message);
+      console.error('[EMAIL/NOTIFICATION WARNING] Failed to notify committee member:', err.message);
     }
 
     res.status(201).json({

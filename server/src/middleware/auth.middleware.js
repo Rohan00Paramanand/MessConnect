@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/user.model.js';
 export const protect = async (req, res, next) => {
     try {
@@ -11,6 +12,10 @@ export const protect = async (req, res, next) => {
         // 2. Fallback: Check Cookies (if header isn't present)
         else if (req.cookies && req.cookies.token) {
             token = req.cookies.token;
+        }
+        // 3. Fallback: Check Query param (used by EventSource SSE connection)
+        else if (req.query && req.query.token) {
+            token = req.query.token;
         }
 
         if (!token) {
@@ -31,9 +36,18 @@ export const protect = async (req, res, next) => {
             await req.user.save();
         }
         
-        // Attach collegeId for tenant isolation (super_admin might not have one).
-        // Note: req.collegeId is a raw Mongoose ObjectId — not a plain string.
-        if (req.user.collegeId) {
+        // Attach collegeId for tenant isolation:
+        // - For super_admin: allow trust-level college switching via 'x-college-id' header or query param.
+        // - For other roles: strictly enforce the user's registered collegeId.
+        if (req.user.role === 'super_admin') {
+            const scopedHeaderId = req.headers['x-college-id'] || req.query.collegeId;
+            if (scopedHeaderId && scopedHeaderId !== 'all' && mongoose.Types.ObjectId.isValid(scopedHeaderId)) {
+                req.collegeId = new mongoose.Types.ObjectId(scopedHeaderId);
+                req.isSuperAdminImpersonating = true;
+            } else if (req.user.collegeId) {
+                req.collegeId = req.user.collegeId;
+            }
+        } else if (req.user.collegeId) {
             req.collegeId = req.user.collegeId;
         }
 
