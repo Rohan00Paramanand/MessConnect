@@ -325,7 +325,7 @@ const CommitteeDashboard = () => {
       {/* ================= MODAL: Submit Inspection Proof ================= */}
       {selectedVisit && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
         >
           <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 border border-gray-100 max-h-[92dvh] overflow-y-auto overscroll-contain my-auto">

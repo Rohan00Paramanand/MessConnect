@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -528,9 +529,20 @@ const StaffDirectory = () => {
       )}
 
       {/* Edit Staff Modal */}
-      {editingStaff && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto">
+      {editingStaff && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !savingStaff) {
+              setEditingStaff(null);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-gray-100 relative max-h-[90dvh] overflow-y-auto overscroll-contain my-auto animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Edit Staff Member</h3>
@@ -539,7 +551,7 @@ const StaffDirectory = () => {
               <button
                 type="button"
                 onClick={() => setEditingStaff(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -629,13 +641,25 @@ const StaffDirectory = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Staff Confirmation Modal (With Critical Warning Prompt) */}
-      {deletingStaff && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-rose-300 relative space-y-4">
+      {deletingStaff && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deletingStaffLoading) {
+              setDeletingStaff(null);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border-2 border-rose-300 relative space-y-4 my-auto max-h-[90dvh] overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
               <AlertOctagon size={32} className="animate-pulse" />
             </div>
@@ -689,7 +713,8 @@ const StaffDirectory = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

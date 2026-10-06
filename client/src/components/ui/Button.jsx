@@ -19,7 +19,7 @@ const Button = ({ children, variant = 'primary', className = '', ...props }) => 
       className={`${baseStyle} ${variants[variant]} ${className}`}
       {...props}
     >
-      <span className="relative z-10 flex items-center justify-center">{children}</span>
+      <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
       {/* Interactive flash effect on hover */}
       <div className="absolute inset-0 h-full w-full bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left ease-out rounded-xl mix-blend-overlay"></div>
     </button>

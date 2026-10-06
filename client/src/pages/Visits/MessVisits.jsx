@@ -31,8 +31,8 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 
 const MessVisits = () => {
-  const { user } = useAuthStore();
-  const isCollegeAdmin = user?.role === 'college_admin';
+  const { user, activeCollege } = useAuthStore();
+  const isCollegeAdmin = user?.role === 'college_admin' || user?.role === 'super_admin';
   const isCommitteeMember = user?.role === 'mess_committee';
 
   const [visits, setVisits] = useState([]);
@@ -101,6 +101,11 @@ const MessVisits = () => {
 
   // Fetch visits
   const fetchVisits = useCallback(async () => {
+    if (user?.role === 'super_admin' && !activeCollege) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const endpoint = isCollegeAdmin ? '/visits' : '/visits/my-visits';
@@ -111,17 +116,19 @@ const MessVisits = () => {
     } finally {
       setLoading(false);
     }
-  }, [isCollegeAdmin]);
+  }, [isCollegeAdmin, user?.role, activeCollege]);
 
   useEffect(() => {
     fetchVisits();
   }, [fetchVisits]);
 
   useEffect(() => {
-    api.get('/messes')
-      .then(({ data }) => setMesses(data.data || []))
-      .catch((err) => console.error('Failed to load messes', err));
-  }, []);
+    if (user?.role !== 'super_admin' || activeCollege) {
+      api.get('/messes')
+        .then(({ data }) => setMesses(data.data || []))
+        .catch((err) => console.error('Failed to load messes', err));
+    }
+  }, [user?.role, activeCollege]);
 
   // Load Messes & Committee members when opening schedule modal
   const openScheduleModal = async () => {
@@ -234,6 +241,20 @@ const MessVisits = () => {
   const inReviewCount = visits.filter((v) => v.status === 'IN_REVIEW').length;
   const completedCount = visits.filter((v) => v.status === 'COMPLETED').length;
   const didNotVisitCount = visits.filter((v) => v.status === 'DID_NOT_VISIT').length;
+
+  if (user?.role === 'super_admin' && !activeCollege) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-white/70 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm max-w-2xl mx-auto my-8">
+        <div className="w-16 h-16 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mb-4 shadow-xs">
+          <ClipboardList size={32} />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Select a Campus to View Mess Visits</h2>
+        <p className="text-gray-500 text-sm mt-2 max-w-md">
+          As Trust Super Admin, choose any campus from the Trust College Selector in the top navigation bar to schedule and inspect committee visit reports for that college.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12">
@@ -601,8 +622,19 @@ const MessVisits = () => {
 
       {/* ================= MODAL: Schedule Visit (College Admin) ================= */}
       {isScheduleOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 border border-gray-100 max-h-[90vh] overflow-y-auto overscroll-contain my-auto sm:my-8">
+        <div
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isScheduling) {
+              setIsScheduleOpen(false);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 border border-gray-100 max-h-[90dvh] overflow-y-auto overscroll-contain my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="text-lg sm:text-xl font-black text-gray-900">Schedule Mess Inspection</h3>
               <button
@@ -713,8 +745,19 @@ const MessVisits = () => {
 
       {/* ================= MODAL: Committee Member Submit Report & Photo ================= */}
       {selectedVisitForSubmit && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto overscroll-contain my-auto sm:my-8">
+        <div
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmitting) {
+              setSelectedVisitForSubmit(null);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-3xl p-5 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90dvh] overflow-y-auto overscroll-contain my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
                 <h3 className="text-xl font-black text-gray-900">Submit Inspection Proof</h3>
@@ -799,8 +842,19 @@ const MessVisits = () => {
 
       {/* ================= MODAL: Admin Review & Mark Done ================= */}
       {selectedVisitForReview && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-2xl w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto overscroll-contain my-auto sm:my-8">
+        <div
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isReviewing) {
+              setSelectedVisitForReview(null);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-3xl p-5 sm:p-8 max-w-2xl w-full shadow-2xl space-y-5 border border-gray-100 max-h-[90dvh] overflow-y-auto overscroll-contain my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
                 <h3 className="text-xl font-black text-gray-900">
