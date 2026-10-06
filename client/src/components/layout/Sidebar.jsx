@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
-import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, ChevronLeft, Menu, School, BarChart3, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Star, Bell, Users, Calendar, LogOut, ShieldCheck, ChevronLeft, Menu, School, BarChart3, ClipboardList, Wrench } from 'lucide-react';
 
 const roleColors = {
   user:           { pill: 'bg-teal-500/10 text-teal-700 border-teal-200',    dot: 'bg-teal-500',    active: 'from-teal-600 to-emerald-600' },
@@ -12,7 +12,7 @@ const roleColors = {
   super_admin:    { pill: 'bg-violet-500/10 text-violet-700 border-violet-200', dot: 'bg-violet-500', active: 'from-violet-700 to-purple-600' },
 };
 
-const getLinks = (role) => {
+const getLinks = (role, activeCollege = null) => {
   const base = [{ name: 'Dashboard', path: `/dashboard/${role === 'student' ? 'user' : role}`, icon: LayoutDashboard }];
   if (role === 'user' || role === 'student') {
     base.push(
@@ -24,6 +24,7 @@ const getLinks = (role) => {
   } else if (role === 'vendor') {
     base.push(
       { name: 'Monthly Report', path: '/vendor-reports', icon: BarChart3 },
+      { name: 'Maintenance Requests', path: '/mess-requests', icon: Wrench },
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Feedback', path: '/feedback', icon: Star },
       { name: 'Notices', path: '/notices', icon: Bell },
@@ -33,6 +34,7 @@ const getLinks = (role) => {
   } else if (role === 'mess_committee') {
     base.push(
       { name: 'Mess Visits', path: '/visits', icon: ClipboardList },
+      { name: 'Maintenance Requests', path: '/mess-requests', icon: Wrench },
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Feedback', path: '/feedback', icon: Star },
       { name: 'Notices', path: '/notices', icon: Bell },
@@ -42,6 +44,7 @@ const getLinks = (role) => {
   } else if (role === 'college_admin') {
     base.push(
       { name: 'Campus Analytics', path: '/college-analytics', icon: BarChart3 },
+      { name: 'Maintenance Requests', path: '/mess-requests', icon: Wrench },
       { name: 'Mess Visits', path: '/visits', icon: ClipboardList },
       { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
       { name: 'Manage Messes', path: '/messes', icon: School },
@@ -52,9 +55,26 @@ const getLinks = (role) => {
     );
   } else if (role === 'super_admin') {
     base.push(
-      { name: 'Analytics', path: '/analytics', icon: BarChart3 },
+      { name: 'Trust Analytics', path: '/analytics', icon: BarChart3 },
       { name: 'Manage Colleges', path: '/colleges', icon: School }
     );
+
+    // If super_admin is currently scoping into a specific college campus
+    if (activeCollege) {
+      base.push(
+        { isSection: true, title: activeCollege.name },
+        { name: 'Campus Analytics', path: '/college-analytics', icon: BarChart3 },
+        { name: 'Maintenance Requests', path: '/mess-requests', icon: Wrench },
+        { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
+        { name: 'Manage Messes', path: '/messes', icon: School },
+        { name: 'Mess Visits', path: '/visits', icon: ClipboardList },
+        { name: 'Complaints', path: '/complaints', icon: MessageSquare },
+        { name: 'Feedback', path: '/feedback', icon: Star },
+        { name: 'Staff', path: '/staff', icon: Users },
+        { name: 'Notices', path: '/notices', icon: Bell },
+        { name: 'Timetable', path: '/timetable', icon: Calendar }
+      );
+    }
   }
   return base;
 };
@@ -84,7 +104,7 @@ const NavItem = ({ link, role, onClick }) => {
 };
 
 const SidebarContent = ({ user, role, links, onLinkClick }) => {
-  const { logout } = useAuthStore();
+  const { logout, activeCollege, setActiveCollege } = useAuthStore();
   const theme = roleColors[role] || roleColors.super_admin;
 
   return (
@@ -100,18 +120,27 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
       {/* Role Pill Banner */}
       {role && (
         <div className="px-6 pt-4 pb-2">
-          <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl border ${theme.pill}`}>
+          <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl border ${theme.pill} max-w-full`}>
             <span className={`w-2 h-2 rounded-full ${theme.dot} animate-pulse flex-shrink-0`}></span>
-            {role.replace('_', ' ')}
+            <span className="truncate">{role.replace('_', ' ')}</span>
           </div>
         </div>
       )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-        {links.map((link) => (
-          <NavItem key={link.path} link={link} role={role} onClick={onLinkClick} />
-        ))}
+        {links.map((link, idx) => {
+          if (link.isSection) {
+            return (
+              <div key={`sec-${idx}`} className="pt-4 pb-1 px-3">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 truncate">
+                  {link.title}
+                </p>
+              </div>
+            );
+          }
+          return <NavItem key={link.path} link={link} role={role} onClick={onLinkClick} />;
+        })}
       </nav>
 
       {/* User Footer */}
@@ -127,7 +156,7 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
         </div>
         <button
           onClick={() => { onLinkClick && onLinkClick(); logout(); }}
-          className="flex w-full items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl border border-red-100 hover:border-red-200 transition-all duration-200"
+          className="flex w-full items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl border border-red-100 hover:border-red-200 transition-all duration-200 cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           <span>Sign out</span>
@@ -138,9 +167,9 @@ const SidebarContent = ({ user, role, links, onLinkClick }) => {
 };
 
 const Sidebar = ({ mobileOpen: propMobileOpen, setMobileOpen: propSetMobileOpen }) => {
-  const { user } = useAuthStore();
+  const { user, activeCollege } = useAuthStore();
   const role = user?.role;
-  const links = getLinks(role);
+  const links = getLinks(role, activeCollege);
   const [internalOpen, setInternalOpen] = useState(false);
 
   const isMobileOpen = propMobileOpen !== undefined ? propMobileOpen : internalOpen;

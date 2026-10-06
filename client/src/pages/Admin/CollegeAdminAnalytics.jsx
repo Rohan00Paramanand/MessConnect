@@ -34,6 +34,8 @@ import {
   Tooltip
 } from 'recharts';
 
+import useAuthStore from '../../store/useAuthStore';
+
 const COMPLAINT_COLORS = {
   resolved: '#10b981', // emerald-500
   assigned: '#3b82f6', // blue-500
@@ -42,12 +44,18 @@ const COMPLAINT_COLORS = {
 };
 
 export default function CollegeAdminAnalytics() {
+  const { user, activeCollege } = useAuthStore();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'messes' | 'grievances' | 'staff'
 
   const fetchAnalytics = useCallback(async (isManualRefresh = false) => {
+    if (user?.role === 'super_admin' && !activeCollege) {
+      setLoading(false);
+      return;
+    }
+
     if (isManualRefresh) setRefreshing(true);
     else setLoading(true);
 
@@ -64,11 +72,15 @@ export default function CollegeAdminAnalytics() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user?.role, activeCollege]);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+    if (user?.role !== 'super_admin' || activeCollege) {
+      fetchAnalytics();
+    } else {
+      setLoading(false);
+    }
+  }, [activeCollege, fetchAnalytics, user?.role]);
 
   // Complaints Donut Data
   const complaintStatusData = useMemo(() => {
@@ -96,6 +108,20 @@ export default function CollegeAdminAnalytics() {
       <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4">
         <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-gray-500 font-medium text-sm animate-pulse">Loading campus operational telemetry...</p>
+      </div>
+    );
+  }
+
+  if (user?.role === 'super_admin' && !activeCollege) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-white/70 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm max-w-2xl mx-auto my-8">
+        <div className="w-16 h-16 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mb-4 shadow-xs">
+          <School size={32} />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Select a Campus to View Analytics</h2>
+        <p className="text-gray-500 text-sm mt-2 max-w-md">
+          As Trust Super Admin, you can select any campus from the Trust College Selector in the top navigation bar to inspect its live mess performance, staff metrics, and grievances.
+        </p>
       </div>
     );
   }

@@ -28,6 +28,12 @@ const Maintenance = ({ onRestore }) => {
     }
   };
 
+  useEffect(() => {
+    handleCheck();
+    const interval = setInterval(handleCheck, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col justify-between items-center p-3 sm:p-4 auth-gradient select-none">
       <div className="max-w-md w-full bg-white/85 backdrop-blur-2xl border border-white/80 rounded-2xl sm:rounded-3xl p-6 sm:p-10 text-center shadow-2xl shadow-gray-400/20 relative z-10 animate-fade-in my-auto">

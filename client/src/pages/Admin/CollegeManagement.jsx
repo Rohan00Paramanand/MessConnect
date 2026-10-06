@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle, Globe, ChevronDown } from 'lucide-react';
+import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle, Globe, ChevronDown, Eye } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -130,7 +131,8 @@ const DomainTagInput = ({ domains = [], onChange, label = "Allowed Email Domains
 };
 
 const CollegeManagement = () => {
-  const { user } = useAuthStore();
+  const { user, setActiveCollege } = useAuthStore();
+  const navigate = useNavigate();
   const isSuperAdmin = user?.role === 'super_admin';
 
   const [colleges, setColleges] = useState([]);
@@ -584,6 +586,20 @@ const handleDeleteAdmin = async (userId) => {
                           </td>
                           <td className="p-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
+                              {isSuperAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveCollege(college);
+                                    navigate('/college-analytics');
+                                    toast.success(`Scoped to campus: ${college.name}`);
+                                  }}
+                                  title="Enter Campus View as College Admin"
+                                  className="text-xs px-2.5 py-1.5 font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-xl flex items-center gap-1 border border-violet-200 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                                >
+                                  <Eye size={13} /> Campus View
+                                </button>
+                              )}
                               {isSuperAdmin && (
                                 <button
                                   onClick={() => openAssignModal(college)}

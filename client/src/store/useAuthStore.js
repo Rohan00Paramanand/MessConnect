@@ -6,11 +6,12 @@ import {
   authTokenAtom,
   authIsAuthenticatedAtom,
   authLoadingAtom,
+  activeCollegeAtom,
 } from './authAtoms';
 
 /**
  * useAuthStore – drop-in replacement for the former Zustand store.
- * Exposes the same shape: { user, token, isAuthenticated, loading, setAuth, logout, checkAuth }
+ * Exposes the same shape: { user, token, isAuthenticated, loading, setAuth, logout, checkAuth, activeCollege, setActiveCollege }
  *
  * All returned functions are wrapped in useCallback so their references are stable
  * across re-renders. Recoil state setters are guaranteed stable by Recoil itself,
@@ -21,6 +22,21 @@ const useAuthStore = () => {
   const [token, setToken] = useRecoilState(authTokenAtom);
   const [isAuthenticated, setIsAuthenticated] = useRecoilState(authIsAuthenticatedAtom);
   const [loading, setLoading] = useRecoilState(authLoadingAtom);
+  const [activeCollege, setActiveCollegeState] = useRecoilState(activeCollegeAtom);
+
+  const setActiveCollege = useCallback((college) => {
+    if (college && college._id) {
+      localStorage.setItem('super_admin_active_college_id', college._id);
+      localStorage.setItem('super_admin_active_college', JSON.stringify(college));
+      setActiveCollegeState(college);
+      window.dispatchEvent(new CustomEvent('college:switched', { detail: college }));
+    } else {
+      localStorage.removeItem('super_admin_active_college_id');
+      localStorage.removeItem('super_admin_active_college');
+      setActiveCollegeState(null);
+      window.dispatchEvent(new CustomEvent('college:switched', { detail: null }));
+    }
+  }, [setActiveCollegeState]);
 
   const setAuth = useCallback((newUser, newToken) => {
     if (newToken) {
@@ -43,12 +59,15 @@ const useAuthStore = () => {
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('super_admin_active_college_id');
+      localStorage.removeItem('super_admin_active_college');
       setUser(null);
       setToken(null);
+      setActiveCollegeState(null);
       setIsAuthenticated(false);
       setLoading(false);
     }
-  }, [setUser, setToken, setIsAuthenticated, setLoading]);
+  }, [setUser, setToken, setActiveCollegeState, setIsAuthenticated, setLoading]);
 
   const checkAuth = useCallback(async () => {
     setLoading(true);
@@ -76,7 +95,7 @@ const useAuthStore = () => {
     }
   }, [setLoading, setUser, setIsAuthenticated, setToken]);
 
-  return { user, token, isAuthenticated, loading, setAuth, logout, checkAuth };
+  return { user, token, isAuthenticated, loading, setAuth, logout, checkAuth, activeCollege, setActiveCollege };
 };
 
 export default useAuthStore;

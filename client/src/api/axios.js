@@ -16,11 +16,22 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  // Inject active scoped college header for super_admin impersonation (skip for health ping)
+  const isHealthCheck = config.url?.includes('/health');
+  const activeCollegeId = localStorage.getItem('super_admin_active_college_id');
+  if (!isHealthCheck && activeCollegeId && activeCollegeId !== 'all') {
+    config.headers['x-college-id'] = activeCollegeId;
+  }
+
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // When API succeeds, clear maintenance screen
+    window.dispatchEvent(new CustomEvent('app:maintenance', { detail: false }));
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');

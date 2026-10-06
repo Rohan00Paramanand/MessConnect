@@ -29,8 +29,10 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import VendorDocumentsDropdown from '../../components/vendor/VendorDocumentsDropdown';
+import useAuthStore from '../../store/useAuthStore';
 
 const UserApprovals = () => {
+  const { user, activeCollege } = useAuthStore();
   // Main Tab: 'pending' | 'approved_users' | 'approved_staff'
   const [mainTab, setMainTab] = useState('pending');
   // Pending Sub-tab: 'accounts' | 'staff'
@@ -112,10 +114,12 @@ const UserApprovals = () => {
 
   // Fetch messes for dropdowns
   useEffect(() => {
-    api.get('/messes')
-      .then(({ data }) => setMesses(data.data || []))
-      .catch(err => console.error('Failed to load messes', err));
-  }, []);
+    if (user?.role !== 'super_admin' || activeCollege) {
+      api.get('/messes')
+        .then(({ data }) => setMesses(data.data || []))
+        .catch(err => console.error('Failed to load messes', err));
+    }
+  }, [user?.role, activeCollege]);
 
   // Fetch all pending requests
   const fetchPending = useCallback(async () => {
@@ -147,10 +151,14 @@ const UserApprovals = () => {
 
   // Initial data loading
   const refreshAllData = useCallback(async () => {
+    if (user?.role === 'super_admin' && !activeCollege) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     await Promise.all([fetchPending(), fetchApproved()]);
     setLoading(false);
-  }, [fetchPending, fetchApproved]);
+  }, [fetchPending, fetchApproved, user?.role, activeCollege]);
 
   useEffect(() => {
     refreshAllData();
@@ -386,6 +394,20 @@ const UserApprovals = () => {
     const messId = member.mess?._id || member.mess;
     return messId === messFilter;
   });
+
+  if (user?.role === 'super_admin' && !activeCollege) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-white/70 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm max-w-2xl mx-auto my-8">
+        <div className="w-16 h-16 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mb-4 shadow-xs">
+          <ShieldCheck size={32} />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Select a Campus to Review Approvals</h2>
+        <p className="text-gray-500 text-sm mt-2 max-w-md">
+          As Trust Super Admin, choose any campus from the Trust College Selector in the top navigation bar to review pending vendor and committee applications for that college.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
