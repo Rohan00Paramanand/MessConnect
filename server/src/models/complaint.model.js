@@ -65,6 +65,24 @@ const complaintSchema = new Schema(
     resolvedAt: {
       type: Date
     },
+
+    resolutionDeadline: {
+      type: Date
+    },
+
+    isSlaBreached: {
+      type: Boolean,
+      default: false
+    },
+
+    slaExtensionReason: {
+      type: String,
+      default: ''
+    },
+
+    slaExtendedAt: {
+      type: Date
+    },
     
     location: {
       latitude: Number,
@@ -135,5 +153,6 @@ complaintSchema.index({ status: 1 });
 complaintSchema.index({ assignedTo: 1 });
 complaintSchema.index({ assignedBy: 1 });
 complaintSchema.index({ resolvedBy: 1 });
+complaintSchema.index({ resolutionDeadline: 1 });
 
 export default mongoose.model('Complaint', complaintSchema);

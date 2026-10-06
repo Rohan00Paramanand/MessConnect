@@ -4,8 +4,12 @@ import { sendEmail } from '../utils/sendEmail.js';
 import { 
     complaintStatusEmailTemplate, 
     complaintFeedbackReceivedEmailTemplate,
-    complaintAssignedToVendorEmailTemplate 
+    complaintAssignedToVendorEmailTemplate,
+    complaintVendorUrgentNudgeEmailTemplate
 } from '../utils/emailTemplates.js';
+
+// Standard Service Level Agreement (SLA) turnaround: 3 calendar days (72 hours)
+const SLA_RESOLUTION_DAYS = 3;
 
 const rejectionLabels = {
     duplicate: 'Duplicate Complaint (Already Reported)',
@@ -24,6 +28,12 @@ export const createComplaint = async (req, res) => {
 
         if (!mess) {
             return res.status(400).json({ status: 'error', message: 'Mess is required' });
+        }
+
+        // Validate tenant boundary: Mess must belong to student's college
+        const messDoc = await Mess.findOne({ _id: mess, collegeId: req.collegeId });
+        if (!messDoc) {
+            return res.status(400).json({ status: 'error', message: 'Selected mess does not belong to your college' });
         }
 
         // Check if the student is currently banned
@@ -182,9 +192,14 @@ export const updateComplaintStatus = async (req, res) => {
             }
         }
 
-        const complaint = await Complaint.findById(req.params.id);
+        const queryFilter = { _id: req.params.id };
+        if (req.user.role !== 'super_admin') {
+            queryFilter.collegeId = req.collegeId;
+        }
+
+        const complaint = await Complaint.findOne(queryFilter);
         if (!complaint) {
-            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+            return res.status(404).json({ status: 'error', message: 'Complaint not found or does not belong to your college' });
         }
 
         const currentStatus = complaint.status;
@@ -248,9 +263,12 @@ export const updateComplaintStatus = async (req, res) => {
                     message: 'No active/approved vendor is currently associated with this mess.'
                 });
             }
+            const assignedDate = new Date();
             complaint.assignedTo = vendor._id;
             complaint.assignedBy = req.user._id;
-            complaint.assignedAt = new Date();
+            complaint.assignedAt = assignedDate;
+            complaint.resolutionDeadline = new Date(assignedDate.getTime() + SLA_RESOLUTION_DAYS * 24 * 60 * 60 * 1000);
+            complaint.isSlaBreached = false;
             complaint.vendorCompletedAt = null; // Clear completion timestamp on re-assignment
             assignedVendor = vendor;
         }
@@ -349,19 +367,29 @@ export const updateComplaintStatus = async (req, res) => {
                         messName = messDoc ? messDoc.name : '';
                     }
 
+                    const deadlineFormatted = complaint.resolutionDeadline
+                        ? new Date(complaint.resolutionDeadline).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        })
+                        : 'Within 3 Days';
+
                     const html = complaintAssignedToVendorEmailTemplate({
                         vendorName: assignedVendor.name,
                         title: complaint.title || complaint.category,
                         category: complaint.category,
                         description: complaint.description,
                         messName,
+                        deadlineFormatted,
                         dashboardUrl
                     });
 
                     await sendEmail({
                         email: assignedVendor.email,
-                        subject: `Action Required: New Complaint Assigned - MessConnect`,
-                        message: `Hello ${assignedVendor.name},\n\nA student complaint has been assigned to you by the Mess Committee:\n\nTitle: ${complaint.title || complaint.category}\nCategory: ${complaint.category}\nDescription: ${complaint.description}\n\nPlease visit your dashboard to upload geotagged photo proof and mark it as completed:\n${dashboardUrl}\n\nThank you,\nMessConnect Team`,
+                        subject: `Action Required: New Complaint Assigned (3-Day SLA) - MessConnect`,
+                        message: `Hello ${assignedVendor.name},\n\nA student complaint has been assigned to you by the Mess Committee:\n\nTitle: ${complaint.title || complaint.category}\nCategory: ${complaint.category}\nTarget SLA Deadline: ${deadlineFormatted}\nDescription: ${complaint.description}\n\nPlease visit your dashboard to upload geotagged photo proof and mark it as completed:\n${dashboardUrl}\n\nThank you,\nMessConnect Team`,
                         html
                     });
                 } catch (assignEmailErr) {
@@ -430,8 +458,17 @@ export const markVendorCompleted = async (req, res) => {
             });
         }
 
+        const completionTime = new Date();
         complaint.status = 'vendor_completed';
-        complaint.vendorCompletedAt = Date.now();
+        complaint.vendorCompletedAt = completionTime;
+
+        // Check if resolution was completed within the agreed 3-day SLA
+        if (complaint.resolutionDeadline && completionTime.getTime() > new Date(complaint.resolutionDeadline).getTime()) {
+            complaint.isSlaBreached = true;
+        } else {
+            complaint.isSlaBreached = false;
+        }
+
         complaint.resolutionProof = {
             image,
             location: {
@@ -439,7 +476,7 @@ export const markVendorCompleted = async (req, res) => {
                 longitude: Number(longitude),
                 address: address ? address.trim() : 'Location verified'
             },
-            submittedAt: Date.now(),
+            submittedAt: completionTime,
             remarks: remarks ? remarks.trim() : ''
         };
 
@@ -561,9 +598,14 @@ export const upvoteComplaint = async (req, res) => {
             return res.status(403).json({ status: 'error', message: 'Only users can upvote complaints' });
         }
 
-        const complaint = await Complaint.findById(req.params.id);
+        const complaintQuery = { _id: req.params.id };
+        if (req.user.role !== 'super_admin') {
+            complaintQuery.collegeId = req.collegeId;
+        }
+
+        const complaint = await Complaint.findOne(complaintQuery);
         if (!complaint) {
-            return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+            return res.status(404).json({ status: 'error', message: 'Complaint not found or does not belong to your college' });
         }
 
         // Initialize upvotes array if it doesn't exist (for older records)
@@ -619,6 +661,140 @@ export const deleteComplaint = async (req, res) => {
         res.status(200).json({
             status: 'success',
             message: 'Complaint deleted successfully'
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+// @desc    Grant SLA extension for an assigned complaint
+// @route   PATCH /api/complaints/:id/extend-sla
+// @access  Private (Mess Committee)
+export const extendComplaintSla = async (req, res) => {
+    try {
+        const { extensionHours, reason } = req.body;
+        const hours = parseInt(extensionHours, 10);
+
+        if (!hours || hours <= 0 || !reason || !reason.trim()) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Valid extension hours (positive number) and a descriptive reason are required.'
+            });
+        }
+
+        const complaintQuery = { _id: req.params.id };
+        if (req.user.role !== 'super_admin') {
+            complaintQuery.collegeId = req.collegeId;
+        }
+
+        const complaint = await Complaint.findOne(complaintQuery);
+        if (!complaint) {
+            return res.status(404).json({ status: 'error', message: 'Complaint not found or does not belong to your college.' });
+        }
+
+        if (complaint.status !== 'assigned') {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Extensions can only be granted to actively assigned complaints.'
+            });
+        }
+
+        // Base the extension on current deadline or current time, whichever is later
+        const baseDate = (complaint.resolutionDeadline && new Date(complaint.resolutionDeadline) > new Date())
+            ? new Date(complaint.resolutionDeadline)
+            : new Date();
+
+        complaint.resolutionDeadline = new Date(baseDate.getTime() + hours * 60 * 60 * 1000);
+        complaint.slaExtensionReason = reason.trim();
+        complaint.slaExtendedAt = new Date();
+        complaint.isSlaBreached = false;
+
+        const updated = await complaint.save();
+        const populated = await Complaint.findById(updated._id)
+            .populate('user_id', 'name email avatar trustMeter role')
+            .populate('assignedTo', 'name email')
+            .populate('assignedBy', 'name email role')
+            .populate('resolvedBy', 'name email role')
+            .populate('mess', 'name');
+
+        res.json({
+            status: 'success',
+            message: `SLA deadline extended by ${hours} hours.`,
+            data: populated
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
+
+// @desc    Send urgent reminder/nudge to vendor for assigned complaint
+// @route   POST /api/complaints/:id/nudge-vendor
+// @access  Private (Mess Committee)
+export const nudgeVendor = async (req, res) => {
+    try {
+        const complaintQuery = { _id: req.params.id };
+        if (req.user.role !== 'super_admin') {
+            complaintQuery.collegeId = req.collegeId;
+        }
+
+        const complaint = await Complaint.findOne(complaintQuery)
+            .populate('assignedTo', 'name email')
+            .populate('mess', 'name');
+
+        if (!complaint) {
+            return res.status(404).json({ status: 'error', message: 'Complaint not found or does not belong to your college.' });
+        }
+
+        if (complaint.status !== 'assigned') {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Reminders can only be sent for actively assigned complaints.'
+            });
+        }
+
+        if (!complaint.assignedTo || !complaint.assignedTo.email) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'No assigned vendor found with a valid email address.'
+            });
+        }
+
+        const isOverdue = complaint.resolutionDeadline && new Date() > new Date(complaint.resolutionDeadline);
+        const deadlineFormatted = complaint.resolutionDeadline
+            ? new Date(complaint.resolutionDeadline).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+            : 'Within 3 Days';
+
+        const clientUrl = process.env.CLIENT_URL || 'https://pcet.connectmess.in';
+        const dashboardUrl = `${clientUrl}/complaints`;
+
+        const html = complaintVendorUrgentNudgeEmailTemplate({
+            vendorName: complaint.assignedTo.name,
+            title: complaint.title || complaint.category,
+            category: complaint.category,
+            messName: complaint.mess?.name || 'Mess Facility',
+            deadlineFormatted,
+            isOverdue,
+            dashboardUrl
+        });
+
+        await sendEmail({
+            email: complaint.assignedTo.email,
+            subject: isOverdue
+                ? `🚨 URGENT: Complaint SLA Breached - Action Required - MessConnect`
+                : `⚠️ Reminder: Complaint Approaching 3-Day SLA Deadline - MessConnect`,
+            message: `Hello ${complaint.assignedTo.name},\n\nThis is an urgent reminder from the Mess Committee regarding the assigned complaint "${complaint.title || complaint.category}".\nDeadline: ${deadlineFormatted}\n\nPlease upload proof on your dashboard to complete it: ${dashboardUrl}`,
+            html
+        });
+
+        res.json({
+            status: 'success',
+            message: isOverdue ? 'Urgent escalation notice sent to vendor.' : 'Reminder sent to vendor.'
         });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api, { getImageUrl } from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -7,7 +8,7 @@ import VendorResolutionModal from './VendorResolutionModal';
 import PhotoViewerModal from '../../components/common/PhotoViewerModal';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
-import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Camera, Smile, Frown, Sparkles, Flame, User, Globe, ArrowUpDown, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, RefreshCw, MapPin, ThumbsUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Camera, Smile, Frown, Sparkles, Flame, User, Globe, ArrowUpDown, Trash2, Bell, CalendarPlus } from 'lucide-react';
 
 const statusConfig = {
   pending:          { label: 'Pending',          color: 'bg-gray-100 text-gray-700 border-gray-200',    icon: Clock },
@@ -25,6 +26,103 @@ const StatusBadge = ({ status }) => {
       <Icon size={12} />
       {cfg.label}
     </span>
+  );
+};
+
+const SlaStatusBadge = ({ complaint, role }) => {
+  if (['pending', 'rejected'].includes(complaint.status)) {
+    return null;
+  }
+
+  // Calculate resolution deadline (fallback to assignedAt + 3 days if resolutionDeadline missing on legacy records)
+  let deadline = complaint.resolutionDeadline ? new Date(complaint.resolutionDeadline) : null;
+  if (!deadline && complaint.assignedAt) {
+    deadline = new Date(new Date(complaint.assignedAt).getTime() + 3 * 24 * 60 * 60 * 1000);
+  }
+
+  if (!deadline) return null;
+
+  const now = new Date();
+  const isCompletedOrResolved = ['vendor_completed', 'resolved'].includes(complaint.status);
+
+  // If completed or resolved
+  if (isCompletedOrResolved) {
+    const wasBreached = complaint.isSlaBreached || (complaint.vendorCompletedAt && new Date(complaint.vendorCompletedAt) > deadline);
+    if (wasBreached) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
+          <Clock size={12} className="text-amber-600 flex-shrink-0" />
+          <span>Resolved after 3-day SLA</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+        <CheckCircle size={12} className="text-emerald-600 flex-shrink-0" />
+        <span>Resolved within 3-day SLA</span>
+      </span>
+    );
+  }
+
+  // Actively assigned state
+  const diffMs = deadline.getTime() - now.getTime();
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.ceil(diffHours / 24);
+  const isOverdue = diffMs < 0;
+
+  const formattedDate = deadline.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  });
+
+  if (isOverdue) {
+    return (
+      <div className="flex flex-col gap-1 mt-1">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-xl bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs w-fit">
+          <AlertCircle size={13} className="text-rose-600 flex-shrink-0 animate-pulse" />
+          <span>
+            {['user', 'student'].includes(role)
+              ? `Delayed — Escalated to Committee (Target was ${formattedDate})`
+              : `SLA Breached · Overdue by ${Math.abs(diffHours)}h`}
+          </span>
+        </span>
+        {complaint.slaExtensionReason && (
+          <span className="text-[11px] text-amber-700 font-semibold pl-1">
+            ⏱️ Extension Reason: "{complaint.slaExtensionReason}"
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (diffHours <= 24) {
+    return (
+      <div className="flex flex-col gap-1 mt-1">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-50 text-amber-800 border border-amber-300 w-fit">
+          <Clock size={13} className="text-amber-600 flex-shrink-0" />
+          <span>Due Today · ~{diffHours}h remaining (by {formattedDate})</span>
+        </span>
+        {complaint.slaExtensionReason && (
+          <span className="text-[11px] text-indigo-700 font-medium pl-1">
+            ⏱️ Extension: "{complaint.slaExtensionReason}"
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1 mt-1">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 w-fit">
+        <Clock size={13} className="text-indigo-600 flex-shrink-0" />
+        <span>Target Resolution: ~{diffDays} days left (by {formattedDate})</span>
+      </span>
+      {complaint.slaExtensionReason && (
+        <span className="text-[11px] text-indigo-700 font-medium pl-1">
+          ⏱️ Note: "{complaint.slaExtensionReason}"
+        </span>
+      )}
+    </div>
   );
 };
 
@@ -76,6 +174,9 @@ const ComplaintCard = ({
   handleStatusUpdate,
   handleDeleteComplaint,
   deletingId,
+  handleNudgeVendor,
+  nudgingId,
+  setExtensionModalComplaint,
   isLatest = false,
   rankBadge = null,
 }) => {
@@ -264,6 +365,9 @@ const ComplaintCard = ({
                 )}
               </div>
             )}
+
+            {/* SLA Resolution Deadline Badge */}
+            <SlaStatusBadge complaint={complaint} role={user?.role} />
 
             {complaint.location?.latitude && (
               <div className="flex items-center gap-1 text-teal-600 bg-teal-50/60 px-2.5 py-1 rounded-xl border border-teal-100/70 w-fit max-w-full min-w-0">
@@ -469,8 +573,18 @@ const ComplaintCard = ({
                           { value: 'pending', label: '⏳ Pending' },
                           { value: 'assigned', label: '⚙️ In Progress (Assign to Vendor)' },
                           { value: 'resolved', label: '✅ Mark Resolved' },
-                          { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - -5)' },
-                          { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -5)' },
+                          { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
+                          { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
+                          { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
+                          { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
+                          { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
+                        ]
+                      : complaint.status === 'assigned'
+                      ? [
+                          { value: 'assigned', label: '⚙️ Assigned to Vendor', disabled: true },
+                          { value: 'resolved', label: '✅ Committee Direct Resolve' },
+                          { value: 'rejected:duplicate', label: '❌ Reject (Duplicate - 0)' },
+                          { value: 'rejected:wrong_category', label: '❌ Reject (Wrong Category - -2)' },
                           { value: 'rejected:spam', label: '❌ Reject (Spam - -10)' },
                           { value: 'rejected:false_information', label: '❌ Reject (False Info - -15)' },
                           { value: 'rejected:inappropriate', label: '❌ Reject (Inappropriate - -10)' },
@@ -482,6 +596,33 @@ const ComplaintCard = ({
                         ]
                   }
                 />
+
+                {/* Committee SLA & Escalation Controls for Assigned Complaints */}
+                {complaint.status === 'assigned' && (
+                  <div className="space-y-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleNudgeVendor(complaint._id)}
+                      disabled={nudgingId === complaint._id}
+                      className="w-full py-2 px-2.5 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      title="Send urgent email reminder to vendor"
+                    >
+                      <Bell size={13} className="text-indigo-600 flex-shrink-0" />
+                      <span>{nudgingId === complaint._id ? 'Sending...' : 'Nudge Vendor'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setExtensionModalComplaint(complaint)}
+                      className="w-full py-2 px-2.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Grant SLA Extension"
+                    >
+                      <CalendarPlus size={13} className="text-amber-600 flex-shrink-0" />
+                      <span>Extend SLA</span>
+                    </button>
+                  </div>
+                )}
+
                 {complaint.status === 'vendor_completed' && (
                   <div className="space-y-2 mt-1">
                     <div className="text-[11px] text-center text-amber-700 bg-amber-50 rounded-xl px-2.5 py-1.5 font-bold border border-amber-200">
@@ -597,6 +738,23 @@ const ComplaintsList = () => {
   const [vendorResolveModalComplaint, setVendorResolveModalComplaint] = useState(null);
   const [ratingDrafts, setRatingDrafts] = useState({});
   const [submittingFeedbackId, setSubmittingFeedbackId] = useState(null);
+
+  // SLA Management State
+  const [nudgingId, setNudgingId] = useState(null);
+  const [extensionModalComplaint, setExtensionModalComplaint] = useState(null);
+  const [extensionHours, setExtensionHours] = useState(24);
+  const [extensionReason, setExtensionReason] = useState('');
+  const [isExtending, setIsExtending] = useState(false);
+
+  // Lock body scroll when SLA extension modal is open
+  useEffect(() => {
+    if (!extensionModalComplaint) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [extensionModalComplaint]);
 
   useEffect(() => {
     if (isStudent) {
@@ -790,6 +948,42 @@ const ComplaintsList = () => {
       toast.error(err.response?.data?.message || 'Failed to delete complaint.');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleNudgeVendor = async (id) => {
+    try {
+      setNudgingId(id);
+      const res = await api.post(`/complaints/${id}/nudge-vendor`);
+      toast.success(res.data.message || 'Urgent reminder sent to vendor.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send vendor reminder.');
+    } finally {
+      setNudgingId(null);
+    }
+  };
+
+  const handleExtendSla = async (e) => {
+    e.preventDefault();
+    if (!extensionReason.trim()) {
+      return toast.error('Please enter a descriptive reason for the extension.');
+    }
+    try {
+      setIsExtending(true);
+      const res = await api.patch(`/complaints/${extensionModalComplaint._id}/extend-sla`, {
+        extensionHours,
+        reason: extensionReason.trim(),
+      });
+      toast.success(res.data.message || 'SLA deadline extended successfully.');
+      setExtensionModalComplaint(null);
+      setExtensionReason('');
+      setComplaints((prev) =>
+        prev.map((c) => (c._id === res.data.data?._id ? res.data.data : c))
+      );
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to extend SLA deadline.');
+    } finally {
+      setIsExtending(false);
     }
   };
 
@@ -1196,6 +1390,9 @@ const ComplaintsList = () => {
                 handleStatusUpdate={handleStatusUpdate}
                 handleDeleteComplaint={handleDeleteComplaint}
                 deletingId={deletingId}
+                handleNudgeVendor={handleNudgeVendor}
+                nudgingId={nudgingId}
+                setExtensionModalComplaint={setExtensionModalComplaint}
                 isLatest={complaint._id === myLatestComplaint?._id}
                 rankBadge={rankBadge}
               />
@@ -1261,6 +1458,106 @@ const ComplaintsList = () => {
           onClose={() => setVendorResolveModalComplaint(null)}
           onSuccess={fetchComplaints}
         />
+      )}
+
+      {/* Committee SLA Extension Modal */}
+      {extensionModalComplaint && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setExtensionModalComplaint(null);
+              setExtensionReason('');
+            }
+          }}
+        >
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl space-y-4 border border-gray-100 max-h-[90dvh] overflow-y-auto overscroll-contain my-auto relative">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-amber-50 text-amber-600 rounded-2xl flex-shrink-0">
+                  <CalendarPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 leading-snug">Grant SLA Extension</h3>
+                  <p className="text-xs text-gray-500 font-medium">Extend the 3-day resolution deadline</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setExtensionModalComplaint(null);
+                  setExtensionReason('');
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer flex-shrink-0"
+              >
+                <XCircle size={22} />
+              </button>
+            </div>
+
+            <div className="p-3 bg-gray-50 rounded-2xl text-xs space-y-1 text-gray-600 border border-gray-100">
+              <p className="font-bold text-gray-900 truncate">
+                Complaint: {extensionModalComplaint.title || extensionModalComplaint.category}
+              </p>
+              <p>Assigned to: <strong className="text-gray-800">{extensionModalComplaint.assignedTo?.name || 'Vendor'}</strong></p>
+            </div>
+
+            <form onSubmit={handleExtendSla} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Extension Duration
+                </label>
+                <select
+                  value={extensionHours}
+                  onChange={(e) => setExtensionHours(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                >
+                  <option value={24}>+24 Hours (1 Day Extension)</option>
+                  <option value={48}>+48 Hours (2 Days Extension)</option>
+                  <option value={72}>+72 Hours (3 Days Extension)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Reason for Extension <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="e.g. Spare filter parts ordered, pest control scheduled for weekend..."
+                  value={extensionReason}
+                  onChange={(e) => setExtensionReason(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none font-medium"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  This note will be shown to the student so they know why resolution is taking longer.
+                </p>
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExtensionModalComplaint(null);
+                    setExtensionReason('');
+                  }}
+                  className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isExtending || !extensionReason.trim()}
+                  className="flex-1 py-2.5 px-4 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isExtending ? 'Saving...' : 'Confirm Extension'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

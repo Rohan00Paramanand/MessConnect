@@ -976,6 +976,7 @@ export const complaintAssignedToVendorEmailTemplate = ({
   category,
   description,
   messName,
+  deadlineFormatted = 'Within 3 Days (72 Hours)',
   dashboardUrl = '',
 }) => {
   const safeName = escapeHtml(vendorName || 'Vendor');
@@ -983,6 +984,7 @@ export const complaintAssignedToVendorEmailTemplate = ({
   const safeCategory = escapeHtml(category || 'General');
   const safeDescription = escapeHtml(description || '');
   const safeMess = escapeHtml(messName || 'Your Mess Facility');
+  const safeDeadline = escapeHtml(deadlineFormatted);
 
   const content = `
     <h2 style="
@@ -1012,6 +1014,26 @@ export const complaintAssignedToVendorEmailTemplate = ({
     ">
       The Mess Committee has reviewed and assigned a student complaint to you for <strong>${safeMess}</strong>. Please review the details below, take corrective action, and upload a geotagged photo proof on your dashboard to mark it as completed.
     </p>
+
+    <!-- SLA Deadline Warning Card -->
+    <div style="
+      margin: 0 0 20px;
+      padding: 14px 18px;
+      background-color: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+    ">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">
+          ⏱️ Standard Resolution SLA (3 Days)
+        </div>
+        <div style="font-size: 14px; font-weight: 700; color: #92400e;">
+          Target Resolution Deadline: ${safeDeadline}
+        </div>
+      </div>
+    </div>
 
     <table
       role="presentation"
@@ -1090,7 +1112,108 @@ export const complaintAssignedToVendorEmailTemplate = ({
 
   return emailLayout({
     title: 'Complaint Assigned - Action Required',
-    preheader: `New complaint assigned at ${safeMess}: ${safeTitle}`,
+    preheader: `New complaint assigned at ${safeMess}: ${safeTitle} (Due: ${safeDeadline})`,
+    content,
+  });
+};
+
+export const complaintVendorUrgentNudgeEmailTemplate = ({
+  vendorName,
+  title,
+  category,
+  messName,
+  deadlineFormatted,
+  isOverdue = false,
+  dashboardUrl = '',
+}) => {
+  const safeName = escapeHtml(vendorName || 'Vendor');
+  const safeTitle = escapeHtml(title || 'Complaint');
+  const safeCategory = escapeHtml(category || 'General');
+  const safeMess = escapeHtml(messName || 'Your Mess Facility');
+  const safeDeadline = escapeHtml(deadlineFormatted || 'Overdue');
+
+  const headline = isOverdue
+    ? '🚨 URGENT: Complaint SLA Breached — Action Required'
+    : '⚠️ Reminder: Complaint Approaching 3-Day SLA Deadline';
+
+  const content = `
+    <h2 style="
+      margin: 0 0 16px;
+      color: ${isOverdue ? '#dc2626' : '#d97706'};
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 28px;
+    ">
+      ${headline}
+    </h2>
+
+    <p style="
+      margin: 0 0 20px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      Hello <strong>${safeName}</strong>,
+    </p>
+
+    <p style="
+      margin: 0 0 20px;
+      color: #475569;
+      font-size: 15px;
+      line-height: 25px;
+    ">
+      The Mess Committee is requesting an urgent status update regarding an assigned student complaint for <strong>${safeMess}</strong>.
+      ${isOverdue 
+        ? 'The 3-day resolution deadline for this complaint has passed and has been escalated.' 
+        : 'This complaint is approaching its 3-day resolution deadline.'}
+    </p>
+
+    <div style="
+      margin: 0 0 25px;
+      padding: 16px 18px;
+      background-color: ${isOverdue ? '#fef2f2' : '#fffbeb'};
+      border: 1px solid ${isOverdue ? '#fecaca' : '#fde68a'};
+      border-radius: 8px;
+    ">
+      <div style="font-size: 12px; font-weight: 700; color: ${isOverdue ? '#991b1b' : '#92400e'}; margin-bottom: 6px;">
+        COMPLAINT: ${safeTitle} (${safeCategory.toUpperCase()})
+      </div>
+      <div style="font-size: 13px; color: #475569;">
+        <strong>SLA Target:</strong> ${safeDeadline}
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a
+        href="${dashboardUrl || '#'}"
+        style="
+          background-color: #e11d48;
+          color: #ffffff;
+          padding: 12px 28px;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 14px;
+          text-decoration: none;
+          display: inline-block;
+        "
+      >
+        Upload Proof & Complete Now
+      </a>
+    </div>
+
+    <p style="
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 19px;
+    ">
+      Please submit your resolution with geotagged photo proof on the dashboard as soon as possible.
+    </p>
+  `;
+
+  return emailLayout({
+    title: isOverdue ? 'URGENT: Complaint Overdue' : 'Reminder: Complaint SLA Deadline',
+    preheader: `Urgent update requested for complaint at ${safeMess}`,
     content,
   });
 };

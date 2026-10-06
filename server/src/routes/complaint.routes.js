@@ -6,7 +6,9 @@ import {
     markVendorCompleted, 
     submitComplaintFeedback,
     upvoteComplaint,
-    deleteComplaint
+    deleteComplaint,
+    extendComplaintSla,
+    nudgeVendor
 } from '../controllers/complaint.controller.js';
 import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 import upload from '../middleware/upload.middleware.js';
@@ -25,6 +27,12 @@ router.route('/:id')
 
 router.route('/:id/status')
     .patch(authorizeRoles('mess_committee'), updateComplaintStatus);
+
+router.route('/:id/extend-sla')
+    .patch(authorizeRoles('mess_committee', 'college_admin'), extendComplaintSla);
+
+router.route('/:id/nudge-vendor')
+    .post(authorizeRoles('mess_committee', 'college_admin'), nudgeVendor);
 
 router.route('/:id/vendor-complete')
     .patch(authorizeRoles('vendor'), upload.single('resolutionProof'), markVendorCompleted);

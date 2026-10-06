@@ -37,6 +37,15 @@ export const getVendorMonthlyReport = async (req, res) => {
                         message: 'No mess facility found.'
                     });
                 }
+            } else if (req.user.role !== 'super_admin') {
+                // Strictly verify requested mess belongs to this admin/committee's college
+                const messValid = await Mess.findOne({ _id: messId, collegeId: req.collegeId });
+                if (!messValid) {
+                    return res.status(403).json({
+                        status: 'error',
+                        message: 'Mess facility does not belong to your college.'
+                    });
+                }
             }
         } else {
             return res.status(403).json({
