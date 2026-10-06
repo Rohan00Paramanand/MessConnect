@@ -23,10 +23,22 @@ const categories = ["food", "cleanliness", "timeliness", "taste", "staff behavio
 const ITEMS_PER_PAGE = 6;
 
 const FeedbackView = () => {
-  const { user } = useAuthStore();
+  const { user, activeCollege } = useAuthStore();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [date] = useState(new Date().toISOString().split('T')[0]);
+
+  // Reliable local date string: YYYY-MM-DD
+  const getTodayDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const todayStr = getTodayDateString();
+  const isStudent = user?.role === 'user' || user?.role === 'student';
+
+  const [date] = useState(todayStr);
   const [selectedCat, setSelectedCat] = useState("food");
   const [currentRating, setCurrentRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -52,7 +64,7 @@ const FeedbackView = () => {
 
   // Fetch active messes dynamically on mount
   useEffect(() => {
-    if (user?.collegeId) {
+    if (user?.collegeId || user?.role === 'super_admin') {
       api.get('/messes')
         .then(({ data }) => {
           const list = data.data || [];
@@ -80,7 +92,7 @@ const FeedbackView = () => {
         setSubmissionMess(vendorMessId);
       }
     }
-  }, [user]);
+  }, [user, activeCollege]);
 
   // Check if current user has already submitted feedback for the selected date and mess
   const existingFeedbackForDate = feedbacks.find((f) => {
@@ -106,9 +118,11 @@ const FeedbackView = () => {
       } else if (filterVal) {
         params.mess = filterVal;
       }
-      // Only use the applied (committed) date values
-      if (appliedStartDate) params.startDate = appliedStartDate;
-      if (appliedEndDate) params.endDate = appliedEndDate;
+      // Only non-students can filter by previous dates (students see daily feedback)
+      if (!isStudent) {
+        if (appliedStartDate) params.startDate = appliedStartDate;
+        if (appliedEndDate) params.endDate = appliedEndDate;
+      }
 
       const { data } = await api.get(`/feedback`, { params }); 
 
@@ -123,7 +137,7 @@ const FeedbackView = () => {
     } finally { 
       setLoading(false); 
     }
-  }, [messFilter, user, appliedStartDate, appliedEndDate]);
+  }, [messFilter, user, isStudent, appliedStartDate, appliedEndDate, activeCollege]);
 
   useEffect(() => { 
     fetchFeedback(1, messFilter); 
@@ -323,66 +337,15 @@ const FeedbackView = () => {
         </div>
       )}
 
-      {/* Date Filter & Category Filter */}
-      <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
-        {/* Date Range Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
-          <div className="flex items-center gap-1.5 text-gray-500 self-center sm:self-end sm:pb-2.5">
-            <Calendar size={16} className="text-amber-500" />
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Filter by Date</span>
-          </div>
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">From</label>
-              <input
-                type="date"
-                value={startDate}
-                min="2026-09-30"
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400/40 focus:bg-white shadow-sm hover:border-gray-400 transition-all duration-300"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">To</label>
-              <input
-                type="date"
-                value={endDate}
-                min={date}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400/40 focus:bg-white shadow-sm hover:border-gray-400 transition-all duration-300"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 self-end">
-            <button
-              type="button"
-              onClick={handleDateFilter}
-              className="min-h-[44px] px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 shadow-sm transition-all duration-300 active:scale-95 cursor-pointer"
-            >
-              Apply
-            </button>
-            {hasDateFilter && (
-              <button
-                type="button"
-                onClick={handleClearDates}
-                className="min-h-[44px] px-3.5 py-2.5 bg-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-200 transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-1"
-              >
-                <X size={14} /> Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Category filter + count */}
-        {totalCount > 0 && (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
+      {/* Filter Section */}
+      {isStudent ? (
+        totalCount > 0 ? (
+          <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="w-full sm:w-72">
               <Select
                 label="Filter Reviews by Category"
                 value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                }}
+                onChange={(e) => setCategoryFilter(e.target.value)}
                 options={[
                   { value: 'ALL', label: `All Categories (${totalCount})` },
                   ...categories.map((cat) => ({
@@ -400,9 +363,7 @@ const FeedbackView = () => {
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setCategoryFilter('ALL');
-                  }}
+                  onClick={() => setCategoryFilter('ALL')}
                   className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
                 >
                   Clear filter
@@ -410,8 +371,103 @@ const FeedbackView = () => {
               </div>
             )}
           </div>
-        )}
-      </div>
+        ) : null
+      ) : (
+        /* Date Filter & Category Filter for Mess Committee, Vendor, and College Admin */
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+          {/* Date Range Filter */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+            <div className="flex items-center gap-1.5 text-gray-500 self-center sm:self-end sm:pb-2.5">
+              <Calendar size={16} className="text-amber-500" />
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Filter by Date</span>
+            </div>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">From</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  max={endDate || todayStr}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setStartDate(val);
+                    if (endDate && val > endDate) setEndDate(val);
+                  }}
+                  className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400/40 focus:bg-white shadow-xs hover:border-gray-400 transition-all duration-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">To</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate || undefined}
+                  max={todayStr}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400/40 focus:bg-white shadow-xs hover:border-gray-400 transition-all duration-300"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end">
+              <button
+                type="button"
+                onClick={handleDateFilter}
+                className="min-h-[44px] px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 shadow-xs transition-all duration-300 active:scale-95 cursor-pointer"
+              >
+                Apply
+              </button>
+              {hasDateFilter && (
+                <button
+                  type="button"
+                  onClick={handleClearDates}
+                  className="min-h-[44px] px-3.5 py-2.5 bg-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-200 transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-1"
+                >
+                  <X size={14} /> Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Category filter + count */}
+          {totalCount > 0 && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
+              <div className="w-full sm:w-72">
+                <Select
+                  label="Filter Reviews by Category"
+                  value={categoryFilter}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value);
+                  }}
+                  options={[
+                    { value: 'ALL', label: `All Categories (${totalCount})` },
+                    ...categories.map((cat) => ({
+                      value: cat,
+                      label: `${cat.charAt(0).toUpperCase() + cat.slice(1)}`,
+                    })),
+                  ]}
+                />
+              </div>
+
+              {categoryFilter !== 'ALL' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 font-medium">
+                    Showing <strong>{displayedFeedbacks.length}</strong> of <strong>{feedbacks.length}</strong> on this page
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryFilter('ALL');
+                    }}
+                    className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
+                  >
+                    Clear filter
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Feedback Grid */}
       {loading ? (

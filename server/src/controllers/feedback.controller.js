@@ -131,8 +131,8 @@ export const getFeedback = async (req, res) => {
             aggregateFilter.mess = req.query.mess;
         }
 
-        // Date range filter support
-        if (req.query.startDate || req.query.endDate) {
+        // Date range filter support (available to Mess Committee, Vendor, and Admins)
+        if (req.user.role !== 'user' && (req.query.startDate || req.query.endDate)) {
             aggregateFilter.date = {};
             if (req.query.startDate) {
                 const start = new Date(req.query.startDate);
@@ -146,7 +146,7 @@ export const getFeedback = async (req, res) => {
             }
         }
         
-        // Calculate aggregations correctly mapped to the filtered set
+        // Calculate aggregations (overall/scoped average ratings and category averages)
         const allFeedbacksForAgg = await Feedback.find(aggregateFilter);
         let totalScore = 0; let totalRatings = 0;
         const catScores = {}; const catCounts = {};
@@ -169,7 +169,27 @@ export const getFeedback = async (req, res) => {
         Object.keys(catScores).forEach(cat => { categoryAverages[cat] = (catScores[cat] / catCounts[cat]).toFixed(1); });
         const avgRating = totalRatings ? (totalScore / totalRatings).toFixed(1) : '–';
 
-        let query = Feedback.find(aggregateFilter)
+        // Prepare query filter for the paginated feedback review cards
+        const listFilter = { ...aggregateFilter };
+
+        // Students can only see daily feedback (today's reviews)
+        if (req.user.role === 'user') {
+            const now = new Date();
+            const startOfToday = new Date(now);
+            startOfToday.setHours(0, 0, 0, 0);
+            const endOfToday = new Date(now);
+            endOfToday.setHours(23, 59, 59, 999);
+
+            const utcStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+            const utcEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+
+            const earliestToday = new Date(Math.min(startOfToday.getTime(), utcStart.getTime()));
+            const latestToday = new Date(Math.max(endOfToday.getTime(), utcEnd.getTime()));
+
+            listFilter.date = { $gte: earliestToday, $lte: latestToday };
+        }
+
+        let query = Feedback.find(listFilter)
             .populate('mess', 'name')
             .sort({ date: -1, createdAt: -1 });
 
@@ -180,7 +200,7 @@ export const getFeedback = async (req, res) => {
             query = query.populate('user', 'name email');
         }
 
-        const total = await Feedback.countDocuments(aggregateFilter);
+        const total = await Feedback.countDocuments(listFilter);
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 6;
         const skip = (page - 1) * limit;
