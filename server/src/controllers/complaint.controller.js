@@ -115,6 +115,7 @@ export const getComplaints = async (req, res) => {
             complaints = await Complaint.find(userFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
+                .populate('assignedBy', 'name email role')
                 .populate('resolvedBy', 'name email role')
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
@@ -123,6 +124,7 @@ export const getComplaints = async (req, res) => {
             complaints = await Complaint.find(queryFilter)
                 .populate('user_id', 'name email avatar trustMeter role')
                 .populate('assignedTo', 'name email')
+                .populate('assignedBy', 'name email role')
                 .populate('resolvedBy', 'name email role')
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
@@ -133,6 +135,7 @@ export const getComplaints = async (req, res) => {
             complaints = await Complaint.find(queryFilter)
                 .populate('user_id', 'role')
                 .populate('assignedTo', 'name email')
+                .populate('assignedBy', 'name email role')
                 .populate('resolvedBy', 'name email role')
                 .populate('mess', 'name')
                 .sort({ createdAt: -1 });
@@ -246,6 +249,8 @@ export const updateComplaintStatus = async (req, res) => {
                 });
             }
             complaint.assignedTo = vendor._id;
+            complaint.assignedBy = req.user._id;
+            complaint.assignedAt = new Date();
             complaint.vendorCompletedAt = null; // Clear completion timestamp on re-assignment
             assignedVendor = vendor;
         }
@@ -365,7 +370,14 @@ export const updateComplaintStatus = async (req, res) => {
             })();
         }
 
-        res.json({ status: 'success', data: updatedComplaint });
+        const populatedComplaint = await Complaint.findById(updatedComplaint._id)
+            .populate('user_id', 'name email avatar trustMeter role')
+            .populate('assignedTo', 'name email')
+            .populate('assignedBy', 'name email role')
+            .populate('resolvedBy', 'name email role')
+            .populate('mess', 'name');
+
+        res.json({ status: 'success', data: populatedComplaint || updatedComplaint });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
     }

@@ -61,10 +61,12 @@ export const approveUser = async (req, res) => {
         }
 
         user.isApprovedByAdmin = true;
+        user.approvedBy = req.user._id;
+        user.approvedAt = new Date();
         await user.save();
 
         // Retrieve user without password to send back
-        const updatedUser = await User.findById(id).select('-password');
+        const updatedUser = await User.findById(id).select('-password').populate('approvedBy', 'name email');
 
         res.status(200).json({
             status: 'success',
@@ -184,11 +186,18 @@ export const approveStaff = async (req, res) => {
         }
 
         staff.isApprovedByAdmin = true;
+        staff.approvedBy = req.user._id;
+        staff.approvedAt = new Date();
         await staff.save();
+
+        const updatedStaff = await Staff.findById(id)
+            .populate('vendor', 'name email companyName messAssigned')
+            .populate('mess', 'name')
+            .populate('approvedBy', 'name email');
 
         res.status(200).json({
             status: 'success',
-            data: staff
+            data: updatedStaff || staff
         });
     } catch (error) {
         res.status(500).json({
@@ -251,6 +260,7 @@ export const getApprovedUsers = async (req, res) => {
 
         const users = await User.find(query)
             .populate('messAssigned', 'name')
+            .populate('approvedBy', 'name email')
             .select('-password')
             .sort({ createdAt: -1 });
 
@@ -282,6 +292,7 @@ export const getApprovedStaff = async (req, res) => {
         const staffList = await Staff.find(query)
             .populate('vendor', 'name email companyName messAssigned')
             .populate('mess', 'name')
+            .populate('approvedBy', 'name email')
             .sort({ createdAt: -1 });
 
         res.status(200).json({ status: 'success', data: staffList });

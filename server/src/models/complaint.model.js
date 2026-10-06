@@ -44,6 +44,15 @@ const complaintSchema = new Schema(
       ref: 'User'
     },
 
+    assignedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+
+    assignedAt: {
+      type: Date
+    },
+
     resolvedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User'
@@ -124,6 +133,7 @@ const complaintSchema = new Schema(
 // Indexes for faster filtering
 complaintSchema.index({ status: 1 });
 complaintSchema.index({ assignedTo: 1 });
+complaintSchema.index({ assignedBy: 1 });
 complaintSchema.index({ resolvedBy: 1 });
 
 export default mongoose.model('Complaint', complaintSchema);

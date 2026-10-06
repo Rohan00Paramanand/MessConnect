@@ -75,6 +75,15 @@ const userSchema = new Schema(
       default: false
     },
 
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+
+    approvedAt: {
+      type: Date
+    },
+
     trustMeter: {
       type: Number,
       default: 100,

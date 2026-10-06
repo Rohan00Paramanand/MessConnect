@@ -244,6 +244,27 @@ const ComplaintCard = ({
                 )
               )}
             </p>
+
+            {/* Assignment & Resolution Attribution */}
+            {complaint.status !== 'pending' && (complaint.assignedTo || complaint.assignedBy) && (
+              <div className="flex items-center gap-1.5 text-xs text-indigo-950 bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-indigo-100/90 w-fit max-w-full min-w-0 flex-wrap font-medium">
+                <span className="text-indigo-600 font-semibold">Assigned to</span>
+                <span className="font-bold text-gray-900">
+                  {complaint.assignedTo?.name || 'Vendor'}
+                </span>
+                <span className="text-gray-400">·</span>
+                <span>
+                  by <strong className="font-bold text-indigo-900">{complaint.assignedBy?.name || 'Mess Committee'}</strong>
+                  {complaint.assignedBy?.name && <span className="text-gray-500 font-normal"> (Committee)</span>}
+                </span>
+                {complaint.assignedAt && (
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    • {new Date(complaint.assignedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            )}
+
             {complaint.location?.latitude && (
               <div className="flex items-center gap-1 text-teal-600 bg-teal-50/60 px-2.5 py-1 rounded-xl border border-teal-100/70 w-fit max-w-full min-w-0">
                 <MapPin size={12} className="flex-shrink-0 text-teal-500" />
@@ -329,6 +350,11 @@ const ComplaintCard = ({
                       </p>
                       {complaint.resolutionFeedback.comment && (
                         <p className="text-gray-700 font-medium break-words [overflow-wrap:anywhere]">"{complaint.resolutionFeedback.comment}"</p>
+                      )}
+                      {complaint.resolvedBy?.name && (
+                        <p className="text-[10px] text-gray-500 font-medium truncate">
+                          Resolved by {complaint.resolvedBy.name} (Mess Committee)
+                        </p>
                       )}
                     </div>
                     <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap flex-shrink-0">

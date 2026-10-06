@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import {
@@ -7,6 +8,7 @@ import {
   FileText,
   UserCheck,
   Users,
+  User,
   Building2,
   Edit2,
   Trash2,
@@ -26,6 +28,7 @@ import {
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
+import VendorDocumentsDropdown from '../../components/vendor/VendorDocumentsDropdown';
 
 const UserApprovals = () => {
   // Main Tab: 'pending' | 'approved_users' | 'approved_staff'
@@ -80,6 +83,32 @@ const UserApprovals = () => {
   // Delete Staff Danger Modal
   const [deletingStaff, setDeletingStaff] = useState(null);
   const [deletingStaffLoading, setDeletingStaffLoading] = useState(false);
+
+  // Freeze background scrolling when any popup modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(denyingUser || editingUser || deletingUser || editingStaff || deletingStaff);
+    if (!isAnyModalOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (editingUser && !savingUser) setEditingUser(null);
+        if (deletingUser && !deletingUserLoading) setDeletingUser(null);
+        if (denyingUser && !denying) setDenyingUser(null);
+        if (editingStaff && !savingStaff) setEditingStaff(null);
+        if (deletingStaff && !deletingStaffLoading) setDeletingStaff(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [denyingUser, editingUser, deletingUser, editingStaff, deletingStaff, savingUser, deletingUserLoading, denying, savingStaff, deletingStaffLoading]);
 
   // Fetch messes for dropdowns
   useEffect(() => {
@@ -534,41 +563,10 @@ const UserApprovals = () => {
                         )}
                       </div>
 
-                      {user.vendorDocuments && (
+                      {user.role === 'vendor' && (
                         <div>
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Documents</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {user.vendorDocuments.udyamCertificate && (
-                              <a href={user.vendorDocuments.udyamCertificate} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> Udyam
-                              </a>
-                            )}
-                            {user.vendorDocuments.fssaiLicense && (
-                              <a href={user.vendorDocuments.fssaiLicense} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> FSSAI
-                              </a>
-                            )}
-                            {user.vendorDocuments.labourLicense && (
-                              <a href={user.vendorDocuments.labourLicense} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> Labour
-                              </a>
-                            )}
-                            {user.vendorDocuments.gstCertificate && (
-                              <a href={user.vendorDocuments.gstCertificate} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> GST
-                              </a>
-                            )}
-                            {user.vendorDocuments.panCard && (
-                              <a href={user.vendorDocuments.panCard} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> PAN
-                              </a>
-                            )}
-                            {user.vendorDocuments.aadhaarCard && (
-                              <a href={user.vendorDocuments.aadhaarCard} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> Aadhaar
-                              </a>
-                            )}
-                          </div>
+                          <VendorDocumentsDropdown documents={user.vendorDocuments} vendorName={user.name} />
                         </div>
                       )}
 
@@ -630,41 +628,10 @@ const UserApprovals = () => {
                             )}
                           </td>
                           <td className="p-4">
-                            {user.vendorDocuments ? (
-                              <div className="flex flex-wrap gap-1.5 max-w-xs">
-                                {user.vendorDocuments.udyamCertificate && (
-                                  <a href={user.vendorDocuments.udyamCertificate} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> Udyam
-                                  </a>
-                                )}
-                                {user.vendorDocuments.fssaiLicense && (
-                                  <a href={user.vendorDocuments.fssaiLicense} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> FSSAI
-                                  </a>
-                                )}
-                                {user.vendorDocuments.labourLicense && (
-                                  <a href={user.vendorDocuments.labourLicense} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> Labour
-                                  </a>
-                                )}
-                                {user.vendorDocuments.gstCertificate && (
-                                  <a href={user.vendorDocuments.gstCertificate} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> GST
-                                  </a>
-                                )}
-                                {user.vendorDocuments.panCard && (
-                                  <a href={user.vendorDocuments.panCard} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> PAN
-                                  </a>
-                                )}
-                                {user.vendorDocuments.aadhaarCard && (
-                                  <a href={user.vendorDocuments.aadhaarCard} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> Aadhaar
-                                  </a>
-                                )}
-                              </div>
+                            {user.role === 'vendor' ? (
+                              <VendorDocumentsDropdown documents={user.vendorDocuments} vendorName={user.name} />
                             ) : (
-                              <span className="text-xs text-gray-400 font-medium">N/A</span>
+                              <span className="text-xs text-gray-400 font-medium italic">N/A</span>
                             )}
                           </td>
                           <td className="p-4 pr-6 text-right">
@@ -713,28 +680,10 @@ const UserApprovals = () => {
                         <p className="text-gray-600">Mess: <strong>{member.mess?.name || 'N/A'}</strong></p>
                       </div>
 
-                      {member.documents && (
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Documents</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {member.documents.identityProof && (
-                              <a href={member.documents.identityProof} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> Identity
-                              </a>
-                            )}
-                            {member.documents.policeVerification && (
-                              <a href={member.documents.policeVerification} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> Police Report
-                              </a>
-                            )}
-                            {member.documents.medicalReport && (
-                              <a href={member.documents.medicalReport} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                <FileText size={10} /> Medical
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+                        <span className="text-[11px] font-semibold text-gray-400 uppercase">Documents:</span>
+                        <VendorDocumentsDropdown documents={member.documents} vendorName={member.name} />
+                      </div>
 
                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                         <Button onClick={() => handleApproveStaff(member._id)} variant="primary" className="w-full text-xs py-2 bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center">
@@ -777,27 +726,7 @@ const UserApprovals = () => {
                             <p className="text-xs text-gray-500 font-medium">Mess: {member.mess?.name || 'N/A'}</p>
                           </td>
                           <td className="p-4">
-                            {member.documents ? (
-                              <div className="flex flex-wrap gap-1.5">
-                                {member.documents.identityProof && (
-                                  <a href={member.documents.identityProof} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> Identity
-                                  </a>
-                                )}
-                                {member.documents.policeVerification && (
-                                  <a href={member.documents.policeVerification} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> Police Report
-                                  </a>
-                                )}
-                                {member.documents.medicalReport && (
-                                  <a href={member.documents.medicalReport} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded border border-gray-200 inline-flex items-center gap-1">
-                                    <FileText size={10} /> Medical
-                                  </a>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-gray-400 font-medium">No documents</span>
-                            )}
+                            <VendorDocumentsDropdown documents={member.documents} vendorName={member.name} />
                           </td>
                           <td className="p-4 pr-6 text-right">
                             <div className="flex justify-end gap-2">
@@ -915,10 +844,22 @@ const UserApprovals = () => {
                           </>
                         )}
                       </div>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
-                        <CheckCircle2 size={12} /> Approved
-                      </span>
+                      <div className="flex flex-col items-end shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                          <CheckCircle2 size={12} /> Approved
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-medium mt-0.5">
+                          by <strong className="text-gray-600 font-semibold">{u.approvedBy?.name || 'College Admin'}</strong>
+                        </span>
+                      </div>
                     </div>
+
+                    {u.role === 'vendor' && (
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+                        <span className="text-[11px] font-semibold text-gray-400 uppercase">Documents:</span>
+                        <VendorDocumentsDropdown documents={u.vendorDocuments} vendorName={u.name} />
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                       <button
@@ -951,15 +892,16 @@ const UserApprovals = () => {
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User Details</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role & Authority</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Assigned Mess</th>
-                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Documents</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status & Approver</th>
                     <th className="p-4 pr-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {loading ? (
-                    <tr><td colSpan="5" className="p-8 text-center text-gray-500 font-medium">Loading approved members...</td></tr>
+                    <tr><td colSpan="6" className="p-8 text-center text-gray-500 font-medium">Loading approved members...</td></tr>
                   ) : filteredApprovedUsers.length === 0 ? (
-                    <tr><td colSpan="5" className="p-8 text-center text-gray-500 font-medium">No approved vendors or committee members found matching criteria.</td></tr>
+                    <tr><td colSpan="6" className="p-8 text-center text-gray-500 font-medium">No approved vendors or committee members found matching criteria.</td></tr>
                   ) : (
                     filteredApprovedUsers.map((u) => (
                       <tr key={u._id} className="hover:bg-gray-50/60 transition-colors">
@@ -998,9 +940,24 @@ const UserApprovals = () => {
                           )}
                         </td>
                         <td className="p-4">
+                          {u.role === 'vendor' ? (
+                            <VendorDocumentsDropdown documents={u.vendorDocuments} vendorName={u.name} />
+                          ) : (
+                            <span className="text-xs text-gray-400 font-medium italic">N/A</span>
+                          )}
+                        </td>
+                        <td className="p-4">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                             <CheckCircle2 size={12} /> Approved
                           </span>
+                          <p className="text-[11px] text-gray-500 font-medium mt-1 leading-tight">
+                            by <strong className="text-gray-700 font-semibold">{u.approvedBy?.name || 'College Admin'}</strong>
+                          </p>
+                          {u.approvedAt && (
+                            <p className="text-[10px] text-gray-400 font-medium">
+                              {new Date(u.approvedAt).toLocaleDateString()}
+                            </p>
+                          )}
                         </td>
                         <td className="p-4 pr-6 text-right">
                           <div className="flex justify-end items-center gap-2">
@@ -1115,7 +1072,15 @@ const UserApprovals = () => {
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 mt-1">
                           <CheckCircle2 size={11} /> Approved
                         </span>
+                        <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                          by <strong className="text-gray-600 font-semibold">{s.approvedBy?.name || 'College Admin'}</strong>
+                        </p>
                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase">Documents:</span>
+                      <VendorDocumentsDropdown documents={s.documents} vendorName={s.name} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
@@ -1149,15 +1114,16 @@ const UserApprovals = () => {
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Staff Member</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role & Salary</th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Mess & Vendor</th>
-                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Documents</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status & Approver</th>
                     <th className="p-4 pr-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {loading ? (
-                    <tr><td colSpan="5" className="p-8 text-center text-gray-500 font-medium">Loading approved staff...</td></tr>
+                    <tr><td colSpan="6" className="p-8 text-center text-gray-500 font-medium">Loading approved staff...</td></tr>
                   ) : filteredApprovedStaff.length === 0 ? (
-                    <tr><td colSpan="5" className="p-8 text-center text-gray-500 font-medium">No approved staff members found matching criteria.</td></tr>
+                    <tr><td colSpan="6" className="p-8 text-center text-gray-500 font-medium">No approved staff members found matching criteria.</td></tr>
                   ) : (
                     filteredApprovedStaff.map((s) => (
                       <tr key={s._id} className="hover:bg-gray-50/60 transition-colors">
@@ -1187,9 +1153,20 @@ const UserApprovals = () => {
                           </p>
                         </td>
                         <td className="p-4">
+                          <VendorDocumentsDropdown documents={s.documents} vendorName={s.name} />
+                        </td>
+                        <td className="p-4">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                             <CheckCircle2 size={12} /> Approved
                           </span>
+                          <p className="text-[11px] text-gray-500 font-medium mt-1 leading-tight">
+                            by <strong className="text-gray-700 font-semibold">{s.approvedBy?.name || 'College Admin'}</strong>
+                          </p>
+                          {s.approvedAt && (
+                            <p className="text-[10px] text-gray-400 font-medium">
+                              {new Date(s.approvedAt).toLocaleDateString()}
+                            </p>
+                          )}
                         </td>
                         <td className="p-4 pr-6 text-right">
                           <div className="flex justify-end items-center gap-2">
@@ -1224,268 +1201,418 @@ const UserApprovals = () => {
       {/* ============================================================== */}
       {/* MODAL 1: DENY PENDING USER REGISTRATION                        */}
       {/* ============================================================== */}
-      {denyingUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-[95%] sm:w-full p-4 sm:p-6 shadow-2xl border border-white/40 relative max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Deny Registration Request</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Are you sure you want to deny the registration request for <strong className="text-gray-900">{denyingUser.name}</strong> ({denyingUser.email})?
-            </p>
-            
-            <div className="space-y-2 mb-6">
-              <label className="block text-sm font-semibold text-gray-700">Reason for Denial</label>
-              <textarea
-                rows="4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 bg-gray-50 focus:bg-white text-sm transition-all resize-none"
-                placeholder="Enter the reason for denial (this will be emailed)..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-              />
+      {denyingUser && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-slate-950/65 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => !denying && setDenyingUser(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden relative flex flex-col transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-b from-rose-50/80 to-white px-6 pt-6 pb-2 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 shadow-inner border border-rose-200/60 ring-6 ring-rose-50">
+                <XCircle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Deny Registration Request</h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Provide a reason for rejecting <strong className="text-gray-900">{denyingUser.name}</strong> ({denyingUser.email}).
+              </p>
             </div>
-            
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setDenyingUser(null);
-                  setRejectionReason('');
-                }}
-                disabled={denying}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleDenyUser}
-                disabled={denying || !rejectionReason.trim()}
-              >
-                {denying ? 'Denying...' : 'Send & Deny'}
-              </Button>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Reason for Denial
+                </label>
+                <textarea
+                  rows="4"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 bg-gray-50/60 focus:bg-white text-sm transition-all resize-none"
+                  placeholder="Enter the official reason for denial (this will be sent via email)..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDenyingUser(null);
+                    setRejectionReason('');
+                  }}
+                  disabled={denying}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDenyUser}
+                  disabled={denying || !rejectionReason.trim()}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-600/30 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {denying ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Denying...</span>
+                    </>
+                  ) : (
+                    <span>Send & Deny</span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
       {/* MODAL 2: EDIT APPROVED USER (VENDOR / COMMITTEE)              */}
       {/* ============================================================== */}
-      {editingUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  Edit {editingUser.role === 'vendor' ? 'Vendor' : 'Mess Committee Member'}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {editingUser.role === 'vendor' ? 'Update account credentials and mess assignment' : 'Update committee member credentials'}
-                </p>
+      {editingUser && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-slate-950/65 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => !savingUser && setEditingUser(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden relative max-h-[92vh] flex flex-col transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Dynamic Header based on role */}
+            <div className={`px-6 py-5 border-b flex items-start justify-between gap-4 shrink-0 ${
+              editingUser.role === 'vendor'
+                ? 'bg-gradient-to-r from-rose-50/70 via-rose-50/20 to-white border-rose-100/70'
+                : 'bg-gradient-to-r from-amber-50/70 via-indigo-50/20 to-white border-amber-100/70'
+            }`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs border ${
+                  editingUser.role === 'vendor'
+                    ? 'bg-rose-100/80 text-rose-600 border-rose-200/80'
+                    : 'bg-amber-100/80 text-amber-700 border-amber-200/80'
+                }`}>
+                  {editingUser.role === 'vendor' ? <Store size={22} /> : <Building2 size={22} />}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                      Edit {editingUser.role === 'vendor' ? 'Vendor Account' : 'Committee Member'}
+                    </h3>
+                    <span className={`px-2 py-0.5 text-[10px] font-black rounded-full uppercase tracking-wider shrink-0 ${
+                      editingUser.role === 'vendor' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {editingUser.role.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">
+                    {editingUser.role === 'vendor'
+                      ? 'Update catering credentials, mess allocation & details'
+                      : 'Update committee credentials and oversight authority'}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setEditingUser(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
+                onClick={() => !savingUser && setEditingUser(null)}
+                className="w-8 h-8 rounded-full bg-gray-100/80 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors shrink-0 cursor-pointer"
+                aria-label="Close"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditUser} className="space-y-4">
+            {/* Form Content */}
+            <form onSubmit={handleSaveEditUser} className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Full Name */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Full Name</label>
-                <Input
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <User size={13} className="text-gray-400" />
+                  <span>Full Name</span>
+                </label>
+                <input
                   type="text"
                   value={editUserData.name}
                   onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })}
-                  placeholder="Full Name"
+                  placeholder="e.g. John Doe"
                   required
+                  className="w-full px-3.5 py-2.5 text-sm bg-gray-50/60 hover:bg-white focus:bg-white border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-2xs transition-all"
                 />
               </div>
 
+              {/* Email Address */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Email Address</label>
-                <Input
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Mail size={13} className="text-gray-400" />
+                  <span>Email Address</span>
+                </label>
+                <input
                   type="email"
                   value={editUserData.email}
                   onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
-                  placeholder="Email Address"
+                  placeholder="e.g. name@example.com"
                   required
+                  className="w-full px-3.5 py-2.5 text-sm bg-gray-50/60 hover:bg-white focus:bg-white border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-2xs transition-all"
                 />
               </div>
 
+              {/* Phone Number */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Phone Number</label>
-                <Input
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Phone size={13} className="text-gray-400" />
+                  <span>Phone Number</span>
+                </label>
+                <input
                   type="tel"
                   value={editUserData.phoneNumber}
                   onChange={(e) => setEditUserData({ ...editUserData, phoneNumber: e.target.value })}
-                  placeholder="10-digit Phone Number"
+                  placeholder="10-digit mobile number"
                   required
+                  className="w-full px-3.5 py-2.5 text-sm bg-gray-50/60 hover:bg-white focus:bg-white border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-2xs transition-all"
                 />
               </div>
 
+              {/* Vendor-specific fields */}
               {editingUser.role === 'vendor' && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Company / Catering Agency Name</label>
-                  <Input
-                    type="text"
-                    value={editUserData.companyName}
-                    onChange={(e) => setEditUserData({ ...editUserData, companyName: e.target.value })}
-                    placeholder="e.g. Annapurna Caterers Pvt Ltd"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                      <Store size={13} className="text-gray-400" />
+                      <span>Company / Catering Agency Name</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editUserData.companyName}
+                      onChange={(e) => setEditUserData({ ...editUserData, companyName: e.target.value })}
+                      placeholder="e.g. Annapurna Caterers Pvt Ltd"
+                      className="w-full px-3.5 py-2.5 text-sm bg-gray-50/60 hover:bg-white focus:bg-white border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-2xs transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <Select
+                      label="Assigned Mess"
+                      value={editUserData.messAssigned}
+                      onChange={(e) => setEditUserData({ ...editUserData, messAssigned: e.target.value })}
+                      options={[
+                        { value: '', label: 'Unassigned' },
+                        ...messes.map(m => ({ value: m._id, label: m.name })),
+                      ]}
+                    />
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-gray-700">Compliance Documents</p>
+                      <p className="text-[11px] text-gray-500">Government licenses & KYC files</p>
+                    </div>
+                    <VendorDocumentsDropdown documents={editingUser.vendorDocuments} vendorName={editingUser.name} />
+                  </div>
+                </>
               )}
 
-              {editingUser.role === 'vendor' && (
-                <div>
-                  <Select
-                    label="Assigned Mess"
-                    value={editUserData.messAssigned}
-                    onChange={(e) => setEditUserData({ ...editUserData, messAssigned: e.target.value })}
-                    options={[
-                      { value: '', label: 'Unassigned' },
-                      ...messes.map(m => ({ value: m._id, label: m.name })),
-                    ]}
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100">
-                <Button
+              {/* Footer Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 mt-6">
+                <button
                   type="button"
-                  variant="secondary"
                   onClick={() => setEditingUser(null)}
                   disabled={savingUser}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
-                  variant="primary"
-                  className="bg-indigo-600 hover:bg-indigo-700"
                   disabled={savingUser}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
+                    editingUser.role === 'vendor'
+                      ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 shadow-rose-600/25'
+                      : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-indigo-600/25'
+                  }`}
                 >
-                  {savingUser ? 'Saving Changes...' : 'Save Changes'}
-                </Button>
+                  {savingUser ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
       {/* MODAL 3: DELETE USER CONFIRMATION (CRITICAL DATA LOSS WARNING) */}
       {/* ============================================================== */}
-      {deletingUser && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-rose-300 relative space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
-              <AlertOctagon size={32} className="animate-pulse" />
-            </div>
-
-            <div className="text-center space-y-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800">
-                Critical Warning: Permanent Deletion
+      {deletingUser && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => !deletingUserLoading && setDeletingUser(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-rose-100 overflow-hidden relative flex flex-col transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Banner with Soft Accent */}
+            <div className="bg-gradient-to-b from-rose-50/80 to-white px-6 pt-6 pb-2 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 shadow-inner border border-rose-200/60 ring-6 ring-rose-50">
+                <Trash2 size={26} />
+              </div>
+              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 mb-1.5">
+                Permanent Deletion
               </span>
-              <h3 className="text-lg font-black text-gray-900 mt-1">
-                Delete {deletingUser.role === 'vendor' ? 'Vendor' : 'Mess Committee Member'}?
+              <h3 className="text-lg font-bold text-gray-900">
+                Delete {deletingUser.role === 'vendor' ? 'Vendor Account' : 'Committee Member'}?
               </h3>
-              <p className="text-sm font-bold text-rose-600">
-                "{deletingUser.name}" ({deletingUser.role.replace('_', ' ').toUpperCase()})
+              <p className="text-xs text-gray-500 mt-0.5">
+                This account and all linked records will be permanently erased.
               </p>
             </div>
 
-            {/* Prominent warning box prompted to the admin */}
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-950 space-y-2 leading-relaxed">
-              <p className="font-extrabold text-rose-900 flex items-center gap-1.5 text-sm">
-                <AlertTriangle size={16} className="text-rose-600 flex-shrink-0" />
-                Deleting this user will permanently erase all associated data!
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-rose-800 font-medium pl-1 text-[11px]">
-                {deletingUser.role === 'vendor' ? (
-                  <>
-                    <li>All mess staff members registered under this vendor will be removed.</li>
-                    <li>All menu timetables and meal records created by this vendor will be erased.</li>
-                    <li>Vendor notices and assigned complaints will be unlinked.</li>
-                  </>
-                ) : (
-                  <>
-                    <li>All scheduled mess inspection visits assigned to this member will be deleted.</li>
-                    <li>Committee notices and inspection records will be erased.</li>
-                  </>
-                )}
-                <li className="font-bold text-rose-900">This action CANNOT be undone!</li>
-              </ul>
-            </div>
+            <div className="p-6 space-y-4">
+              {/* User Target Card */}
+              <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200/80 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">{deletingUser.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{deletingUser.email}</p>
+                  {deletingUser.companyName && (
+                    <p className="text-xs font-semibold text-teal-700 mt-0.5 truncate">{deletingUser.companyName}</p>
+                  )}
+                </div>
+                <span className={`px-2.5 py-1 text-[10px] font-black rounded-full uppercase tracking-wider shrink-0 ${
+                  deletingUser.role === 'vendor' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {deletingUser.role.replace('_', ' ')}
+                </span>
+              </div>
 
-            <div className="flex gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeletingUser(null)}
-                disabled={deletingUserLoading}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDeleteUser}
-                disabled={deletingUserLoading}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-600/30 cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                {deletingUserLoading ? (
-                  'Deleting All Data...'
-                ) : (
-                  <>
-                    <Trash2 size={14} /> Yes, Delete User & Data
-                  </>
-                )}
-              </button>
+              {/* Warning Callout Box */}
+              <div className="p-4 bg-rose-50/70 border border-rose-200/70 rounded-2xl text-xs space-y-2">
+                <p className="font-bold text-rose-900 flex items-center gap-1.5">
+                  <AlertTriangle size={15} className="text-rose-600 shrink-0" />
+                  Cascading Data Consequences
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-rose-800/90 font-medium text-[11px] pl-1 leading-relaxed">
+                  {deletingUser.role === 'vendor' ? (
+                    <>
+                      <li>All mess staff members registered under this vendor will be removed.</li>
+                      <li>All timetable menus and meal tracking logs will be deleted.</li>
+                      <li>Assigned complaints and vendor notices will be unlinked.</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>All scheduled inspection visits assigned to this member will be unlinked.</li>
+                      <li>Committee notices and inspection records will be erased.</li>
+                    </>
+                  )}
+                  <li className="font-bold text-rose-900">This action cannot be undone.</li>
+                </ul>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingUser(null)}
+                  disabled={deletingUserLoading}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer disabled:opacity-50 text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteUser}
+                  disabled={deletingUserLoading}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {deletingUserLoading ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={13} />
+                      <span>Delete Account</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
       {/* MODAL 4: EDIT APPROVED STAFF MEMBER                            */}
       {/* ============================================================== */}
-      {editingStaff && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Edit Staff Member</h3>
-                <p className="text-xs text-gray-500">Update staff role, salary, and mess location</p>
+      {editingStaff && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-slate-950/65 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => !savingStaff && setEditingStaff(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden relative max-h-[92vh] flex flex-col transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-5 border-b bg-gradient-to-r from-teal-50/70 via-indigo-50/20 to-white border-teal-100/70 flex items-start justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center shrink-0 shadow-xs border border-teal-200/80">
+                  <UserCheck size={22} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">Edit Staff Member</h3>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">Update staff credentials, compensation & mess location</p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setEditingStaff(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
+                onClick={() => !savingStaff && setEditingStaff(null)}
+                className="w-8 h-8 rounded-full bg-gray-100/80 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors shrink-0 cursor-pointer"
+                aria-label="Close"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditStaff} className="space-y-4">
+            <form onSubmit={handleSaveEditStaff} className="flex-1 overflow-y-auto p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Staff Member Name</label>
-                <Input
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <User size={13} className="text-gray-400" />
+                  <span>Staff Member Name</span>
+                </label>
+                <input
                   type="text"
                   value={editStaffData.name}
                   onChange={(e) => setEditStaffData({ ...editStaffData, name: e.target.value })}
-                  placeholder="Full Name"
+                  placeholder="e.g. Ramesh Patil"
                   required
+                  className="w-full px-3.5 py-2.5 text-sm bg-gray-50/60 hover:bg-white focus:bg-white border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-2xs transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Phone Number</label>
-                <Input
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Phone size={13} className="text-gray-400" />
+                  <span>Phone Number</span>
+                </label>
+                <input
                   type="tel"
                   value={editStaffData.phoneNumber}
                   onChange={(e) => setEditStaffData({ ...editStaffData, phoneNumber: e.target.value })}
-                  placeholder="10-digit Phone Number"
+                  placeholder="10-digit mobile number"
                   required
+                  className="w-full px-3.5 py-2.5 text-sm bg-gray-50/60 hover:bg-white focus:bg-white border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-2xs transition-all"
                 />
               </div>
 
@@ -1505,12 +1632,16 @@ const UserApprovals = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Monthly Salary (₹)</label>
-                  <Input
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <DollarSign size={13} className="text-gray-400" />
+                    <span>Monthly Salary (₹)</span>
+                  </label>
+                  <input
                     type="number"
                     value={editStaffData.salary}
                     onChange={(e) => setEditStaffData({ ...editStaffData, salary: e.target.value })}
                     placeholder="e.g. 15000"
+                    className="w-full px-3.5 py-2.5 text-sm bg-gray-50/60 hover:bg-white focus:bg-white border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-2xs transition-all"
                   />
                 </div>
               </div>
@@ -1528,89 +1659,115 @@ const UserApprovals = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100">
-                <Button
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold text-gray-700">Verification Documents</p>
+                  <p className="text-[11px] text-gray-500">ID proof, police verification & medical report</p>
+                </div>
+                <VendorDocumentsDropdown documents={editingStaff.documents} vendorName={editingStaff.name} />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 mt-6">
+                <button
                   type="button"
-                  variant="secondary"
                   onClick={() => setEditingStaff(null)}
                   disabled={savingStaff}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
-                  variant="primary"
-                  className="bg-indigo-600 hover:bg-indigo-700"
                   disabled={savingStaff}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 shadow-md shadow-teal-600/25 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  {savingStaff ? 'Saving...' : 'Save Changes'}
-                </Button>
+                  {savingStaff ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
       {/* MODAL 5: DELETE STAFF CONFIRMATION (CRITICAL WARNING)          */}
       {/* ============================================================== */}
-      {deletingStaff && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-rose-300 relative space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
-              <AlertOctagon size={32} className="animate-pulse" />
-            </div>
-
-            <div className="text-center space-y-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800">
-                Critical Warning: Permanent Deletion
+      {deletingStaff && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+          onClick={() => !deletingStaffLoading && setDeletingStaff(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-rose-100 overflow-hidden relative flex flex-col transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-b from-rose-50/80 to-white px-6 pt-6 pb-2 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 shadow-inner border border-rose-200/60 ring-6 ring-rose-50">
+                <Trash2 size={26} />
+              </div>
+              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 mb-1.5">
+                Permanent Deletion
               </span>
-              <h3 className="text-lg font-black text-gray-900 mt-1">
-                Remove Staff Member?
-              </h3>
-              <p className="text-sm font-bold text-rose-600">
+              <h3 className="text-lg font-bold text-gray-900">Remove Staff Member?</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
                 "{deletingStaff.name}" ({deletingStaff.role})
               </p>
             </div>
 
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-950 space-y-2 leading-relaxed">
-              <p className="font-extrabold text-rose-900 flex items-center gap-1.5 text-sm">
-                <AlertTriangle size={16} className="text-rose-600 flex-shrink-0" />
-                Deleting this staff member will permanently erase all associated data!
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-rose-800 font-medium pl-1 text-[11px]">
-                <li>Staff employment profile and verification history will be permanently deleted.</li>
-                <li>Uploaded compliance documents (police report, medical cert) will be unlinked.</li>
-                <li className="font-bold text-rose-900">This action cannot be undone!</li>
-              </ul>
-            </div>
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-rose-50/70 border border-rose-200/70 rounded-2xl text-xs space-y-2">
+                <p className="font-bold text-rose-900 flex items-center gap-1.5">
+                  <AlertTriangle size={15} className="text-rose-600 shrink-0" />
+                  Consequences of Removal
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-rose-800/90 font-medium text-[11px] pl-1 leading-relaxed">
+                  <li>Staff employment profile and verification history will be permanently deleted.</li>
+                  <li>Uploaded compliance documents (police report, medical cert) will be unlinked.</li>
+                  <li className="font-bold text-rose-900">This action cannot be undone.</li>
+                </ul>
+              </div>
 
-            <div className="flex gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeletingStaff(null)}
-                disabled={deletingStaffLoading}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDeleteStaff}
-                disabled={deletingStaffLoading}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-600/30 cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                {deletingStaffLoading ? (
-                  'Deleting Staff...'
-                ) : (
-                  <>
-                    <Trash2 size={14} /> Yes, Delete Staff Member
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingStaff(null)}
+                  disabled={deletingStaffLoading}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer disabled:opacity-50 text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteStaff}
+                  disabled={deletingStaffLoading}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {deletingStaffLoading ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={13} />
+                      <span>Delete Staff</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

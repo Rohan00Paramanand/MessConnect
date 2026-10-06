@@ -45,6 +45,15 @@ const staffSchema = new Schema(
       default: false
     },
 
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+
+    approvedAt: {
+      type: Date
+    },
+
     isActive: {
       type: Boolean,
       default: true
