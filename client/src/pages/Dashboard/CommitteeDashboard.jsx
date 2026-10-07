@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   TrendingUp,
   Calendar,
-  ShieldCheck,
   ArrowRight,
   Clock,
   UploadCloud,
@@ -107,15 +106,12 @@ const CommitteeDashboard = () => {
       <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-5 sm:p-10 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-700 text-white shadow-[0_8px_30px_rgba(245,158,11,0.2)] group">
         <div className="absolute -left-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
         <div className="relative z-10">
-          <p className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-widest uppercase mb-2 sm:mb-3 border border-white/20">
-            <ShieldCheck size={12} /> Committee Portal
-          </p>
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            Operations,<br />
+            Mess Committee,<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 to-white">{user?.name}</span>
           </h1>
           <p className="text-amber-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">
-            Oversee daily operations, manage student feedback, and perform scheduled mess inspection audits.
+            Conduct mess inspections, monitor quality standards, and review student feedback.
           </p>
         </div>
       </div>

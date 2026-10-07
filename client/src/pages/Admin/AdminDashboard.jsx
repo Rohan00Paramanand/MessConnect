@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
-import { ShieldCheck, Activity, ArrowRight, Server, BarChart3, ClipboardList, Plus } from 'lucide-react';
+import { ShieldCheck, Activity, ArrowRight, BarChart3, ClipboardList, Plus } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -31,15 +31,12 @@ const AdminDashboard = () => {
         <div className="absolute -left-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <p className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-widest uppercase mb-2 sm:mb-3 border border-white/20">
-              <Server size={12} /> System Control Plane
-            </p>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
               College Admin,<br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-100 to-white">{user?.name}</span>
             </h1>
             <p className="text-indigo-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">
-              Review pending vendor and committee applications, schedule and verify mess inspection visits, and manage your college's mess portal.
+              Manage user approvals, schedule inspection visits, and oversee campus mess operations.
             </p>
           </div>
         </div>
