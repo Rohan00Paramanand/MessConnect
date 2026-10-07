@@ -247,10 +247,12 @@ const ComplaintCard = ({
             <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold text-gray-500 bg-gray-100 rounded-full border border-gray-200 capitalize">
               {complaint.category}
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 rounded-full border border-indigo-200 max-w-full min-w-0">
-              <span className="flex-shrink-0">🏛️</span>
-              <span className="truncate">{complaint.mess?.name || messes.find(m => m._id === (complaint.mess?._id || complaint.mess))?.name || 'Mess'}</span>
-            </span>
+            {!isVendor && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 rounded-full border border-indigo-200 max-w-full min-w-0">
+                <span className="flex-shrink-0">🏛️</span>
+                <span className="truncate">{complaint.mess?.name || messes.find(m => m._id === (complaint.mess?._id || complaint.mess))?.name || 'Mess'}</span>
+              </span>
+            )}
             <div className="ml-auto flex items-center gap-2">
               <button
                 type="button"

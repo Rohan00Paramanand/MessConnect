@@ -229,7 +229,7 @@ const FeedbackView = () => {
             </p>
           </div>
           <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
-            {user?.role !== 'vendor' ? (
+            {user?.role !== 'vendor' && (
               <Select
                 variant="header"
                 value={messFilter}
@@ -242,11 +242,6 @@ const FeedbackView = () => {
                   ...messes.map((m) => ({ value: m._id, label: m.name }))
                 ]}
               />
-            ) : (
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-white/30 text-white font-bold text-sm flex items-center gap-1.5">
-                <span>🏛️</span>
-                <span>{messes.find(m => m._id === messFilter)?.name || user?.messAssigned?.name || 'Assigned Mess'}</span>
-              </div>
             )}
             <div className="text-right bg-white/20 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2.5 sm:py-4 border border-white/30">
               <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
@@ -499,9 +494,11 @@ const FeedbackView = () => {
                   <span className="text-xs text-gray-400 font-bold bg-gray-100 px-3 py-1 rounded-full">
                     {new Date(fb.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'})}
                   </span>
-                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
-                    🏛️ {fb.mess?.name || messes.find(m => m._id === fb.mess)?.name || 'Mess'}
-                  </span>
+                  {user?.role !== 'vendor' && (
+                    <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                      🏛️ {fb.mess?.name || messes.find(m => m._id === fb.mess)?.name || 'Mess'}
+                    </span>
+                  )}
                 </div>
                 {(!fb.ratings || fb.ratings.length === 0) && <StarRating rating={fb.rating} readOnly />}
               </div>
