@@ -19,11 +19,11 @@ router.use(protect);
 router.get('/my-visits', authorizeRoles('mess_committee'), getMyVisits);
 router.post('/submit/:id', authorizeRoles('mess_committee'), visitSubmissionUpload, submitVisitReport);
 
-// College Admin Endpoints
-router.get('/committee-members', authorizeRoles('college_admin'), getCollegeCommitteeMembers);
-router.get('/', authorizeRoles('college_admin'), getCollegeVisits);
-router.post('/schedule', authorizeRoles('college_admin'), scheduleVisit);
-router.patch('/mark-done/:id', authorizeRoles('college_admin'), markVisitDone);
-router.delete('/:id', authorizeRoles('college_admin'), deleteVisit);
+// College Admin Endpoints (and Super Admin scoped to college)
+router.get('/committee-members', authorizeRoles('college_admin', 'super_admin'), getCollegeCommitteeMembers);
+router.get('/', authorizeRoles('college_admin', 'super_admin'), getCollegeVisits);
+router.post('/schedule', authorizeRoles('college_admin', 'super_admin'), scheduleVisit);
+router.patch('/mark-done/:id', authorizeRoles('college_admin', 'super_admin'), markVisitDone);
+router.delete('/:id', authorizeRoles('college_admin', 'super_admin'), deleteVisit);
 
 export default router;

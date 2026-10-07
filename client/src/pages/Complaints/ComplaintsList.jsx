@@ -190,8 +190,9 @@ const ComplaintCard = ({
   const isAssignedToMe = !complaint.assignedTo ||
     (complaint.assignedTo?._id || complaint.assignedTo).toString() === (user?._id || user?.id)?.toString();
 
+  const isAuthority = ['mess_committee', 'college_admin', 'super_admin'].includes(user?.role);
   const hasActions =
-    (user?.role === 'mess_committee' && !['resolved', 'rejected'].includes(complaint.status)) ||
+    (isAuthority && !['resolved', 'rejected'].includes(complaint.status)) ||
     isVendor;
 
   return (
@@ -560,8 +561,8 @@ const ComplaintCard = ({
         {/* Role-Specific Actions */}
         {hasActions && (
           <div className="flex-shrink-0 w-full sm:w-48 pt-2 sm:pt-0">
-            {/* Mess Committee Actions */}
-            {user?.role === 'mess_committee' && (
+            {/* Mess Committee & College/Super Admin Actions */}
+            {isAuthority && (
               <div className="space-y-2">
                 <Select
                   label="Update Status"
@@ -720,7 +721,7 @@ const ComplaintCard = ({
 };
 
 const ComplaintsList = () => {
-  const { user } = useAuthStore();
+  const { user, activeCollege } = useAuthStore();
   const isStudent = user?.role === 'user' || user?.role === 'student';
 
   const [complaints, setComplaints] = useState([]);
@@ -765,7 +766,7 @@ const ComplaintsList = () => {
   }, [isStudent]);
 
   useEffect(() => {
-    if (user?.collegeId) {
+    if (user?.collegeId || user?.role === 'super_admin') {
       api.get('/messes')
         .then(({ data }) => {
           setMesses(data.data || []);
@@ -774,7 +775,7 @@ const ComplaintsList = () => {
           console.error('Failed to load messes', err);
         });
     }
-  }, [user]);
+  }, [user, activeCollege]);
 
   const isMyComplaint = (c) => {
     const complaintUserId = c.user_id?._id || c.user_id;
@@ -811,7 +812,7 @@ const ComplaintsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [messFilter, user?.role]);
+  }, [messFilter, user?.role, activeCollege]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

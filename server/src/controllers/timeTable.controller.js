@@ -58,16 +58,21 @@ export const createTimeTable = async (req, res) => {
 export const getTimeTable = async (req, res) => {
     try {
         const { date, mess } = req.query;
-        // Always scope to the user's own college
-        let query = { collegeId: req.collegeId };
+        // Scope to college if present (or non-super-admin)
+        let query = {};
+        if (req.user.role !== 'super_admin' || req.collegeId) {
+            query.collegeId = req.collegeId;
+        }
 
         if (req.user.role === 'vendor') {
             query.mess = req.user.messAssigned;
         } else if (mess) {
-            // Validate the requested mess belongs to this college
-            const messDoc = await Mess.findOne({ _id: mess, collegeId: req.collegeId });
-            if (!messDoc) {
-                return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
+            // Validate the requested mess belongs to this college if scoped
+            if (req.collegeId) {
+                const messDoc = await Mess.findOne({ _id: mess, collegeId: req.collegeId });
+                if (!messDoc) {
+                    return res.status(403).json({ status: 'error', message: 'Mess does not belong to your college' });
+                }
             }
             query.mess = mess;
         }

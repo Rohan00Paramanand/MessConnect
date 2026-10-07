@@ -10,9 +10,9 @@ router.use(protect);
 // Read-only endpoint for logged-in students/vendors/committees to get active messes
 router.get('/', getMesses);
 
-// Administrative endpoints for college admins to manage messes
-router.get('/admin', authorizeRoles('college_admin'), getAdminMesses);
-router.post('/admin', authorizeRoles('college_admin'), createMess);
-router.put('/admin/:id', authorizeRoles('college_admin'), updateMess);
+// Administrative endpoints for college admins and super admin (when scoped to a college) to manage messes
+router.get('/admin', authorizeRoles('college_admin', 'super_admin'), getAdminMesses);
+router.post('/admin', authorizeRoles('college_admin', 'super_admin'), createMess);
+router.put('/admin/:id', authorizeRoles('college_admin', 'super_admin'), updateMess);
 
 export default router;

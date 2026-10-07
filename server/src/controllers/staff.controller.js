@@ -63,12 +63,15 @@ export const addStaff = async (req, res) => {
 // @access  Private (Vendor, Mess Committee, College Admin)
 export const getStaff = async (req, res) => {
     try {
-        const allowedRoles = ['vendor', 'mess_committee', 'college_admin'];
+        const allowedRoles = ['vendor', 'mess_committee', 'college_admin', 'super_admin'];
         if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to view staff' });
         }
 
-        let query = { collegeId: req.collegeId };
+        let query = {};
+        if (req.user.role !== 'super_admin' || req.collegeId) {
+            query.collegeId = req.collegeId;
+        }
 
         if (req.user.role === 'vendor') {
             query.vendor = req.user._id;
@@ -104,7 +107,7 @@ export const getStaff = async (req, res) => {
 // @access  Private (Vendor only)
 export const updateStaff = async (req, res) => {
     try {
-        const allowedRoles = ['vendor', 'college_admin'];
+        const allowedRoles = ['vendor', 'college_admin', 'super_admin'];
         if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to update staff' });
         }
@@ -118,7 +121,7 @@ export const updateStaff = async (req, res) => {
         if (req.user.role === 'vendor' && staff.vendor.toString() !== req.user._id.toString()) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to update this staff member' });
         }
-        if (req.user.role === 'college_admin' && staff.collegeId.toString() !== req.collegeId.toString()) {
+        if (['college_admin', 'super_admin'].includes(req.user.role) && req.collegeId && staff.collegeId.toString() !== req.collegeId.toString()) {
             return res.status(403).json({ status: 'error', message: 'Staff does not belong to your college' });
         }
 
@@ -142,7 +145,7 @@ export const updateStaff = async (req, res) => {
 // @access  Private (Vendor, College Admin)
 export const deleteStaff = async (req, res) => {
     try {
-        const allowedRoles = ['vendor', 'college_admin'];
+        const allowedRoles = ['vendor', 'college_admin', 'super_admin'];
         if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to delete staff' });
         }
@@ -156,7 +159,7 @@ export const deleteStaff = async (req, res) => {
         if (req.user.role === 'vendor' && staff.vendor.toString() !== req.user._id.toString()) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to delete this staff member' });
         }
-        if (req.user.role === 'college_admin' && staff.collegeId.toString() !== req.collegeId.toString()) {
+        if (['college_admin', 'super_admin'].includes(req.user.role) && req.collegeId && staff.collegeId.toString() !== req.collegeId.toString()) {
             return res.status(403).json({ status: 'error', message: 'Staff does not belong to your college' });
         }
 

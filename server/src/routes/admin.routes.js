@@ -19,7 +19,18 @@ import { protect, authorizeRoles } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 router.use(protect);
-router.use(authorizeRoles('college_admin'));
+router.use(authorizeRoles('college_admin', 'super_admin'));
+
+// Ensure a college context is active before querying college admin endpoints
+router.use((req, res, next) => {
+    if (!req.collegeId) {
+        return res.status(400).json({
+            status: 'error',
+            message: 'Please select a college to view college admin features'
+        });
+    }
+    next();
+});
 
 router.get('/analytics', getCollegeAdminAnalytics);
 

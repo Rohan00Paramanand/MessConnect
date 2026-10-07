@@ -16,7 +16,7 @@ const mealTypeConfig = {
 };
 
 const WeeklyTimetable = () => {
-  const { user } = useAuthStore();
+  const { user, activeCollege } = useAuthStore();
   const [timetable, setTimetable] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCell, setActiveCell] = useState(null);
@@ -29,7 +29,7 @@ const WeeklyTimetable = () => {
   const popoverRef = useRef(null);
 
   useEffect(() => {
-    if (user?.collegeId) {
+    if (user?.collegeId || activeCollege) {
       api.get('/messes')
         .then(({ data }) => {
           const list = data.data || [];
@@ -42,12 +42,12 @@ const WeeklyTimetable = () => {
           console.error('Failed to load messes', err);
         });
     }
-  }, [user]);
+  }, [user, activeCollege]);
 
   const fetchTimetable = useCallback(async (filterVal = messFilter) => {
     try { 
       const params = {};
-      if (['user', 'student', 'mess_committee'].includes(user?.role) && filterVal) {
+      if (['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && filterVal) {
         params.mess = filterVal;
       }
       const { data } = await api.get('/timetable', { params }); 
@@ -257,7 +257,7 @@ const WeeklyTimetable = () => {
               </span>
             </div>
           )}
-          {['user', 'student', 'mess_committee'].includes(user?.role) && (
+          {['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
             <Select
               variant="header"
               value={messFilter}

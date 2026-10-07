@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Lock, Mail, Copy, RotateCcw, Trash2, BarChart3, AlertTriangle, X } from 'lucide-react';
+import { ShieldCheck, School, UserCheck, CheckCircle, ArrowRight, Mail, Copy, RotateCcw, Trash2, BarChart3, AlertTriangle, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
@@ -176,9 +176,6 @@ const SuperAdminDashboard = () => {
       <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-6 sm:p-10 bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 text-white shadow-[0_8px_30px_rgba(109,40,217,0.25)] group">
         <div className="absolute -left-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
         <div className="relative z-10">
-          <p className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-widest uppercase mb-3 border border-white/20">
-            <Lock size={12} /> Root Controller Plane
-          </p>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
             Super Administrator,<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-100 to-white">{user?.name}</span>

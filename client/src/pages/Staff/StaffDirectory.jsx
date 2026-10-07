@@ -11,7 +11,7 @@ import { Users, Plus, X, Trash2, Phone, CalendarDays, DollarSign, FileText, Chec
 const roleColors = { Cook: 'bg-orange-100 text-orange-700', Cleaner: 'bg-blue-100 text-blue-700', Cashier: 'bg-green-100 text-green-700', Manager: 'bg-purple-100 text-purple-700' };
 
 const StaffDirectory = () => {
-  const { user } = useAuthStore();
+  const { user, activeCollege } = useAuthStore();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -35,7 +35,7 @@ const StaffDirectory = () => {
   const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
-    if (user?.collegeId && (user.role === 'mess_committee' || user.role === 'college_admin')) {
+    if ((user?.collegeId || activeCollege) && (user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin')) {
       api.get('/messes')
         .then(({ data }) => {
           const list = data.data || [];
@@ -45,13 +45,13 @@ const StaffDirectory = () => {
           console.error('Failed to load messes', err);
         });
     }
-  }, [user]);
+  }, [user, activeCollege]);
 
   const fetchStaff = useCallback(async (filterVal = messFilter) => {
     try {
       setLoading(true);
       const params = {};
-      if ((user?.role === 'mess_committee' || user?.role === 'college_admin') && filterVal) {
+      if ((user?.role === 'mess_committee' || user?.role === 'college_admin' || user?.role === 'super_admin') && filterVal) {
         params.mess = filterVal;
       }
       const { data } = await api.get('/staff', { params });
@@ -210,7 +210,7 @@ const StaffDirectory = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {['mess_committee', 'college_admin'].includes(user?.role) && (
+            {['mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
               <Select
                 variant="header"
                 icon={Building2}

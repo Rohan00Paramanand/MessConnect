@@ -10,11 +10,11 @@ const router = express.Router();
 router.use(protect);
 
 router.route('/')
-    .get(authorizeRoles('vendor', 'mess_committee', 'college_admin'), getStaff)
+    .get(authorizeRoles('vendor', 'mess_committee', 'college_admin', 'super_admin'), getStaff)
     .post(authorizeRoles('vendor'), staffDocUpload, addStaff);
 
 router.route('/:id')
-    .patch(authorizeRoles('vendor', 'college_admin'), updateStaff)
-    .delete(authorizeRoles('vendor', 'college_admin'), deleteStaff);
+    .patch(authorizeRoles('vendor', 'college_admin', 'super_admin'), updateStaff)
+    .delete(authorizeRoles('vendor', 'college_admin', 'super_admin'), deleteStaff);
 
 export default router;

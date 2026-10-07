@@ -63,6 +63,10 @@ export const authorizeRoles = (...roles) => {
         if (!req.user) {
             return res.status(401).json({ status: 'error', message: 'Not authorized' });
         }
+        // Super admin has overarching supervisory authority across all administrative and college modules
+        if (req.user.role === 'super_admin') {
+            return next();
+        }
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 status: 'error',

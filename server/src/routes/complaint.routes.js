@@ -29,10 +29,10 @@ router.route('/:id/status')
     .patch(authorizeRoles('mess_committee'), updateComplaintStatus);
 
 router.route('/:id/extend-sla')
-    .patch(authorizeRoles('mess_committee', 'college_admin'), extendComplaintSla);
+    .patch(authorizeRoles('mess_committee', 'college_admin', 'super_admin'), extendComplaintSla);
 
 router.route('/:id/nudge-vendor')
-    .post(authorizeRoles('mess_committee', 'college_admin'), nudgeVendor);
+    .post(authorizeRoles('mess_committee', 'college_admin', 'super_admin'), nudgeVendor);
 
 router.route('/:id/vendor-complete')
     .patch(authorizeRoles('vendor'), upload.single('resolutionProof'), markVendorCompleted);
