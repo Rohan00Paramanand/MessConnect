@@ -8,7 +8,7 @@ import Select from '../../components/ui/Select';
 import { Camera, X, MapPin, Check } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
-const ComplaintForm = ({ onComplaintAdded }) => {
+const ComplaintForm = ({ onComplaintAdded, isModal = false, onCancel }) => {
   const { user } = useAuthStore();
   const [messes, setMesses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -244,8 +244,10 @@ const ComplaintForm = ({ onComplaintAdded }) => {
   }
 
   return (
-    <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-200 mb-6">
-      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Submit New Complaint</h3>
+    <div className={isModal ? 'space-y-4' : 'bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-gray-200 mb-6'}>
+      {!isModal && (
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Submit New Complaint</h3>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -396,9 +398,16 @@ const ComplaintForm = ({ onComplaintAdded }) => {
           document.body
         )}
 
-        <Button type="submit" disabled={loading} variant="student" className="w-full sm:w-auto">
-          {loading ? 'Submitting...' : 'Submit Complaint'}
-        </Button>
+        <div className={`flex items-center gap-3 ${isModal ? 'justify-end pt-3 border-t border-gray-100' : ''}`}>
+          {isModal && onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={loading} variant="student" className={isModal ? 'w-full sm:w-auto font-bold' : 'w-full sm:w-auto'}>
+            {loading ? 'Submitting...' : 'Submit Complaint'}
+          </Button>
+        </div>
       </form>
     </div>
   );

@@ -18,16 +18,17 @@ import {
   ClipboardList,
   Smile,
   Frown,
-  CheckCircle2
+  CheckCircle2,
+  MessageSquarePlus
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import LiveCameraCapture from '../../components/common/LiveCameraCapture';
+import ComplaintForm from '../Complaints/ComplaintForm';
 
 const CommitteeDashboard = () => {
   const { user } = useAuthStore();
   const [visits, setVisits] = useState([]);
-  const [loadingVisits, setLoadingVisits] = useState(true);
   const [resolvedComplaints, setResolvedComplaints] = useState([]);
 
   // Submission modal state
@@ -37,33 +38,60 @@ const CommitteeDashboard = () => {
   const [remarks, setRemarks] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Report mess issue modal state
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
   const fetchMyVisits = async () => {
     try {
-      setLoadingVisits(true);
       const { data } = await api.get('/visits/my-visits');
       setVisits(data.data || []);
     } catch (err) {
       console.warn('Failed to load committee visits:', err.message);
-    } finally {
-      setLoadingVisits(false);
     }
   };
 
-  const fetchComplaintsWithFeedback = async () => {
-    try {
-      const { data } = await api.get('/complaints');
-      const list = data.data || data || [];
-      const resolved = list.filter((c) => c.status === 'resolved');
-      setResolvedComplaints(resolved);
-    } catch (err) {
-      console.warn('Failed to load resolved complaints for dashboard:', err.message);
-    }
-  };
 
   useEffect(() => {
-    fetchMyVisits();
-    fetchComplaintsWithFeedback();
+    let isMounted = true;
+
+    const loadDashboardData = async () => {
+      try {
+        const [visitsRes, complaintsRes] = await Promise.allSettled([
+          api.get('/visits/my-visits'),
+          api.get('/complaints')
+        ]);
+
+        if (isMounted && visitsRes.status === 'fulfilled') {
+          setVisits(visitsRes.value.data?.data || []);
+        }
+
+        if (isMounted && complaintsRes.status === 'fulfilled') {
+          const list = complaintsRes.value.data?.data || complaintsRes.value.data || [];
+          setResolvedComplaints(list.filter((c) => c.status === 'resolved'));
+        }
+      } catch (err) {
+        console.warn('Failed to load dashboard data:', err);
+      }
+    };
+
+    loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // Lock background scroll when any modal is open
+  useEffect(() => {
+    if (selectedVisit || isReportModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedVisit, isReportModalOpen]);
 
   const handleReportSubmit = async (e) => {
     e.preventDefault();
@@ -105,14 +133,24 @@ const CommitteeDashboard = () => {
       {/* Hero Banner */}
       <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] p-5 sm:p-10 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-700 text-white shadow-[0_8px_30px_rgba(245,158,11,0.2)] group">
         <div className="absolute -left-12 -bottom-12 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 blur-3xl rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            Mess Committee,<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 to-white">{user?.name}</span>
-          </h1>
-          <p className="text-amber-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">
-            Conduct mess inspections, monitor quality standards, and review student feedback.
-          </p>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+              Mess Committee,<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 to-white">{user?.name}</span>
+            </h1>
+            <p className="text-amber-100 font-medium mt-2 sm:mt-3 max-w-md text-sm sm:text-base">
+              Conduct mess inspections, monitor quality standards, and review student feedback.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsReportModalOpen(true)}
+            className="self-start sm:self-auto inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-amber-800 hover:bg-amber-50 font-black shadow-lg shadow-black/10 transition-all hover:scale-[1.02] active:scale-95 text-sm cursor-pointer"
+          >
+            <MessageSquarePlus size={18} className="text-amber-600" />
+            Report Mess Issue
+          </button>
         </div>
       </div>
 
@@ -213,7 +251,7 @@ const CommitteeDashboard = () => {
       )}
 
       {/* Quick Action Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {[
           { to: '/visits',     label: 'Audits',   title: 'Mess Visits',Icon: ClipboardList, color: 'text-amber-500', bg: 'from-amber-100 to-orange-50', hover: 'hover:text-amber-500' },
           { to: '/complaints', label: 'Actions',  title: 'Complaints', Icon: AlertTriangle, color: 'text-red-500',   bg: 'from-red-100 to-rose-50',    hover: 'hover:text-red-500' },
@@ -239,6 +277,21 @@ const CommitteeDashboard = () => {
             </NavLink>
           );
         })}
+
+        {/* Dedicated "Report Issue" Action Card */}
+        <button
+          type="button"
+          onClick={() => setIsReportModalOpen(true)}
+          className="text-left bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+        >
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Report</p>
+            <h3 className="text-xl font-black text-gray-900 group-hover:text-rose-600 transition-colors">Log Issue</h3>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-100 to-orange-50 flex items-center justify-center text-rose-500 shadow-inner group-hover:scale-110 transition-transform duration-200 flex-shrink-0">
+            <MessageSquarePlus size={22} strokeWidth={2.5} />
+          </div>
+        </button>
       </div>
 
       {/* Complaint Resolutions & Student Feedback Section */}
@@ -402,6 +455,41 @@ const CommitteeDashboard = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ================= MODAL: Report Mess Issue / Log Complaint ================= */}
+      {isReportModalOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] overflow-y-auto overscroll-contain flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
+        >
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-xl w-full shadow-2xl space-y-4 border border-gray-100 max-h-[92dvh] overflow-y-auto overscroll-contain my-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-xl font-black text-gray-900">Report Mess Issue</h3>
+                <p className="text-xs text-gray-500 font-medium">
+                  File an issue directly into the mess complaint tracking system
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReportModalOpen(false)}
+                className="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <ComplaintForm
+              isModal={true}
+              onCancel={() => setIsReportModalOpen(false)}
+              onComplaintAdded={() => {
+                setIsReportModalOpen(false);
+              }}
+            />
           </div>
         </div>,
         document.body

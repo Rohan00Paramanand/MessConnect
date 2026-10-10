@@ -69,16 +69,22 @@ export const createComplaint = async (req, res) => {
             collegeId: req.collegeId
         });
 
-        // Notify Mess Committee in real-time
+        // Notify Mess Committee in real-time (excluding author if submitted by committee member)
         (async () => {
             try {
-                const committee = await User.find({ collegeId: req.collegeId, role: 'mess_committee' }).select('_id');
+                const committee = await User.find({
+                    collegeId: req.collegeId,
+                    role: 'mess_committee',
+                    _id: { $ne: req.user._id }
+                }).select('_id');
+
                 if (committee.length > 0) {
+                    const isCommitteeCreator = req.user.role === 'mess_committee';
                     await notifyMultipleUsers(
                         committee.map((c) => c._id),
                         {
                             collegeId: req.collegeId,
-                            title: 'New Student Complaint',
+                            title: isCommitteeCreator ? 'New Committee Inspection Issue' : 'New Student Complaint',
                             message: `A new complaint has been filed for ${messDoc.name}: "${complaintTitle}".`,
                             type: 'COMPLAINT_STATUS',
                             link: '/complaints',
@@ -224,6 +230,14 @@ export const updateComplaintStatus = async (req, res) => {
         const complaint = await Complaint.findOne(queryFilter);
         if (!complaint) {
             return res.status(404).json({ status: 'error', message: 'Complaint not found or does not belong to your college' });
+        }
+
+        // Prevent conflict of interest: Committee members cannot review/resolve their own filed complaints
+        if (complaint.user_id?.toString() === req.user._id.toString()) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'To prevent conflict of interest, complaints filed by committee members must be reviewed and resolved by another committee member.'
+            });
         }
 
         const currentStatus = complaint.status;

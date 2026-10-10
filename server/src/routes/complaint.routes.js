@@ -20,7 +20,7 @@ router.use(protect);
 
 router.route('/')
     .get(getComplaints)
-    .post(authorizeRoles('user'), upload.single('image'), createComplaint);
+    .post(authorizeRoles('user', 'mess_committee'), upload.single('image'), createComplaint);
 
 router.route('/:id')
     .delete(authorizeRoles('user'), deleteComplaint);
@@ -29,10 +29,10 @@ router.route('/:id/status')
     .patch(authorizeRoles('mess_committee'), updateComplaintStatus);
 
 router.route('/:id/extend-sla')
-    .patch(authorizeRoles('mess_committee', 'college_admin', 'super_admin'), extendComplaintSla);
+    .patch(authorizeRoles('mess_committee'), extendComplaintSla);
 
 router.route('/:id/nudge-vendor')
-    .post(authorizeRoles('mess_committee', 'college_admin', 'super_admin'), nudgeVendor);
+    .post(authorizeRoles('mess_committee'), nudgeVendor);
 
 router.route('/:id/vendor-complete')
     .patch(authorizeRoles('vendor'), upload.single('resolutionProof'), markVendorCompleted);
