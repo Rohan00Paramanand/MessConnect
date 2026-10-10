@@ -28,6 +28,8 @@ const WeeklyTimetable = () => {
   const [messes, setMesses] = useState([]);
   const popoverRef = useRef(null);
 
+  const isMessScopedRole = ['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role);
+
   useEffect(() => {
     if (user?.collegeId || activeCollege) {
       api.get('/messes')
@@ -35,33 +37,55 @@ const WeeklyTimetable = () => {
           const list = data.data || [];
           setMesses(list);
           if (list.length > 0) {
-            setMessFilter(list[0]._id);
+            // Default to user's assigned mess if present, otherwise first available mess
+            const defaultMessId = list.find(m => m._id === user?.messAssigned)?._id || list[0]._id;
+            setMessFilter(defaultMessId);
+          } else {
+            setLoading(false);
           }
         })
         .catch(err => {
           console.error('Failed to load messes', err);
+          setLoading(false);
         });
     }
   }, [user, activeCollege]);
 
-  const fetchTimetable = useCallback(async (filterVal = messFilter) => {
-    try { 
+  const fetchTimetable = useCallback(async (selectedMessId) => {
+    try {
+      setLoading(true);
       const params = {};
-      if (['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && filterVal) {
-        params.mess = filterVal;
+      if (isMessScopedRole && selectedMessId) {
+        params.mess = selectedMessId;
       }
-      const { data } = await api.get('/timetable', { params }); 
-      setTimetable(data.data || data); 
+      const { data } = await api.get('/timetable', { params });
+      setTimetable(data.data || data);
+    } catch {
+      toast.error('Failed to load timetable');
+    } finally {
+      setLoading(false);
     }
-    catch { toast.error('Failed to load timetable'); } finally { setLoading(false); }
-  }, [user, messFilter]);
+  }, [isMessScopedRole]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchTimetable(messFilter);
+      if (user?.role === 'vendor') {
+        // Vendors are tied to their own assigned mess by the server
+        fetchTimetable();
+      } else if (messFilter) {
+        // College admin, students, committee, and super admin query by the active mess filter
+        fetchTimetable(messFilter);
+      }
     }, 0);
     return () => clearTimeout(timer);
-  }, [messFilter, fetchTimetable]);
+  }, [user?.role, messFilter, fetchTimetable]);
+
+  const handleClosePopover = useCallback(() => {
+    setActiveCell(null);
+    setActiveSlotEl(null);
+    setPopoverStyle(null);
+    setItemsInput('');
+  }, []);
 
   // Dynamically compute popover coordinates directly beside the clicked slot in viewport space
   const updatePopoverPosition = useCallback((targetEl) => {
@@ -159,14 +183,7 @@ const WeeklyTimetable = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeCell]);
-
-  const handleClosePopover = () => {
-    setActiveCell(null);
-    setActiveSlotEl(null);
-    setPopoverStyle(null);
-    setItemsInput('');
-  };
+  }, [activeCell, handleClosePopover]);
 
   const handleSlotClick = (e, date, type) => {
     if (user?.role !== 'vendor') return;
@@ -257,12 +274,13 @@ const WeeklyTimetable = () => {
               </span>
             </div>
           )}
-          {['user', 'student', 'mess_committee', 'college_admin', 'super_admin'].includes(user?.role) && (
+          {isMessScopedRole && (
             <Select
               variant="header"
               value={messFilter}
               onChange={(e) => setMessFilter(e.target.value)}
-              options={messes.map((m) => ({ value: m._id, label: m.name }))}
+              options={messes.length > 0 ? messes.map((m) => ({ value: m._id, label: m.name })) : [{ value: '', label: 'No messes available' }]}
+              disabled={messes.length === 0}
             />
           )}
         </div>
@@ -386,6 +404,16 @@ const WeeklyTimetable = () => {
       {loading ? (
         <div className="flex items-center justify-center p-16">
           <div className="w-10 h-10 border-2 border-gray-300 border-t-teal-600 rounded-full animate-spin"></div>
+        </div>
+      ) : messes.length === 0 && user?.role !== 'vendor' ? (
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-12 text-center shadow-sm">
+          <UtensilsCrossed size={40} className="mx-auto text-gray-300 mb-3" />
+          <h3 className="text-lg font-black text-gray-900 mb-1">No Messes Found</h3>
+          <p className="text-sm text-gray-500 font-medium max-w-md mx-auto">
+            {user?.role === 'college_admin'
+              ? 'No messes have been configured for your college yet. Use Manage Messes to add a campus mess.'
+              : 'No messes have been configured for your campus yet.'}
+          </p>
         </div>
       ) : (
         <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl sm:rounded-[2rem] p-3 sm:p-8 shadow-sm relative z-0">

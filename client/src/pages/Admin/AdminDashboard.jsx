@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
-import { ShieldCheck, Activity, ArrowRight, BarChart3, ClipboardList, Plus } from 'lucide-react';
+import { ShieldCheck, Activity, ArrowRight, BarChart3, ClipboardList, Plus, Calendar } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -43,7 +43,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats + Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
         <NavLink to="/visits" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Mess Inspections</p>
@@ -85,6 +85,21 @@ const AdminDashboard = () => {
           </div>
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-indigo-500 shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
             <ShieldCheck size={22} strokeWidth={2.5} />
+          </div>
+        </NavLink>
+
+        <NavLink to="/timetable" className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/90 hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Campus Dining</p>
+            <div className="flex items-baseline gap-1">
+              <h3 className="text-lg font-black text-gray-900 group-hover:text-teal-600 transition-colors">Mess Timetable</h3>
+            </div>
+            <span className="text-[11px] text-teal-600 font-bold flex items-center gap-1 mt-1">
+              View Schedule <ArrowRight size={12} />
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-100 to-emerald-50 flex items-center justify-center text-teal-600 shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
+            <Calendar size={22} strokeWidth={2.5} />
           </div>
         </NavLink>
 

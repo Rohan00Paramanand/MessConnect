@@ -48,6 +48,7 @@ const getLinks = (role, activeCollege = null) => {
       { name: 'Mess Visits', path: '/visits', icon: ClipboardList },
       { name: 'User Approvals', path: '/approvals', icon: ShieldCheck },
       { name: 'Manage Messes', path: '/messes', icon: School },
+      { name: 'Timetable', path: '/timetable', icon: Calendar },
       { name: 'Staff', path: '/staff', icon: Users },
       { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       { name: 'Notices', path: '/notices', icon: Bell },
@@ -104,7 +105,7 @@ const NavItem = ({ link, role, onClick }) => {
 };
 
 const SidebarContent = ({ user, role, links, onLinkClick }) => {
-  const { logout, activeCollege, setActiveCollege } = useAuthStore();
+  const { logout } = useAuthStore();
   const theme = roleColors[role] || roleColors.super_admin;
 
   return (
