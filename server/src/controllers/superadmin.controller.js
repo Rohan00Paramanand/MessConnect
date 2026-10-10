@@ -632,53 +632,6 @@ export const deleteCollegeAdmin = async (req, res) => {
     }
 };
 
-export const deleteCollege = async (req, res) => {
-    try {
-        const { id: collegeId } = req.params;
-
-        const college = await College.findById(collegeId);
-        if (!college) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'College not found'
-            });
-        }
-
-        // Cascade delete all accounts and data associated with this college:
-        // 1. All Users belonging to this college (students, faculty, mess committee, vendors, college admins)
-        // 2. All Messes
-        // 3. All Complaints
-        // 4. All Feedback
-        // 5. All Notices
-        // 6. All Staff
-        // 7. All TimeTable entries
-        // 8. All Invitations
-        // 9. The College itself
-        await Promise.all([
-            User.deleteMany({ collegeId }),
-            Mess.deleteMany({ collegeId }),
-            Complaint.deleteMany({ collegeId }),
-            Feedback.deleteMany({ collegeId }),
-            Notice.deleteMany({ collegeId }),
-            Staff.deleteMany({ collegeId }),
-            TimeTable.deleteMany({ collegeId }),
-            Invitation.deleteMany({ collegeId }),
-            College.findByIdAndDelete(collegeId)
-        ]);
-
-        return res.status(200).json({
-            status: 'success',
-            message: `College '${college.name}' and all associated accounts and data have been permanently deleted.`
-        });
-    } catch (error) {
-        console.error('Error deleting college and cascade data:', error);
-        return res.status(500).json({
-            status: 'error',
-            message: error.message || 'Failed to delete college and associated data'
-        });
-    }
-};
-
 export const deleteInvitation = async (req, res) => {
     try {
         const { id } = req.params;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { School, Check, X, ShieldAlert, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Trash2, AlertTriangle, Globe, ChevronDown, Eye } from 'lucide-react';
+import { School, Check, X, Plus, ToggleLeft, ToggleRight, Mail, Phone, Edit, UserCheck, UserPlus, UserX, Shield, Globe, ChevronDown, Eye } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -157,10 +157,6 @@ const CollegeManagement = () => {
   const [revoking, setRevoking] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Delete College state
-  const [deletingCollege, setDeletingCollege] = useState(null);
-  const [isDeletingCollege, setIsDeletingCollege] = useState(false);
-
   // Create College form state
   const [formData, setFormData] = useState({
     name: '',
@@ -182,7 +178,7 @@ const CollegeManagement = () => {
   }, []);
 
   useEffect(() => {
-    const isAnyModalOpen = editingCollege || assigningCollege || deletingCollege;
+    const isAnyModalOpen = editingCollege || assigningCollege;
     if (!isAnyModalOpen) return;
 
     const originalOverflow = document.body.style.overflow;
@@ -191,7 +187,7 @@ const CollegeManagement = () => {
     return () => {
       document.body.style.overflow = originalOverflow;
     };
-  }, [editingCollege, assigningCollege, deletingCollege]);
+  }, [editingCollege, assigningCollege]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -397,22 +393,6 @@ const handleDeleteAdmin = async (userId) => {
     setDeleting(false);
   }
 };
-
-  const handleDeleteCollege = async () => {
-    if (!deletingCollege) return;
-
-    setIsDeletingCollege(true);
-    try {
-      const { data } = await api.delete(`/superadmin/colleges/${deletingCollege._id}`);
-      toast.success(data.message || 'College and all related data deleted successfully');
-      setDeletingCollege(null);
-      await fetchColleges();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete college');
-    } finally {
-      setIsDeletingCollege(false);
-    }
-  };
 
   return (
     <>
@@ -623,15 +603,6 @@ const handleDeleteAdmin = async (userId) => {
                                   <Edit size={13} /> Edit
                                 </button>
                               )}
-                              {isSuperAdmin && (
-                                <button
-                                  onClick={() => setDeletingCollege(college)}
-                                  title="Delete College"
-                                  className="text-xs px-2.5 py-1.5 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl flex items-center gap-1 border border-rose-200 transition-all cursor-pointer"
-                                >
-                                  <Trash2 size={13} /> Delete
-                                </button>
-                              )}
                             </div>
                           </td>
                         </tr>
@@ -836,89 +807,6 @@ const handleDeleteAdmin = async (userId) => {
                 </Button>
               </div>
             </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Delete College Confirmation Modal */}
-      {deletingCollege && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
-          onClick={() => {
-            if (!isDeletingCollege) setDeletingCollege(null);
-          }}
-        >
-          <div
-            className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-[95%] sm:w-full p-4 sm:p-8 shadow-2xl border border-rose-100 relative max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle size={22} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-gray-900">Delete College</h3>
-                  <p className="text-xs text-rose-600 font-bold uppercase tracking-wider">Irreversible Destructive Action</p>
-                </div>
-              </div>
-              <button
-                onClick={() => !isDeletingCollege && setDeletingCollege(null)}
-                disabled={isDeletingCollege}
-                className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none disabled:opacity-50"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4 mb-6">
-              <p className="text-sm text-gray-700 font-medium leading-relaxed">
-                Are you sure you want to permanently delete <strong className="text-gray-900 font-black">{deletingCollege.name}</strong>?
-              </p>
-
-              <div className="p-4 bg-rose-50/80 border border-rose-200 rounded-2xl space-y-2.5">
-                <div className="flex items-center gap-2 text-rose-800 font-bold text-xs uppercase tracking-wide">
-                  <ShieldAlert size={16} className="text-rose-600 flex-shrink-0" />
-                  <span>Consequences of Deleting this College</span>
-                </div>
-                <p className="text-xs text-rose-900 font-semibold leading-relaxed">
-                  Deleting this college will result in the complete and permanent removal of all accounts and data related to this college:
-                </p>
-                <ul className="text-xs text-rose-800 space-y-1.5 list-disc list-inside font-medium">
-                  <li><strong>All User Accounts:</strong> Students, faculty, mess committee members, vendors, and college administrators.</li>
-                  <li><strong>All Messes:</strong> Mess configurations, catering facilities, and manager assignments.</li>
-                  <li><strong>All Activity Records:</strong> Complaints, upvotes, feedback ratings, and notices.</li>
-                  <li><strong>All Operational Data:</strong> Timetables, meal menus, and staff member directories.</li>
-                  <li><strong>All Invitations:</strong> Pending and active admin registration tokens.</li>
-                </ul>
-              </div>
-
-              <p className="text-xs text-gray-500 font-medium">
-                This action <strong className="text-gray-900">cannot be undone</strong>. Please confirm if you wish to proceed.
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setDeletingCollege(null)}
-                disabled={isDeletingCollege}
-              >
-                Cancel
-              </Button>
-              <button
-                type="button"
-                onClick={handleDeleteCollege}
-                disabled={isDeletingCollege}
-                className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20"
-              >
-                <Trash2 size={16} />
-                {isDeletingCollege ? 'Deleting College & All Data...' : 'Yes, Delete Everything'}
-              </button>
-            </div>
           </div>
         </div>,
         document.body

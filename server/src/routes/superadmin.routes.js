@@ -4,7 +4,6 @@ import {
     getColleges,
     updateCollege,
     updateCollegeStatus,
-    deleteCollege,
     getAdmins,
     inviteAdmin,
     getInvitations,
@@ -27,7 +26,6 @@ router.post('/colleges', createCollege);
 router.get('/colleges', getColleges);
 router.put('/colleges/:id', updateCollege);
 router.patch('/colleges/:id/status', updateCollegeStatus);
-router.delete('/colleges/:id', deleteCollege);
 router.post('/colleges/:id/assign-admin', assignCollegeAdmin);
 
 router.get('/admins', getAdmins);
