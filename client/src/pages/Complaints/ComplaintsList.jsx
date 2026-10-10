@@ -190,9 +190,9 @@ const ComplaintCard = ({
   const isAssignedToMe = !complaint.assignedTo ||
     (complaint.assignedTo?._id || complaint.assignedTo).toString() === (user?._id || user?.id)?.toString();
 
-  const isAuthority = ['mess_committee', 'college_admin', 'super_admin'].includes(user?.role);
+  const isMessCommittee = user?.role === 'mess_committee';
   const hasActions =
-    (isAuthority && !['resolved', 'rejected'].includes(complaint.status)) ||
+    (isMessCommittee && !['resolved', 'rejected'].includes(complaint.status)) ||
     isVendor;
 
   return (
@@ -563,8 +563,8 @@ const ComplaintCard = ({
         {/* Role-Specific Actions */}
         {hasActions && (
           <div className="flex-shrink-0 w-full sm:w-48 pt-2 sm:pt-0">
-            {/* Mess Committee & College/Super Admin Actions */}
-            {isAuthority && (
+            {/* Mess Committee Actions (Exclusive to Committee) */}
+            {isMessCommittee && (
               <div className="space-y-2">
                 <Select
                   label="Update Status"
@@ -760,11 +760,10 @@ const ComplaintsList = () => {
   }, [extensionModalComplaint]);
 
   useEffect(() => {
-    if (isStudent) {
-      setScopeFilter('my');
-    } else {
-      setScopeFilter('all');
-    }
+    const timer = setTimeout(() => {
+      setScopeFilter(isStudent ? 'my' : 'all');
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isStudent]);
 
   useEffect(() => {
@@ -814,7 +813,7 @@ const ComplaintsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [messFilter, user?.role, activeCollege]);
+  }, [messFilter, user]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -923,16 +922,6 @@ const ComplaintsList = () => {
       });
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to record vote');
-    }
-  };
-
-  const handleVendorComplete = async (id) => {
-    try {
-      await api.patch(`/complaints/${id}/vendor-complete`);
-      toast.success('Marked as completed!');
-      fetchComplaints();
-    } catch {
-      toast.error('Failed to update status');
     }
   };
 
