@@ -4,9 +4,8 @@ import useAuthStore from '../../store/useAuthStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
-import { Clock, UtensilsCrossed, Sunrise, Sun, Coffee, Moon, Plus, X, Trash2 } from 'lucide-react';
+import { UtensilsCrossed, Sunrise, Sun, Coffee, Moon, Plus, X, Trash2, Pencil } from 'lucide-react';
 
 const mealTypeConfig = {
   'Breakfast': { icon: Sunrise, gradient: 'from-amber-400 to-orange-400', bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700' },
@@ -93,8 +92,8 @@ const WeeklyTimetable = () => {
     const rect = targetEl.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const popoverWidth = Math.min(340, vw - 32);
-    const popoverHeight = popoverRef.current ? popoverRef.current.offsetHeight : 275;
+    const popoverWidth = Math.min(360, vw - 32);
+    const popoverHeight = popoverRef.current ? popoverRef.current.offsetHeight : 310;
     const gap = 12;
     const pad = 16;
 
@@ -192,37 +191,95 @@ const WeeklyTimetable = () => {
     d.setHours(12, 0, 0, 0);
     const dateStr = d.toISOString().split('T')[0];
 
-    // Toggle close if clicking already open slot
-    if (activeCell && activeCell.date === dateStr && activeCell.mealType === type) {
+    // Toggle close if clicking already open slot in create mode
+    if (activeCell && activeCell.date === dateStr && activeCell.mealType === type && activeCell.mode === 'create') {
       handleClosePopover();
       return;
     }
 
     const clickedEl = e.currentTarget;
     setActiveSlotEl(clickedEl);
-    setActiveCell({ date: dateStr, mealType: type });
+    setActiveCell({ date: dateStr, mealType: type, mode: 'create' });
+    setItemsInput('');
     updatePopoverPosition(clickedEl);
+  };
+
+  const handleEditMeal = (e, meal, date, type) => {
+    if (e) e.stopPropagation();
+    if (user?.role !== 'vendor') return;
+
+    const d = new Date(date || meal.date);
+    d.setHours(12, 0, 0, 0);
+    const dateStr = d.toISOString().split('T')[0];
+
+    // Toggle close if clicking already open edit slot
+    if (activeCell && activeCell.mealId === meal._id) {
+      handleClosePopover();
+      return;
+    }
+
+    const clickedEl = e?.currentTarget?.closest('.group\\/meal') || e?.currentTarget;
+    setActiveSlotEl(clickedEl);
+    setActiveCell({
+      date: dateStr,
+      mealType: type || meal.mealType,
+      mode: 'edit',
+      mealId: meal._id,
+    });
+    setItemsInput(Array.isArray(meal.items) ? meal.items.join(', ') : '');
+    updatePopoverPosition(clickedEl);
+  };
+
+  const handleRemoveItemTag = (idxToRemove) => {
+    const currentItems = itemsInput
+      .split(/[,\n]+/)
+      .map(i => i.trim())
+      .filter(Boolean);
+    const updated = currentItems.filter((_, idx) => idx !== idxToRemove);
+    setItemsInput(updated.join(', '));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
     if (!activeCell) return;
+
+    const parsedItems = itemsInput
+      .split(/[,\n]+/)
+      .map(i => i.trim())
+      .filter(Boolean);
+
+    if (parsedItems.length === 0) {
+      toast.error('Please enter at least one menu item');
+      return;
+    }
+
     setFormLoading(true);
     try {
-      const payload = { 
-        date: activeCell.date, 
-        mealType: activeCell.mealType, 
-        items: itemsInput.split(',').map(i => i.trim()).filter(i => i) 
-      };
-      
-      const { data } = await api.post('/timetable', payload);
-      if (data.status === 'success') {
-        toast.success('Meal added!'); 
-        setTimetable(prev => [...prev, data.data]);
-        handleClosePopover();
+      if (activeCell.mode === 'edit' && activeCell.mealId) {
+        const { data } = await api.patch(`/timetable/${activeCell.mealId}`, {
+          items: parsedItems
+        });
+        if (data.status === 'success') {
+          toast.success('Meal updated successfully!');
+          setTimetable(prev => prev.map(m => m._id === activeCell.mealId ? data.data : m));
+          handleClosePopover();
+        }
+      } else {
+        const payload = { 
+          date: activeCell.date, 
+          mealType: activeCell.mealType, 
+          items: parsedItems 
+        };
+        
+        const { data } = await api.post('/timetable', payload);
+        if (data.status === 'success') {
+          toast.success('Meal added!'); 
+          setTimetable(prev => [...prev, data.data]);
+          handleClosePopover();
+        }
       }
     } catch (error) { 
-      toast.error(error.response?.data?.message || 'Failed to add meal'); 
+      toast.error(error.response?.data?.message || (activeCell.mode === 'edit' ? 'Failed to update meal' : 'Failed to add meal')); 
     } finally { 
       setFormLoading(false); 
     }
@@ -230,8 +287,16 @@ const WeeklyTimetable = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this meal?')) return;
-    try { await api.delete(`/timetable/${id}`); setTimetable(timetable.filter(m => m._id !== id)); toast.success('Deleted!'); }
-    catch { toast.error('Failed to delete'); }
+    try { 
+      await api.delete(`/timetable/${id}`); 
+      setTimetable(prev => prev.filter(m => m._id !== id)); 
+      if (activeCell?.mealId === id) {
+        handleClosePopover();
+      }
+      toast.success('Meal deleted!'); 
+    } catch { 
+      toast.error('Failed to delete meal'); 
+    }
   };
 
   const getWeekDates = () => {
@@ -249,6 +314,11 @@ const WeeklyTimetable = () => {
   };
   const weekDates = getWeekDates();
   const mealTypes = ['Breakfast', 'Lunch', 'Evening Snack', 'Dinner'];
+
+  const currentItemChips = itemsInput
+    .split(/[,\n]+/)
+    .map(i => i.trim())
+    .filter(Boolean);
 
   return (
     <div className="space-y-6 pb-8">
@@ -270,7 +340,7 @@ const WeeklyTimetable = () => {
           {user?.role === 'vendor' && (
             <div className="text-white/80 font-medium text-xs sm:text-sm self-start sm:self-auto">
               <span className="bg-white/20 px-3 py-1.5 rounded-lg border border-white/20 font-bold backdrop-blur-sm shadow-sm inline-flex items-center gap-2">
-                <Plus size={14} className="opacity-70" /> Tap empty slot to add meal
+                <Pencil size={14} className="opacity-70" /> Tap slot to add or edit meal
               </span>
             </div>
           )}
@@ -286,7 +356,7 @@ const WeeklyTimetable = () => {
         </div>
       </div>
 
-      {/* Add Meal Popover (rendered into document.body to avoid parent scroll/filter container traps) */}
+      {/* Add / Edit Meal Popover (rendered into document.body to avoid parent scroll/filter container traps) */}
       {activeCell && user?.role === 'vendor' && popoverStyle && createPortal(
         <>
           {/* Subtle click-outside backdrop overlay */}
@@ -303,8 +373,9 @@ const WeeklyTimetable = () => {
               top: popoverStyle.top,
               left: popoverStyle.left,
               width: popoverStyle.width,
+              maxHeight: 'calc(100vh - 32px)',
             }}
-            className="z-50 bg-white border border-gray-200/90 rounded-2xl p-5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.25),0_0_0_1px_rgba(0,0,0,0.05)] animate-in fade-in zoom-in-95 duration-150"
+            className="z-50 bg-white border border-gray-200/90 rounded-2xl p-5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.25),0_0_0_1px_rgba(0,0,0,0.05)] animate-in fade-in zoom-in-95 duration-150 overflow-y-auto"
           >
             {/* Pointer arrow pointing to the clicked slot */}
             {popoverStyle.placement === 'right' && (
@@ -344,7 +415,16 @@ const WeeklyTimetable = () => {
                   })}
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-gray-900 leading-tight">Add {activeCell.mealType}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-gray-900 leading-tight">
+                      {activeCell.mode === 'edit' ? `Edit ${activeCell.mealType}` : `Add ${activeCell.mealType}`}
+                    </h3>
+                    {activeCell.mode === 'edit' && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-teal-50 text-teal-700 rounded-md border border-teal-200/60">
+                        Quick Fix
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 font-medium">
                     {new Date(activeCell.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric'})}
                   </p>
@@ -363,9 +443,12 @@ const WeeklyTimetable = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Menu Items <span className="text-gray-400 font-normal">(comma-separated)</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Menu Items
+                  </label>
+                  <span className="text-[11px] text-gray-400 font-medium">comma or line-separated</span>
+                </div>
                 <textarea 
                   autoFocus
                   required 
@@ -375,9 +458,43 @@ const WeeklyTimetable = () => {
                   onChange={e => setItemsInput(e.target.value)}
                   placeholder="e.g. Idli, Sambar, Chutney, Tea"
                 />
+
+                {/* Interactive Item Tags preview */}
+                {currentItemChips.length > 0 && (
+                  <div className="mt-2.5 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      Items preview ({currentItemChips.length})
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                      {currentItemChips.map((item, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-gray-100/90 text-gray-800 rounded-lg border border-gray-200/70 hover:bg-gray-200/70 transition-colors">
+                          <span className="truncate max-w-[150px]">{item}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItemTag(idx)}
+                            className="text-gray-400 hover:text-rose-600 rounded-full transition-colors"
+                            title={`Remove ${item}`}
+                          >
+                            <X size={11} strokeWidth={2.5} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 pt-1">
+                {activeCell.mode === 'edit' && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(activeCell.mealId)}
+                    className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors border border-rose-200/80"
+                    title="Delete meal entry"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
                 <button 
                   type="button" 
                   onClick={handleClosePopover} 
@@ -391,7 +508,7 @@ const WeeklyTimetable = () => {
                   className="flex-1 !py-2 text-sm" 
                   disabled={formLoading}
                 >
-                  {formLoading ? 'Saving...' : 'Save Meal'}
+                  {formLoading ? 'Saving...' : activeCell.mode === 'edit' ? 'Update Meal' : 'Save Meal'}
                 </Button>
               </div>
             </form>
@@ -458,16 +575,42 @@ const WeeklyTimetable = () => {
                         const dateMidday = new Date(date);
                         dateMidday.setHours(12, 0, 0, 0);
                         const dateKey = dateMidday.toISOString().split('T')[0];
-                        const isActiveSlot = activeCell?.date === dateKey && activeCell?.mealType === type;
+                        const isActiveCreateSlot = activeCell?.date === dateKey && activeCell?.mealType === type && activeCell?.mode === 'create';
+                        const isActiveEditSlot = activeCell?.mealId && meal && activeCell?.mealId === meal._id;
                         
                         return (
                           <td key={colIndex} className={`p-4 align-top hover:bg-gray-50/50 transition-colors ${colIndex === 6 ? '' : 'border-r'} border-gray-200/60 ${rowIndex === 3 ? (colIndex === 6 ? 'rounded-br-2xl' : '') : 'border-b'}`}>
                             {meal ? (
-                              <div className="relative group/meal h-full bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                              <div 
+                                className={`relative group/meal h-full bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 ${
+                                  user?.role === 'vendor' ? 'cursor-pointer hover:border-teal-200 hover:ring-1 hover:ring-teal-200' : ''
+                                } ${isActiveEditSlot ? 'ring-2 ring-teal-500 shadow-md bg-teal-50/15' : ''}`}
+                                onClick={user?.role === 'vendor' ? (e) => handleEditMeal(e, meal, date, type) : undefined}
+                              >
                                 {user?.role === 'vendor' && (
-                                  <button onClick={() => handleDelete(meal._id)} className="absolute -top-2 -right-2 p-1.5 bg-red-100 text-red-600 rounded-full opacity-0 group-hover/meal:opacity-100 transition-opacity shadow-md hover:bg-red-500 hover:text-white z-10">
-                                    <Trash2 size={12} strokeWidth={3} />
-                                  </button>
+                                  <div className="absolute -top-2.5 -right-2 flex items-center gap-1 z-10">
+                                    <button 
+                                      type="button"
+                                      onClick={(e) => handleEditMeal(e, meal, date, type)}
+                                      className="p-1.5 bg-teal-100 text-teal-700 hover:bg-teal-600 hover:text-white rounded-full sm:opacity-0 sm:group-hover/meal:opacity-100 transition-all shadow-md hover:scale-105 active:scale-95 border border-teal-200"
+                                      title="Quick edit meal"
+                                      aria-label="Quick edit meal"
+                                    >
+                                      <Pencil size={11} strokeWidth={2.5} />
+                                    </button>
+                                    <button 
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(meal._id);
+                                      }}
+                                      className="p-1.5 bg-rose-100 text-rose-600 hover:bg-rose-500 hover:text-white rounded-full sm:opacity-0 sm:group-hover/meal:opacity-100 transition-all shadow-md hover:scale-105 active:scale-95 border border-rose-200"
+                                      title="Delete meal"
+                                      aria-label="Delete meal"
+                                    >
+                                      <Trash2 size={11} strokeWidth={2.5} />
+                                    </button>
+                                  </div>
                                 )}
                                 <ul className="space-y-2">
                                   {meal.items.map((item, idx) => (
@@ -477,13 +620,21 @@ const WeeklyTimetable = () => {
                                     </li>
                                   ))}
                                 </ul>
+                                {user?.role === 'vendor' && (
+                                  <div className="mt-3 pt-2 border-t border-gray-100 text-[10px] text-teal-600 font-bold opacity-0 group-hover/meal:opacity-100 transition-opacity flex items-center justify-between">
+                                    <span className="flex items-center gap-1">
+                                      <Pencil size={10} /> Quick edit
+                                    </span>
+                                    <span className="text-gray-400 font-normal">Click slot</span>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div 
                                 className={`h-full flex flex-col items-center justify-center p-4 min-h-[120px] rounded-xl transition-all ${
                                   user?.role === 'vendor' ? 'cursor-pointer group' : ''
                                 } ${
-                                  isActiveSlot
+                                  isActiveCreateSlot
                                     ? 'bg-teal-50 border-2 border-teal-500 shadow-md ring-4 ring-teal-500/15'
                                     : user?.role === 'vendor'
                                       ? 'border border-transparent hover:bg-white hover:shadow-sm hover:border-teal-100'
@@ -492,7 +643,7 @@ const WeeklyTimetable = () => {
                                 onClick={(e) => handleSlotClick(e, date, type)}
                               >
                                 {user?.role === 'vendor' ? (
-                                  isActiveSlot ? (
+                                  isActiveCreateSlot ? (
                                     <>
                                       <div className="w-8 h-8 rounded-full bg-teal-500 text-white font-bold flex items-center justify-center mb-2 shadow-sm animate-pulse">
                                         <Plus size={18} strokeWidth={3} />

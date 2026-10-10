@@ -133,20 +133,54 @@ export const updateTimeTable = async (req, res) => {
             return res.status(404).json({ status: 'error', message: 'Timetable entry not found' });
         }
 
-        if (timeTable.createdBy.toString() !== req.user._id.toString()) {
+        // Allow updates by the user who created it or any vendor assigned to this mess
+        const isOwner = timeTable.createdBy?.toString() === req.user._id.toString();
+        const isAssignedVendor = req.user.messAssigned && timeTable.mess?.toString() === req.user.messAssigned.toString();
+
+        if (!isOwner && !isAssignedVendor) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to update this timetable' });
         }
 
-        timeTable = await TimeTable.findByIdAndUpdate(req.params.id, req.body, {
+        const { items, mealType, date } = req.body;
+        const updateFields = {};
+
+        if (items !== undefined) {
+            const rawItems = Array.isArray(items) ? items : [items];
+            const cleanedItems = rawItems
+                .map(i => (typeof i === 'string' ? i.trim() : i))
+                .filter(Boolean);
+
+            if (cleanedItems.length === 0) {
+                return res.status(400).json({ status: 'error', message: 'At least one menu item is required' });
+            }
+            updateFields.items = cleanedItems;
+        }
+
+        if (mealType) {
+            updateFields.mealType = mealType;
+        }
+
+        if (date) {
+            const mealDate = new Date(date);
+            if (isNaN(mealDate.getTime())) {
+                return res.status(400).json({ status: 'error', message: 'Invalid date format' });
+            }
+            updateFields.date = mealDate;
+        }
+
+        timeTable = await TimeTable.findByIdAndUpdate(req.params.id, updateFields, {
             new: true,
             runValidators: true
-        });
+        }).populate('createdBy', 'name');
 
         res.status(200).json({
             status: 'success',
             data: timeTable
         });
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ status: 'error', message: 'Meal already exists for this date and time slot' });
+        }
         res.status(500).json({ status: 'error', message: error.message });
     }
 };
@@ -166,7 +200,10 @@ export const deleteTimeTable = async (req, res) => {
             return res.status(404).json({ status: 'error', message: 'Timetable entry not found' });
         }
 
-        if (timeTable.createdBy.toString() !== req.user._id.toString()) {
+        const isOwner = timeTable.createdBy?.toString() === req.user._id.toString();
+        const isAssignedVendor = req.user.messAssigned && timeTable.mess?.toString() === req.user.messAssigned.toString();
+
+        if (!isOwner && !isAssignedVendor) {
             return res.status(403).json({ status: 'error', message: 'Not authorized to delete this timetable' });
         }
 

@@ -101,9 +101,9 @@ const guideContent = {
             steps: [
               'Open Timetable (/timetable) from the sidebar.',
               'You will see a matrix of 7 days (Monday through Sunday) with 4 meal slots each.',
-              'Click on any slot you wish to update.',
-              'In the edit popup, specify the Dish/Meal Name and list items included.',
-              'Click "Save Changes". The updated menu will immediately reflect on student dashboards.'
+              'Click on any empty slot to add a meal, or click on an existing meal (or its edit pencil icon) to quick fix items.',
+              'In the edit popup, review, add, or remove menu items with one click or edit the text.',
+              'Click "Update Meal" or "Save Meal". The updated menu will immediately reflect on student dashboards.'
             ]
           },
           {
@@ -288,9 +288,9 @@ const guideContent = {
             steps: [
               'साइडबारमधून "Timetable" (/timetable) उघडा.',
               'सोमवार ते रविवार या ७ दिवसांचे आणि ४ वेळेचे (नाश्ता, जेवण इ.) कोष्टक दिसेल.',
-              'ज्या वेळेचा मेन्यू बदलायचा आहे त्या स्लॉटवर क्लिक करा.',
-              'उघडलेल्या फॉर्ममध्ये पदार्थाचे नाव व तपशील भरा.',
-              '"Save Changes" वर क्लिक करा. हा नवीन मेनू सर्व विद्यार्थ्यांच्या स्क्रीनवर तात्काळ दिसेल.'
+              'नवीन मेन्यू जोडण्यासाठी रिकाम्या स्लॉटवर क्लिक करा, किंवा अस्तित्वात असलेला मेनू बदलण्यासाठी त्यावर किंवा Edit (पेन्सिल) चिन्हावर क्लिक करा.',
+              'उघडलेल्या फॉर्ममध्ये पदार्थांची नावे एडिट करा किंवा टॅग्सवरून एका क्लिकवर काढा/जोडा.',
+              '"Update Meal" किंवा "Save Meal" वर क्लिक करा. हा नवीन मेनू सर्व विद्यार्थ्यांच्या स्क्रीनवर तात्काळ दिसेल.'
             ]
           },
           {
