@@ -837,8 +837,6 @@ export const getCollegeAdminAnalytics = async (req, res) => {
 
             if (!domain) return;
 
-            grandTotalUsersInCampus += count;
-
             // If the user's email domain is in allowedDomains, attribute to that specific college domain.
             // If the user is a vendor (or has an external email like @gmail.com), attribute them under
             // the college's primary domain (allowedDomainsList[0]) rather than creating an external domain row.
@@ -854,14 +852,20 @@ export const getCollegeAdminAnalytics = async (req, res) => {
             const record = domainMap.get(targetDomain);
             if (role === 'user' || role === 'student') {
                 record.students += count;
+                record.total += count;
+                grandTotalUsersInCampus += count;
             } else if (role === 'vendor') {
                 record.vendors += count;
+                // Vendors are not included in institutional college signups
             } else if (role === 'mess_committee') {
                 record.committee += count;
+                record.total += count;
+                grandTotalUsersInCampus += count;
             } else if (role === 'college_admin') {
                 record.collegeAdmins += count;
+                record.total += count;
+                grandTotalUsersInCampus += count;
             }
-            record.total += count;
         });
 
         // 3. Convert to array, sort by total sign-ups descending, and calculate share percentage

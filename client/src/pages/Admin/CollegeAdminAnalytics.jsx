@@ -363,19 +363,15 @@ export default function CollegeAdminAnalytics() {
                         </span>
                       </div>
                       <span className="inline-block px-2.5 py-1 rounded-lg bg-gray-100 text-gray-900 text-xs font-extrabold shrink-0">
-                        {item.total} {item.total === 1 ? 'user' : 'users'}
+                        {(item.students || 0) + (item.committee || 0) + (item.collegeAdmins || 0)} {((item.students || 0) + (item.committee || 0) + (item.collegeAdmins || 0)) === 1 ? 'user' : 'users'}
                       </span>
                     </div>
 
-                    {/* Compact 4-column metric bar across screen */}
-                    <div className="grid grid-cols-4 gap-1 bg-gray-50/80 p-2 rounded-xl text-center border border-gray-100">
+                    {/* Compact 3-column metric bar across screen */}
+                    <div className="grid grid-cols-3 gap-1 bg-gray-50/80 p-2 rounded-xl text-center border border-gray-100">
                       <div className="px-1 py-0.5 min-w-0">
                         <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5 truncate">Students</span>
                         <span className="text-xs font-black text-emerald-700">{item.students}</span>
-                      </div>
-                      <div className="px-1 py-0.5 border-l border-gray-200/60 min-w-0">
-                        <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5 truncate">Vendors</span>
-                        <span className="text-xs font-black text-blue-700">{item.vendors}</span>
                       </div>
                       <div className="px-1 py-0.5 border-l border-gray-200/60 min-w-0">
                         <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5 truncate">Committee</span>
@@ -397,7 +393,6 @@ export default function CollegeAdminAnalytics() {
                     <tr className="bg-gray-50/70 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                       <th className="py-3 px-4 sm:px-6">College / Institution</th>
                       <th className="py-3 px-3 sm:px-4 text-center">Students</th>
-                      <th className="py-3 px-3 sm:px-4 text-center">Vendors</th>
                       <th className="py-3 px-3 sm:px-4 text-center">Committee</th>
                       <th className="py-3 px-3 sm:px-4 text-center">Admins</th>
                       <th className="py-3 px-4 sm:px-6 text-right">Total Sign-ups</th>
@@ -420,11 +415,6 @@ export default function CollegeAdminAnalytics() {
                           </span>
                         </td>
                         <td className="py-3.5 px-3 sm:px-4 text-center font-semibold text-gray-700">
-                          <span className="inline-block px-3 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold">
-                            {item.vendors}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-3 sm:px-4 text-center font-semibold text-gray-700">
                           <span className="inline-block px-3 py-1 rounded-lg bg-cyan-50 text-cyan-700 text-xs font-bold">
                             {item.committee}
                           </span>
@@ -436,7 +426,7 @@ export default function CollegeAdminAnalytics() {
                         </td>
                         <td className="py-3.5 px-4 sm:px-6 text-right">
                           <span className="inline-block px-3 py-1 rounded-xl bg-gray-100 text-gray-900 font-extrabold text-xs">
-                            {item.total}
+                            {(item.students || 0) + (item.committee || 0) + (item.collegeAdmins || 0)}
                           </span>
                         </td>
                       </tr>
