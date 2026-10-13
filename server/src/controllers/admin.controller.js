@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/user.model.js';
 import Staff from '../models/staff.model.js';
 import College from '../models/college.model.js';
@@ -483,13 +484,17 @@ export const deleteApprovedStaff = async (req, res) => {
 
 export const getCollegeAdminAnalytics = async (req, res) => {
     try {
-        const collegeId = req.collegeId;
+        let collegeId = req.collegeId;
 
         if (!collegeId) {
             return res.status(400).json({
                 status: 'error',
                 message: 'No college associated with your account'
             });
+        }
+
+        if (mongoose.Types.ObjectId.isValid(collegeId)) {
+            collegeId = new mongoose.Types.ObjectId(collegeId);
         }
 
         const now = new Date();
@@ -822,11 +827,11 @@ export const getCollegeAdminAnalytics = async (req, res) => {
             }
         });
 
-        // 2. Populate counts from aggregation
+        // 2. Populate counts from aggregation (strictly restricted to college.allowedDomains)
         let grandTotalUsersInCampus = 0;
 
         usersByDomainAndRoleAgg.forEach(item => {
-            const domain = item._id?.domain;
+            const domain = item._id?.domain?.toLowerCase()?.trim();
             const role = item._id?.role;
             const count = item.count || 0;
 
@@ -834,19 +839,19 @@ export const getCollegeAdminAnalytics = async (req, res) => {
 
             grandTotalUsersInCampus += count;
 
-            if (!domainMap.has(domain)) {
-                domainMap.set(domain, {
-                    domain,
-                    label: KNOWN_DOMAIN_LABELS[domain] || `@${domain}`,
-                    students: 0,
-                    vendors: 0,
-                    committee: 0,
-                    collegeAdmins: 0,
-                    total: 0
-                });
+            // If the user's email domain is in allowedDomains, attribute to that specific college domain.
+            // If the user is a vendor (or has an external email like @gmail.com), attribute them under
+            // the college's primary domain (allowedDomainsList[0]) rather than creating an external domain row.
+            let targetDomain = domain;
+            if (!domainMap.has(targetDomain)) {
+                if (allowedDomainsList.length > 0) {
+                    targetDomain = allowedDomainsList[0];
+                } else {
+                    return;
+                }
             }
 
-            const record = domainMap.get(domain);
+            const record = domainMap.get(targetDomain);
             if (role === 'user' || role === 'student') {
                 record.students += count;
             } else if (role === 'vendor') {
@@ -976,7 +981,10 @@ export const getCollegeAdminAnalytics = async (req, res) => {
         return res.status(200).json({
             status: 'success',
             data: {
-                collegeInfo: college,
+                collegeInfo: {
+                    ...(college?.toObject ? college.toObject() : college),
+                    isMultiDomain: allowedDomainsList.length > 1
+                },
 
                 kpis: {
                     totalStudents: roleCounts.student,

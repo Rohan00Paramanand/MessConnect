@@ -320,8 +320,8 @@ export default function CollegeAdminAnalytics() {
             </div>
           </div>
 
-          {/* Constituent Institutions Overview */}
-          {domainBreakdown && domainBreakdown.length > 0 && (
+          {/* Constituent Institutions Overview (Shown strictly for multi-domain campuses like PCET Nigdi Campus) */}
+          {domainBreakdown && domainBreakdown.length > 1 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               {/* Header */}
               <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100">
