@@ -126,7 +126,7 @@ export default function CollegeAdminAnalytics() {
     );
   }
 
-  const { collegeInfo, kpis, messPerformance, complaints, feedback, staff, trustSignals } = data || {};
+  const { collegeInfo, kpis, domainBreakdown, messPerformance, complaints, feedback, staff, trustSignals } = data || {};
 
   const TABS = [
     { id: 'overview', label: 'Campus Overview', icon: LayoutDashboard, badge: null },
@@ -231,7 +231,7 @@ export default function CollegeAdminAnalytics() {
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-fadeIn">
           {/* Top Campus KPI Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4">
             {/* Students */}
             <div className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between text-gray-400 mb-2">
@@ -266,6 +266,18 @@ export default function CollegeAdminAnalytics() {
               </div>
               <div className="text-xl md:text-2xl font-black text-gray-900">{kpis?.totalCommittee || 0}</div>
               <p className="text-xs text-gray-500 mt-2 font-medium">Student representatives</p>
+            </div>
+
+            {/* College Admins */}
+            <div className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between text-gray-400 mb-2">
+                <span className="text-[11px] md:text-xs font-bold uppercase tracking-wider text-gray-500">Admins</span>
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                  <ShieldCheck className="w-4 h-4 md:w-5 md:h-5" />
+                </div>
+              </div>
+              <div className="text-xl md:text-2xl font-black text-gray-900">{kpis?.totalCollegeAdmins || 0}</div>
+              <p className="text-xs text-purple-600 mt-2 font-semibold">Campus administrators</p>
             </div>
 
             {/* Mess Halls */}
@@ -308,10 +320,137 @@ export default function CollegeAdminAnalytics() {
             </div>
           </div>
 
+          {/* Constituent Institutions Overview */}
+          {domainBreakdown && domainBreakdown.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              {/* Header */}
+              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
+                    <School className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm sm:text-base font-black text-gray-900 tracking-tight">
+                        Constituent Institutions & Colleges
+                      </h3>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 shrink-0">
+                        {domainBreakdown.length} Institution{domainBreakdown.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs bg-gray-50 border border-gray-200/80 rounded-xl px-3 py-1.5 self-start sm:self-auto shrink-0">
+                  <span className="text-gray-500 font-medium">Total Campus Users:</span>
+                  <span className="font-extrabold text-gray-900">
+                    {kpis?.totalUsers || (Number(kpis?.totalStudents || 0) + Number(kpis?.totalVendors || 0) + Number(kpis?.totalCommittee || 0) + Number(kpis?.totalCollegeAdmins || 0))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mobile View: Clean Stacked Cards (100% width, zero horizontal scrolling) */}
+              <div className="block md:hidden divide-y divide-gray-100">
+                {domainBreakdown.map((item) => (
+                  <div key={item.domain} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-sm text-gray-900 leading-snug break-words">
+                          {item.label}
+                        </h4>
+                        <span className="inline-block font-mono text-[11px] text-gray-400 mt-0.5 break-all">
+                          @{item.domain}
+                        </span>
+                      </div>
+                      <span className="inline-block px-2.5 py-1 rounded-lg bg-gray-100 text-gray-900 text-xs font-extrabold shrink-0">
+                        {item.total} {item.total === 1 ? 'user' : 'users'}
+                      </span>
+                    </div>
+
+                    {/* Compact 4-column metric bar across screen */}
+                    <div className="grid grid-cols-4 gap-1 bg-gray-50/80 p-2 rounded-xl text-center border border-gray-100">
+                      <div className="px-1 py-0.5 min-w-0">
+                        <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5 truncate">Students</span>
+                        <span className="text-xs font-black text-emerald-700">{item.students}</span>
+                      </div>
+                      <div className="px-1 py-0.5 border-l border-gray-200/60 min-w-0">
+                        <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5 truncate">Vendors</span>
+                        <span className="text-xs font-black text-blue-700">{item.vendors}</span>
+                      </div>
+                      <div className="px-1 py-0.5 border-l border-gray-200/60 min-w-0">
+                        <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5 truncate">Committee</span>
+                        <span className="text-xs font-black text-cyan-700">{item.committee}</span>
+                      </div>
+                      <div className="px-1 py-0.5 border-l border-gray-200/60 min-w-0">
+                        <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5 truncate">Admins</span>
+                        <span className="text-xs font-black text-purple-700">{item.collegeAdmins}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop & Tablet View: Clean Table without dots */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50/70 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                      <th className="py-3 px-4 sm:px-6">College / Institution</th>
+                      <th className="py-3 px-3 sm:px-4 text-center">Students</th>
+                      <th className="py-3 px-3 sm:px-4 text-center">Vendors</th>
+                      <th className="py-3 px-3 sm:px-4 text-center">Committee</th>
+                      <th className="py-3 px-3 sm:px-4 text-center">Admins</th>
+                      <th className="py-3 px-4 sm:px-6 text-right">Total Sign-ups</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm">
+                    {domainBreakdown.map((item) => (
+                      <tr key={item.domain} className="hover:bg-indigo-50/20 transition-colors">
+                        <td className="py-3.5 px-4 sm:px-6">
+                          <div className="font-bold text-gray-900 leading-snug">
+                            {item.label}
+                          </div>
+                          <div className="text-xs font-mono text-gray-400 mt-0.5">
+                            @{item.domain}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 sm:px-4 text-center font-semibold text-gray-700">
+                          <span className="inline-block px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold">
+                            {item.students}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 sm:px-4 text-center font-semibold text-gray-700">
+                          <span className="inline-block px-3 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold">
+                            {item.vendors}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 sm:px-4 text-center font-semibold text-gray-700">
+                          <span className="inline-block px-3 py-1 rounded-lg bg-cyan-50 text-cyan-700 text-xs font-bold">
+                            {item.committee}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 sm:px-4 text-center font-semibold text-gray-700">
+                          <span className="inline-block px-3 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-bold">
+                            {item.collegeAdmins}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 sm:px-6 text-right">
+                          <span className="inline-block px-3 py-1 rounded-xl bg-gray-100 text-gray-900 font-extrabold text-xs">
+                            {item.total}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Quick Overview Snapshot: Grievances & Top Messes */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Campus Grievance Telemetry Preview */}
-            <div className="lg:col-span-7 bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="lg:col-span-7 bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm min-w-0">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-base font-black text-gray-900 tracking-tight">Campus Grievances Intelligence</h3>
@@ -325,7 +464,7 @@ export default function CollegeAdminAnalytics() {
                 </button>
               </div>
 
-              <div className="h-56 w-full">
+              <div className="h-56 w-full min-w-0">
                 {categoryBarData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={categoryBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

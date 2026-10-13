@@ -498,6 +498,7 @@ export const getCollegeAdminAnalytics = async (req, res) => {
         const [
             college,
             usersByRoleAgg,
+            usersByDomainAndRoleAgg,
             messes,
             vendors,
             pendingUserApprovals,
@@ -528,6 +529,30 @@ export const getCollegeAdminAnalytics = async (req, res) => {
                                 $cond: ['$isActive', 1, 0]
                             }
                         }
+                    }
+                }
+            ]),
+
+            // Domain-specific breakdown by role for this campus
+            User.aggregate([
+                { $match: { collegeId } },
+                {
+                    $project: {
+                        role: 1,
+                        domain: {
+                            $toLower: {
+                                $arrayElemAt: [{ $split: ['$email', '@'] }, 1]
+                            }
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            domain: '$domain',
+                            role: '$role'
+                        },
+                        count: { $sum: 1 }
                     }
                 }
             ]),
@@ -747,7 +772,8 @@ export const getCollegeAdminAnalytics = async (req, res) => {
         const roleCounts = {
             student: 0,
             vendor: 0,
-            mess_committee: 0
+            mess_committee: 0,
+            college_admin: 0
         };
 
         usersByRoleAgg.forEach(r => {
@@ -757,8 +783,89 @@ export const getCollegeAdminAnalytics = async (req, res) => {
                 roleCounts.vendor += r.count;
             } else if (r._id === 'mess_committee') {
                 roleCounts.mess_committee += r.count;
+            } else if (r._id === 'college_admin') {
+                roleCounts.college_admin += r.count;
             }
         });
+
+        // Human-friendly naming for known institutional domains
+        const KNOWN_DOMAIN_LABELS = {
+            'pccoepune.org': 'Pimpri Chinchwad College of Engineering (PCCOE)',
+            'sbpatilmba.com': 'S.B. Patil Institute of Management (MBA)',
+            'sbpatilarchitecture.com': 'S.B. Patil College of Architecture',
+            'pcpolytechnic.com': 'Pimpri Chinchwad Polytechnic',
+            'pcu.edu.in': 'Pimpri Chinchwad University (PCU)',
+            'pccoer.in': 'Pimpri Chinchwad College of Engineering & Research (PCCOE&R)',
+            'sbpatilpublicschool.com': 'S.B. Patil Public School',
+        };
+
+        // Gather all domains: start with college.allowedDomains, plus any actual user domains present
+        const domainMap = new Map();
+
+        // 1. Initialize with allowedDomains from the college profile
+        const allowedDomainsList = Array.isArray(college?.allowedDomains)
+            ? college.allowedDomains
+            : [];
+
+        allowedDomainsList.forEach(rawDomain => {
+            const domain = rawDomain.toLowerCase().trim();
+            if (domain) {
+                domainMap.set(domain, {
+                    domain,
+                    label: KNOWN_DOMAIN_LABELS[domain] || `@${domain}`,
+                    students: 0,
+                    vendors: 0,
+                    committee: 0,
+                    collegeAdmins: 0,
+                    total: 0
+                });
+            }
+        });
+
+        // 2. Populate counts from aggregation
+        let grandTotalUsersInCampus = 0;
+
+        usersByDomainAndRoleAgg.forEach(item => {
+            const domain = item._id?.domain;
+            const role = item._id?.role;
+            const count = item.count || 0;
+
+            if (!domain) return;
+
+            grandTotalUsersInCampus += count;
+
+            if (!domainMap.has(domain)) {
+                domainMap.set(domain, {
+                    domain,
+                    label: KNOWN_DOMAIN_LABELS[domain] || `@${domain}`,
+                    students: 0,
+                    vendors: 0,
+                    committee: 0,
+                    collegeAdmins: 0,
+                    total: 0
+                });
+            }
+
+            const record = domainMap.get(domain);
+            if (role === 'user' || role === 'student') {
+                record.students += count;
+            } else if (role === 'vendor') {
+                record.vendors += count;
+            } else if (role === 'mess_committee') {
+                record.committee += count;
+            } else if (role === 'college_admin') {
+                record.collegeAdmins += count;
+            }
+            record.total += count;
+        });
+
+        // 3. Convert to array, sort by total sign-ups descending, and calculate share percentage
+        const domainBreakdown = Array.from(domainMap.values()).map(d => ({
+            ...d,
+            sharePercentage: grandTotalUsersInCampus > 0
+                ? Number(((d.total / grandTotalUsersInCampus) * 100).toFixed(1))
+                : 0
+        })).sort((a, b) => b.total - a.total);
 
         // Map complaint status & categories
         const complaintStatusMap = {
@@ -875,6 +982,8 @@ export const getCollegeAdminAnalytics = async (req, res) => {
                     totalStudents: roleCounts.student,
                     totalVendors: roleCounts.vendor,
                     totalCommittee: roleCounts.mess_committee,
+                    totalCollegeAdmins: roleCounts.college_admin,
+                    totalUsers: roleCounts.student + roleCounts.vendor + roleCounts.mess_committee + roleCounts.college_admin,
                     totalMesses: messes.length,
                     activeMesses: messes.filter(
                         m => m.isActive
@@ -900,6 +1009,7 @@ export const getCollegeAdminAnalytics = async (req, res) => {
                     totalNotices
                 },
 
+                domainBreakdown,
                 messPerformance,
 
                 complaints: {
